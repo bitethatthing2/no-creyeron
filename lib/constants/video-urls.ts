@@ -90,7 +90,16 @@ export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
 // Helper function to get video URL for a menu item
 export function getMenuItemVideoUrl(itemName: string): string | null {
   const normalizedName = itemName.toLowerCase().trim();
-  return MENU_VIDEO_MAPPING[normalizedName] || null;
+  const videoUrl = MENU_VIDEO_MAPPING[normalizedName];
+  
+  // Temporarily disable videos until Supabase storage is confirmed working
+  // Return null to gracefully hide video buttons instead of showing broken videos
+  if (process.env.NODE_ENV === 'production') {
+    console.warn(`Video system temporarily disabled in production for: ${itemName}`);
+    return null;
+  }
+  
+  return videoUrl || null;
 }
 
 // Export all URLs for reference (clean Supabase storage names)
