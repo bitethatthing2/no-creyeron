@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { initializeFirebaseAdmin, getAdminMessaging, isFirebaseAdminInitialized } from '@/lib/firebase/admin';
 import { NOTIFICATION_TOPICS } from '@/types/features/firebase';
 import type { NotificationTopicKey, FcmResponse, BulkNotificationResult } from '@/types/features/firebase';
