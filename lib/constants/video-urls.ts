@@ -1,38 +1,30 @@
-// Supabase Storage URLs for Menu Videos
-// All videos are stored in the 'menu-videos' bucket in Supabase Storage
-// Format: https://[project-ref].supabase.co/storage/v1/object/public/menu-videos/[folder]/[filename]
+// Local Video URLs for Menu Videos
+// All videos are stored in the public/food-menu-images/ directory
+// Format: /food-menu-images/[filename] or /drink-menu-images/[filename]
 
-const SUPABASE_URL = 'https://tvnpgbjypnezoasbhbwx.supabase.co';
-const BUCKET = 'menu-videos';
-
-// Helper function to construct Supabase storage URL
-const getSupabaseVideoUrl = (folder: 'food' | 'drinks' | 'icons', filename: string) => {
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${folder}/${filename}`;
-};
-
-// Video URL mapping for all menu items
+// Video URL mapping for all menu items - using local public folder paths
 export const VIDEO_URLS = {
-  // Food videos (clean Supabase storage paths)
-  'birria-soup-watch-it-made': getSupabaseVideoUrl('food', 'birria-soup-watch-it-made.mp4'),
-  'fish-tacos-watch-it-made': getSupabaseVideoUrl('food', 'fish-tacos-watch-it-made.mp4'),
-  'watch-it-being-made-queso-tacos': getSupabaseVideoUrl('food', 'watch-it-being-made-queso-tacos.mp4'),
-  'watch-it-being-made-taco-salad': getSupabaseVideoUrl('food', 'watch-it-being-made-taco-salad.mp4'),
-  'watch-it-be-made-burrito': getSupabaseVideoUrl('food', 'watch-it-be-made-burrito.mp4'),
-  'watch-it-be-made-general': getSupabaseVideoUrl('food', 'watch-it-be-made-general.mp4'),
-  'watch-it-made-breakfast-burrito': getSupabaseVideoUrl('food', 'watch-it-made-breakfast-burrito.mp4'),
-  'watch-it-made-pizza': getSupabaseVideoUrl('food', 'watch-it-made-pizza.mp4'),
+  // Food videos (local public folder)
+  'birria-soup-watch-it-made': '/food-menu-images/birria-soup-watch-it-made.mp4',
+  'fish-tacos-watch-it-made': '/food-menu-images/fish-tacos-watch-it-made.mp4',
+  'watch-it-being-made-queso-tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
+  'watch-it-being-made-taco-salad': '/food-menu-images/watch-it-being-made-taco-salad.mp4',
+  'watch-it-be-made-burrito': '/food-menu-images/watch-it-be-made-burrito.mp4',
+  'watch-it-be-made-general': '/food-menu-images/watch-it-be-made.mp4',
+  'watch-it-made-breakfast-burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
+  'watch-it-made-pizza': '/food-menu-images/watch-it-made-pizza.mp4',
   
-  // Drink videos (clean Supabase storage paths)
-  'MARGARITA-BOARDS': getSupabaseVideoUrl('drinks', 'MARGARITA-BOARDS.mp4'),
-  'margarita-tower': getSupabaseVideoUrl('drinks', 'margarita-tower.mp4'),
-  'watch-it-made-vampiros': getSupabaseVideoUrl('drinks', 'watch-it-made-vampiros.mp4'),
+  // Drink videos (local public folder)
+  'MARGARITA-BOARDS': '/drink-menu-images/MARGARITA-BOARDS.mp4',
+  'margarita-tower': '/drink-menu-images/margarita-tower.mp4',
+  'watch-it-made-vampiros': '/drink-menu-images/watch-it-made-vampiros.mp4',
   
-  // Icon/promotional videos
-  'first-box': getSupabaseVideoUrl('icons', 'first-box.mp4'),
-  'main-page-only': getSupabaseVideoUrl('icons', 'main-page-only.mp4'),
-  'priemer-destination': getSupabaseVideoUrl('icons', 'priemer-destination.mp4'),
-  'video-food': getSupabaseVideoUrl('icons', 'video-food.mp4'),
-  'welcome-to-hustle': getSupabaseVideoUrl('icons', 'welcome-to-hustle.mp4'),
+  // Icon/promotional videos (local public folder)
+  'first-box': '/videos/first-box.mp4',
+  'main-page-only': '/videos/main-page-only.mp4',
+  'priemer-destination': '/videos/priemer-destination.mp4',
+  'video-food': '/videos/video-food.mp4',
+  'welcome-to-hustle': '/videos/welcome-to-hustle.mp4',
 } as const;
 
 // Video mapping for menu items - maps item names to video keys
@@ -90,37 +82,28 @@ export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
 // Helper function to get video URL for a menu item
 export function getMenuItemVideoUrl(itemName: string): string | null {
   const normalizedName = itemName.toLowerCase().trim();
-  const videoUrl = MENU_VIDEO_MAPPING[normalizedName];
-  
-  // Temporarily disable videos until Supabase storage is confirmed working
-  // Return null to gracefully hide video buttons instead of showing broken videos
-  if (process.env.NODE_ENV === 'production') {
-    console.warn(`Video system temporarily disabled in production for: ${itemName}`);
-    return null;
-  }
-  
-  return videoUrl || null;
+  return MENU_VIDEO_MAPPING[normalizedName] || null;
 }
 
-// Export all URLs for reference (clean Supabase storage names)
+// Export all URLs for reference (local public folder paths)
 export const ALL_VIDEO_FILES = [
-  // Food videos (as stored in Supabase)
-  'birria-soup-watch-it-made.mp4',
-  'fish-tacos-watch-it-made.mp4',
-  'watch-it-being-made-queso-tacos.mp4', // Cleaned from .mp4.mp4
-  'watch-it-being-made-taco-salad.mp4',
-  'watch-it-be-made-burrito.mp4',
-  'watch-it-be-made-general.mp4', // Renamed for clarity
-  'watch-it-made-breakfast-burrito.mp4',
-  'watch-it-made-pizza.mp4',
-  // Drink videos (as stored in Supabase)
-  'MARGARITA-BOARDS.mp4',
-  'margarita-tower.mp4', // Cleaned from .mp4.mp4
-  'watch-it-made-vampiros.mp4', // Added .mp4 extension
-  // Icon videos
-  'first-box.mp4',
-  'main-page-only.mp4',
-  'priemer-destination.mp4',
-  'video-food.mp4',
-  'welcome-to-hustle.mp4'
+  // Food videos (in public/food-menu-images/)
+  '/food-menu-images/birria-soup-watch-it-made.mp4',
+  '/food-menu-images/fish-tacos-watch-it-made.mp4',
+  '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
+  '/food-menu-images/watch-it-being-made-taco-salad.mp4',
+  '/food-menu-images/watch-it-be-made-burrito.mp4',
+  '/food-menu-images/watch-it-be-made.mp4',
+  '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
+  '/food-menu-images/watch-it-made-pizza.mp4',
+  // Drink videos (in public/drink-menu-images/)
+  '/drink-menu-images/MARGARITA-BOARDS.mp4',
+  '/drink-menu-images/margarita-tower.mp4',
+  '/drink-menu-images/watch-it-made-vampiros.mp4',
+  // Icon videos (in public/videos/)
+  '/videos/first-box.mp4',
+  '/videos/main-page-only.mp4',
+  '/videos/priemer-destination.mp4',
+  '/videos/video-food.mp4',
+  '/videos/welcome-to-hustle.mp4'
 ];
