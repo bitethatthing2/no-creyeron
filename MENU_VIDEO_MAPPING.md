@@ -1,66 +1,75 @@
-# MENU VIDEO MAPPING DOCUMENTATION
+# MENU VIDEO MAPPING DOCUMENTATION - ✅ PRODUCTION READY
 
-## CRITICAL: There are TWO separate video mappings that MUST be kept in sync!
+## ✅ SYSTEM STATUS: CENTRALIZED & DEPLOYED
 
-### Problem We Solved:
-The "Watch It Made" functionality was not working for Birria Ramen Bowl because we have **TWO DIFFERENT MENU SYSTEMS** with **TWO DIFFERENT VIDEO MAPPINGS** that both need to be updated when adding videos.
+### Videos Successfully Uploaded:
+All "Watch It Made" videos have been **manually uploaded to Supabase storage** and are working in production.
 
-## REQUIRED FILES TO UPDATE FOR ANY NEW "WATCH IT MADE" VIDEOS:
+### ✅ Centralized Video System:
+The video mapping system has been **centralized** into a single source of truth:
 
-### 1. Front Page Carousel (MAIN MENU USERS SEE)
-**File:** `/components/shared/FoodDrinkCarousel.tsx`
-**Lines:** ~906-925 (in `getWatchItMadeVideo` function)
-**Function:** `const videoMap: { [key: string]: string } = {`
+**File:** `/lib/constants/video-urls.ts`
 
-This controls the "Watch It Made" buttons on the **FRONT PAGE SLIDER** that users see first.
+This **single file** now controls ALL video mappings for:
+- Front page carousel (`FoodDrinkCarousel.tsx`)
+- Full menu page (`MenuItemCard.tsx`)
 
-### 2. Full Menu Page 
-**File:** `/components/menu/MenuItemCard.tsx`  
-**Lines:** ~54-80 (in `getWatchItMadeVideo` function)
-**Function:** `const videoMapping: { [key: string]: string } = {`
+## PRODUCTION VIDEO SYSTEM:
 
-This controls the "Watch It Made" buttons on the **FULL MENU PAGE** (/menu).
+### Current Video URLs (Supabase Storage):
+All videos are served from: `https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/[folder]/[filename]`
 
-## EXACT STEPS TO ADD A NEW "WATCH IT MADE" VIDEO:
+### Working Videos:
+- Birria Soup: ✅ Deployed
+- Fish Tacos: ✅ Deployed  
+- Queso Tacos: ✅ Deployed
+- Taco Salad: ✅ Deployed
+- Burrito: ✅ Deployed
+- Breakfast Burrito: ✅ Deployed
+- Pizza: ✅ Deployed
+- Margarita Board: ✅ Deployed
+- Margarita Tower: ✅ Deployed
+- Vampiros: ✅ Deployed
 
-1. **Upload video file** to `/public/food-menu-images/[video-name].mp4`
+## TO ADD NEW "WATCH IT MADE" VIDEOS:
 
-2. **Update BOTH files** with the EXACT SAME mapping:
-   - Add to FoodDrinkCarousel.tsx (front page)
-   - Add to MenuItemCard.tsx (menu page)
+1. **Manually upload video** to Supabase storage bucket `menu-videos`
+
+2. **Update SINGLE file** `/lib/constants/video-urls.ts`:
+   - Add new video to `VIDEO_URLS` object
+   - Add menu item mappings to `MENU_VIDEO_MAPPING` object
+   - System automatically updates both front page and menu page
 
 3. **Use the EXACT menu item name** (case-sensitive matching)
 
-## EXAMPLE - What We Did for Birria Ramen Bowl:
+## EXAMPLE - Current Production Setup:
 
-### File 1: `/components/shared/FoodDrinkCarousel.tsx`
+### Single Source of Truth: `/lib/constants/video-urls.ts`
 ```javascript
-const videoMap: { [key: string]: string } = {
-  // ... other mappings
-  'birria ramen bowl': '/food-menu-images/birria-soup-watch-it-made.mp4',
+export const VIDEO_URLS = {
+  'birria-soup-watch-it-made': getSupabaseVideoUrl('food', 'birria-soup-watch-it-made.mp4'),
+  // ... other videos
+};
+
+export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
+  // Works for both front page and menu page
+  'birria ramen bowl': VIDEO_URLS['birria-soup-watch-it-made'],
+  'BIRRIA RAMEN BOWL': VIDEO_URLS['birria-soup-watch-it-made'],
   // ... other mappings
 };
 ```
 
-### File 2: `/components/menu/MenuItemCard.tsx`  
-```javascript
-const videoMapping: { [key: string]: string } = {
-  // ... other mappings
-  'BIRRIA RAMEN BOWL': '/food-menu-images/birria-soup-watch-it-made.mp4',
-  // ... other mappings
-};
-```
+## ✅ SYSTEM BENEFITS:
+- **Single file** to update (no more dual maintenance)
+- **Centralized** video URL management
+- **Production-ready** with Supabase storage
+- **Clean URLs** without naming quirks
+- **Automatic** propagation to both pages
 
-## WHY THIS HAPPENED:
-- Front page uses a carousel with hardcoded menu items
-- Menu page pulls from database  
-- Each has its own video mapping function
-- Both need to be updated for videos to work everywhere
-
-## NEVER FORGET:
-**ALWAYS UPDATE BOTH FILES OR THE VIDEO WON'T WORK ON BOTH PAGES!**
+## 🎬 PRODUCTION STATUS:
+**All videos deployed and working!** No upload scripts needed.
 
 ---
-Last Updated: 2025-08-07
-Issue: Birria Ramen Bowl video mapping
-Video File: `/public/food-menu-images/birria-soup-watch-it-made.mp4`
+Last Updated: 2025-08-08
+Status: ✅ PRODUCTION READY - All videos manually uploaded to Supabase storage
+System: Centralized video mapping in `/lib/constants/video-urls.ts`
