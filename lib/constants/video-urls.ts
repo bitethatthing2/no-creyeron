@@ -13,19 +13,19 @@ const getSupabaseVideoUrl = (folder: 'food' | 'drinks' | 'icons', filename: stri
 // Video URL mapping for all menu items
 export const VIDEO_URLS = {
   // Food videos
-  'watch-it-made': getSupabaseVideoUrl('food', 'watch-it-made.mp4'),
-  'watch-it-made-pizza': getSupabaseVideoUrl('food', 'watch-it-made-pizza.mp4'),
   'birria-soup-watch-it-made': getSupabaseVideoUrl('food', 'birria-soup-watch-it-made.mp4'),
   'fish-tacos-watch-it-made': getSupabaseVideoUrl('food', 'fish-tacos-watch-it-made.mp4'),
+  'watch-it-being-made-queso-tacos-double': getSupabaseVideoUrl('food', 'watch-it-being-made-queso-tacos.mp4.mp4'),
   'watch-it-being-made-taco-salad': getSupabaseVideoUrl('food', 'watch-it-being-made-taco-salad.mp4'),
   'watch-it-be-made-burrito': getSupabaseVideoUrl('food', 'watch-it-be-made-burrito.mp4'),
+  'watch-it-be-made': getSupabaseVideoUrl('food', 'watch-it-be-made.mp4'),
   'watch-it-made-breakfast-burrito': getSupabaseVideoUrl('food', 'watch-it-made-breakfast-burrito.mp4'),
-  'watch-it-being-made-queso-tacos': getSupabaseVideoUrl('food', 'watch-it-being-made-queso-tacos.mp4'),
+  'watch-it-made-pizza': getSupabaseVideoUrl('food', 'watch-it-made-pizza.mp4'),
   
   // Drink videos
   'MARGARITA-BOARDS': getSupabaseVideoUrl('drinks', 'MARGARITA-BOARDS.mp4'),
-  'margarita-tower': getSupabaseVideoUrl('drinks', 'margarita-tower.mp4'),
-  'watch-it-made-vampiros': getSupabaseVideoUrl('drinks', 'watch-it-made-vampiros.mp4'),
+  'margarita-tower-double': getSupabaseVideoUrl('drinks', 'margarita-tower.mp4.mp4'),
+  'watch-it-made-vampiros': getSupabaseVideoUrl('drinks', 'watch-it-made-vampiros'),
   
   // Icon/promotional videos
   'first-box': getSupabaseVideoUrl('icons', 'first-box.mp4'),
@@ -63,6 +63,7 @@ export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
   
   // Burritos
   'burrito': VIDEO_URLS['watch-it-be-made-burrito'],
+  'watch it be made': VIDEO_URLS['watch-it-be-made'],
   'ham & potato breakfast burrito': VIDEO_URLS['watch-it-made-breakfast-burrito'],
   'ham and potato breakfast burrito': VIDEO_URLS['watch-it-made-breakfast-burrito'],
   'chorizo & potato breakfast burrito': VIDEO_URLS['watch-it-made-breakfast-burrito'],
@@ -72,18 +73,18 @@ export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
   'breakfast burrito': VIDEO_URLS['watch-it-made-breakfast-burrito'],
   
   // Queso Tacos
-  'birria queso tacos': VIDEO_URLS['watch-it-being-made-queso-tacos'],
-  'queso birria tacos': VIDEO_URLS['watch-it-being-made-queso-tacos'],
-  'single queso taco': VIDEO_URLS['watch-it-being-made-queso-tacos'],
-  'queso tacos': VIDEO_URLS['watch-it-being-made-queso-tacos'],
-  'queso taco': VIDEO_URLS['watch-it-being-made-queso-tacos'],
+  'birria queso tacos': VIDEO_URLS['watch-it-being-made-queso-tacos-double'],
+  'queso birria tacos': VIDEO_URLS['watch-it-being-made-queso-tacos-double'],
+  'single queso taco': VIDEO_URLS['watch-it-being-made-queso-tacos-double'],
+  'queso tacos': VIDEO_URLS['watch-it-being-made-queso-tacos-double'],
+  'queso taco': VIDEO_URLS['watch-it-being-made-queso-tacos-double'],
   
   // Drinks
   'margarita board': VIDEO_URLS['MARGARITA-BOARDS'],
   'MARGARITA BOARD': VIDEO_URLS['MARGARITA-BOARDS'],
   'vampiros': VIDEO_URLS['watch-it-made-vampiros'],
-  'margarita tower': VIDEO_URLS['margarita-tower'],
-  'MARGARITA TOWER': VIDEO_URLS['margarita-tower'],
+  'margarita tower': VIDEO_URLS['margarita-tower-double'],
+  'MARGARITA TOWER': VIDEO_URLS['margarita-tower-double'],
 };
 
 // Helper function to get video URL for a menu item
@@ -94,19 +95,19 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
 
 // Export all URLs for reference
 export const ALL_VIDEO_FILES = [
-  // Food videos
+  // Food videos (matching user's exact list)
   'birria-soup-watch-it-made.mp4',
   'fish-tacos-watch-it-made.mp4',
-  'watch-it-be-made-burrito.mp4',
-  'watch-it-being-made-queso-tacos.mp4',
+  'watch-it-being-made-queso-tacos.mp4.mp4',
   'watch-it-being-made-taco-salad.mp4',
+  'watch-it-be-made-burrito.mp4',
+  'watch-it-be-made.mp4',
   'watch-it-made-breakfast-burrito.mp4',
   'watch-it-made-pizza.mp4',
-  'watch-it-made.mp4',
-  // Drink videos
+  // Drink videos (matching user's exact list)
   'MARGARITA-BOARDS.mp4',
-  'margarita-tower.mp4',
-  'watch-it-made-vampiros.mp4',
+  'margarita-tower.mp4.mp4',
+  'watch-it-made-vampiros',
   // Icon videos
   'first-box.mp4',
   'main-page-only.mp4',
