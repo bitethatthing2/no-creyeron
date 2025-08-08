@@ -10,6 +10,7 @@ import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { cn } from '@/lib/utils';
 import { getFreshImageUrl } from '@/lib/utils/image-cache';
 import dynamic from 'next/dynamic';
+import { getMenuItemVideoUrl } from '@/lib/constants/video-urls';
 
 // Import raw image component for development
 const RawImage = dynamic(() => import('@/components/dev/RawImage'), { ssr: false });
@@ -46,63 +47,8 @@ const getWatchItMadeVideo = (itemName: string, itemDescription: string, watchItM
     return watchItMadeVideoFromDB;
   }
   
-  const searchText = (itemName + ' ' + itemDescription).toLowerCase().trim();
-  const itemNameOnly = itemName.toLowerCase().trim();
-  
-  
-  // Fallback: Map specific items to their watch-it-made wolfpack_videos (for backward compatibility)
-  const videoMapping: { [key: string]: string } = {
-    'loaded nachos': '/food-menu-images/watch-it-made.mp4',
-    'loaded nacho': '/food-menu-images/watch-it-made.mp4',
-    'birria pizza': '/food-menu-images/watch-it-made-pizza.mp4',
-    'fried fish tacos (2)': '/food-menu-images/fish-tacos-watch-it-made.mp4',
-    'fish tacos': '/food-menu-images/fish-tacos-watch-it-made.mp4',
-    'taco salad': '/food-menu-images/watch-it-being-made-taco-salad.mp4',
-    'burrito': '/food-menu-images/watch-it-be-made-burrito.mp4',
-    'ham & potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'ham and potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'chorizo & potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'chorizo and potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'asada & bacon': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'asada and bacon': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'birria queso tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'queso birria tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'single queso taco': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'queso tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'queso taco': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'vampiros': '/drink-menu-images/watch-it-made-vampiros.mp4',
-    // Drink videos
-    'margarita board': '/drink-menu-images/MARGARITA-BOARDS.mp4',
-    'margarita tower': '/drink-menu-images/margarita-tower.mp4',
-    'MARGARITA TOWER': '/drink-menu-images/margarita-tower.mp4',
-    // Birria soup/ramen bowl variations
-    'birria soup': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'birria ramen': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'birria ramen bowl': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'BIRRIA RAMEN BOWL': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'birria bowl': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'ramen bowl': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'ramen': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'soup': '/food-menu-images/birria-soup-watch-it-made.mp4'
-  };
-  
-  // First pass: Look for EXACT matches with full search text
-  for (const [keyword, videoUrl] of Object.entries(videoMapping)) {
-    if (searchText === keyword.toLowerCase() || itemNameOnly === keyword.toLowerCase()) {
-      return videoUrl;
-    }
-  }
-  
-  // Second pass: Look for partial matches - prioritize longer matches first
-  const sortedMappings = Object.entries(videoMapping).sort((a, b) => b[0].length - a[0].length);
-  for (const [keyword, videoUrl] of sortedMappings) {
-    if (searchText.includes(keyword.toLowerCase()) || itemNameOnly.includes(keyword.toLowerCase())) {
-      return videoUrl;
-    }
-  }
-  
-  return null;
+  // Use centralized video mapping
+  return getMenuItemVideoUrl(itemName);
 };
 
 // Enhanced mapping object (longest matches first for better accuracy)

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Utensils, Wine, Star, DollarSign, Search, Pl
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
 import WatchItMadeModal from '@/components/menu/WatchItMadeModal';
+import { getMenuItemVideoUrl } from '@/lib/constants/video-urls';
 
 interface CarouselItem {
   id: string;
@@ -902,35 +903,7 @@ const carouselItems: CarouselItem[] = [
 
 // Function to get watch-it-made video URL for specific items
 const getWatchItMadeVideo = (itemName: string, itemDescription: string): string | null => {
-  // Map specific items to their watch-it-made wolfpack_videos
-  const videoMap: { [key: string]: string } = {
-    'loaded nachos': '/food-menu-images/watch-it-made.mp4',
-    'loaded nacho': '/food-menu-images/watch-it-made.mp4',
-    'birria pizza': '/food-menu-images/watch-it-made-pizza.mp4',
-    'birria ramen bowl': '/food-menu-images/birria-soup-watch-it-made.mp4',
-    'margarita board': '/drink-menu-images/MARGARITA-BOARDS.mp4',
-    'fried fish tacos (2)': '/food-menu-images/fish-tacos-watch-it-made.mp4',
-    'fish tacos': '/food-menu-images/fish-tacos-watch-it-made.mp4',
-    'taco salad': '/food-menu-images/watch-it-being-made-taco-salad.mp4',
-    'burrito': '/food-menu-images/watch-it-be-made-burrito.mp4',
-    'ham & potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'ham and potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'chorizo & potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'chorizo and potato breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'asada & bacon': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'asada and bacon': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'breakfast burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
-    'birria queso tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'queso birria tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'single queso taco': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'queso tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'queso taco': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
-    'vampiros': '/drink-menu-images/watch-it-made-vampiros.mp4',
-    'margarita tower': '/drink-menu-images/margarita-tower.mp4'
-  };
-
-  const normalizedName = itemName.toLowerCase();
-  return videoMap[normalizedName] || null;
+  return getMenuItemVideoUrl(itemName);
 };
 
 export function FoodDrinkCarousel() {
