@@ -1,0 +1,22 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://xrqsqjwbmxgvbfnqxvmb.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXNxandibXhndmJmbnF4dm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQzMzQ0MDAsImV4cCI6MjAyOTkxMDQwMH0.Nh83ebqzf9Yt_1oJjIZSXEBCE6W3IeYVIVxr4GGqoYU",
+    "NEXT_RUNTIME": "nodejs"
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "skipTypeCheck": true,
+        "nodeVersion": "v22.15.0"
+      }
+    }
+  ]
+}

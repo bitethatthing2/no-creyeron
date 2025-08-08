@@ -1,0 +1,8 @@
+# Build scripts using CommonJS
+scripts/
+# Next.js build output
+.next/
+# Node modules
+node_modules/
+# TypeScript build output
+*.tsbuildinfo

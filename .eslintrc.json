@@ -1,0 +1,40 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "no-unused-vars": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/lib/supabase/client",
+            "message": "Please import from '@/lib/supabase' instead. This ensures consistent client management and proper singleton usage."
+          },
+          {
+            "name": "@/lib/supabase/server", 
+            "message": "Please import from '@/lib/supabase' instead. This ensures consistent client management and proper type safety."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["*/supabase/client", "*/supabase/server"],
+            "message": "Please import from '@/lib/supabase' instead. Direct imports bypass centralized client management."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["scripts/**/*.js"],
+      "rules": {
+        "import/no-commonjs": "off",
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    }
+  ]
+}
