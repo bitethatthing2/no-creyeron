@@ -2,21 +2,21 @@
 // All videos are stored in the public/food-menu-images/ directory
 // Format: /food-menu-images/[filename] or /drink-menu-images/[filename]
 
-// Video URL mapping for all menu items - using local public folder paths
+// Video URL mapping for all menu items - using exact user file names
 export const VIDEO_URLS = {
-  // Food videos (local public folder)
+  // Food videos (matching user's exact file names)
   'birria-soup-watch-it-made': '/food-menu-images/birria-soup-watch-it-made.mp4',
   'fish-tacos-watch-it-made': '/food-menu-images/fish-tacos-watch-it-made.mp4',
-  'watch-it-being-made-queso-tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
+  'watch-it-being-made-queso-tacos': '/food-menu-images/watch-it-being-made-queso-tacos.mp4.mp4',
   'watch-it-being-made-taco-salad': '/food-menu-images/watch-it-being-made-taco-salad.mp4',
   'watch-it-be-made-burrito': '/food-menu-images/watch-it-be-made-burrito.mp4',
   'watch-it-be-made-general': '/food-menu-images/watch-it-be-made.mp4',
   'watch-it-made-breakfast-burrito': '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
   'watch-it-made-pizza': '/food-menu-images/watch-it-made-pizza.mp4',
   
-  // Drink videos (local public folder)
+  // Drink videos (matching user's exact file names)
   'MARGARITA-BOARDS': '/drink-menu-images/MARGARITA-BOARDS.mp4',
-  'margarita-tower': '/drink-menu-images/margarita-tower.mp4',
+  'margarita-tower': '/drink-menu-images/margarita-tower.mp4.mp4',
   'watch-it-made-vampiros': '/drink-menu-images/watch-it-made-vampiros.mp4',
   
   // Icon/promotional videos (local public folder)
@@ -85,20 +85,20 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
   return MENU_VIDEO_MAPPING[normalizedName] || null;
 }
 
-// Export all URLs for reference (local public folder paths)
+// Export all URLs for reference (matching user's exact file names)
 export const ALL_VIDEO_FILES = [
-  // Food videos (in public/food-menu-images/)
+  // Food videos (user's exact file names in public/food-menu-images/)
   '/food-menu-images/birria-soup-watch-it-made.mp4',
   '/food-menu-images/fish-tacos-watch-it-made.mp4',
-  '/food-menu-images/watch-it-being-made-queso-tacos.mp4',
+  '/food-menu-images/watch-it-being-made-queso-tacos.mp4.mp4',
   '/food-menu-images/watch-it-being-made-taco-salad.mp4',
   '/food-menu-images/watch-it-be-made-burrito.mp4',
   '/food-menu-images/watch-it-be-made.mp4',
   '/food-menu-images/watch-it-made-breakfast-burrito.mp4',
   '/food-menu-images/watch-it-made-pizza.mp4',
-  // Drink videos (in public/drink-menu-images/)
+  // Drink videos (user's exact file names in public/drink-menu-images/)
   '/drink-menu-images/MARGARITA-BOARDS.mp4',
-  '/drink-menu-images/margarita-tower.mp4',
+  '/drink-menu-images/margarita-tower.mp4.mp4',
   '/drink-menu-images/watch-it-made-vampiros.mp4',
   // Icon videos (in public/videos/)
   '/videos/first-box.mp4',
