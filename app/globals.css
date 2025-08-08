@@ -1,0 +1,625 @@
+/* Tailwind CSS base directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import consolidated menu styles */
+@import '../styles/consolidated-menu.css';
+
+/* Remove default margins and ensure full coverage */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #000;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* TikTok-style feed scrollbar hiding */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* TikTok-style snap scrolling optimizations */
+.snap-container {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Performance optimizations for video elements */
+.video-container {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Prevent layout shift during infinite scroll */
+.feed-container {
+  contain: layout style paint;
+}
+
+/* Instagram embed fixes - prevent CSS interference */
+.instagram-media,
+.instagram-media * {
+  contain: none !important;
+  will-change: auto !important;
+  transform: none !important;
+  backface-visibility: visible !important;
+}
+
+.instagram-media {
+  /* Allow Instagram's script to manipulate dimensions */
+  max-width: none !important;
+  width: auto !important;
+  height: auto !important;
+  /* Prevent overflow issues */
+  overflow: visible !important;
+  /* Reset any transform properties */
+  transform: none !important;
+  /* Ensure proper positioning */
+  position: relative !important;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* TikTok-style animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Import consolidated menu styles - single source of truth */
+@import '../styles/consolidated-menu.css';
+
+/* Content container for proper framing */
+.content-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    padding: 0 2rem;
+  }
+}
+
+/* Force transparent navigation */
+nav[class*="fixed top-0"], 
+.transparent-nav,
+.transparent-nav * {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* REMOVED: wolfpack-chat.css import - styles moved inline where needed */
+
+/* REMOVED: @import '../styles/wolfpack.css'; - File was deleted */
+
+/* Import Google Fonts for elegant typography */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Typography System */
+@layer base {
+  html, body {
+    background: black !important;
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  body {
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+}
+
+/* Margarita Factory Style Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out;
+}
+
+/* Basic mobile viewport fixes - simplified */
+@layer base {
+  html {
+    overflow-x: hidden;
+  }
+  
+  body {
+    overflow-x: hidden;
+    box-sizing: border-box;
+    /* Account for safe areas on mobile devices */
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+    /* Add padding bottom for bottom navigation - 64px (h-16) + safe area */
+    padding-bottom: calc(64px + constant(safe-area-inset-bottom));
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Global animations and utilities */
+@layer utilities {
+  .animate-in {
+    animation: animateIn 0.5s ease-out forwards;
+  }
+  
+  /* Hide scrollbars for TikTok-style horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Responsive container with safe areas */
+  .responsive-container {
+    width: 100%;
+    max-width: 100vw;
+    padding-left: constant(safe-area-inset-left);
+    padding-left: env(safe-area-inset-left);
+    padding-right: constant(safe-area-inset-right);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Fix for mobile viewport height */
+  .mobile-full-height {
+    height: 100vh;
+    height: -webkit-fill-available;
+    height: fill-available;
+  }
+
+  /* Ensure content doesn't go under notches */
+  .safe-content {
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 
+             env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+
+  /* Instagram embed container fix */
+  .instagram-media {
+    position: relative !important;
+    z-index: 1 !important;
+    margin-bottom: 80px !important; /* Space for bottom nav */
+  }
+
+  /* Instagram embed iframe fix */
+  iframe.instagram-media-rendered {
+    max-height: calc(100vh - 200px) !important; /* Prevent full height */
+    z-index: 1 !important;
+  }
+
+  /* Safe area inset classes */
+  .safe-area-inset-top {
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: constant(safe-area-inset-left);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
+    padding-right: constant(safe-area-inset-right);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Fix broadcast modal positioning */
+  .broadcast-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  .broadcast-modal-content {
+    position: relative !important;
+    background: white !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    max-width: 600px !important;
+    width: 90% !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    transform: none !important; /* Remove any transforms */
+    margin: 0 !important;
+  }
+}
+
+/* Responsive Media Queries */
+@layer components {
+  /* Small devices (phones) */
+  @media (max-width: 640px) {
+    .main-content {
+      min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
+    
+  }
+  
+  /* Tablets and larger */
+  @media (min-width: 768px) {
+    .instagram-media {
+      max-width: 540px !important;
+      margin: 0 auto 80px !important;
+    }
+  }
+  
+  /* Fix for iPhone X and later models */
+  @supports (padding: env(safe-area-inset-top)) {
+    .ios-safe-top {
+      padding-top: env(safe-area-inset-top);
+    }
+    
+    .ios-safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+
+  /* Remove any conflicting positioning */
+  .broadcast-modal-content * {
+    position: relative !important;
+  }
+  
+  /* Hexagonal wolfpack specific animations */
+  .animate-hex-pulse {
+    animation: hexPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-hex-glow {
+    animation: hexGlow 3s ease-in-out infinite alternate;
+  }
+  
+  /* Prevent layout shifts by providing content-visibility hints */
+  .layout-stable {
+    contain: layout style;
+  }
+  
+  /* Image loading optimization to prevent layout shifts */
+  img {
+    height: auto;
+  }
+  
+  img[width][height] {
+    height: auto;
+  }
+  
+  /* Smooth transitions for dynamic content to reduce perceived layout shifts */
+  .smooth-transition {
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+@keyframes animateIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hexPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes hexGlow {
+  0% {
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  100% {
+    filter: drop-shadow(0 0 20px currentColor);
+  }
+}
+
+@layer base {
+  /* Transparent Background */
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --radius: 0.5rem;
+    
+    /* Navigation heights for responsive layout */
+    --top-nav-height: 64px; /* Top navigation height */
+    --chat-header-height: 88px;
+    
+    /* Wolfpack specific variables */
+    --wolfpack-dj: 262.1 83.3% 57.8%;
+    --wolfpack-bartender: 142.1 76.2% 36.3%;
+    --wolfpack-member: 217.2 91.2% 59.8%;
+    --wolfpack-current-user: 221.2 83.2% 53.3%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    
+    /* Wolfpack dark mode colors */
+    --wolfpack-dj: 262.1 83.3% 67.8%;
+    --wolfpack-bartender: 142.1 76.2% 46.3%;
+    --wolfpack-member: 217.2 91.2% 69.8%;
+    --wolfpack-current-user: 221.2 83.2% 63.3%;
+  }
+
+  /* Theme color variations - Enhanced with comprehensive variables */
+  .slate {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-light: 222.2 47.4% 21.2%;
+    --primary-dark: 222.2 47.4% 8.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --tertiary: 214.3 31.8% 91.4%;
+    --surface: 0 0% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --active: 222.2 47.4% 11.2%;
+    --inactive: 210 40% 60%;
+    --hover: 222.2 47.4% 15.2%;
+    --pressed: 222.2 47.4% 8.2%;
+    --disabled: 210 40% 85%;
+  }
+
+  .dark.slate {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-light: 210 40% 90%;
+    --primary-dark: 210 40% 85%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --tertiary: 215 27.9% 16.9%;
+    --surface: 222.2 84% 6.9%;
+    --border: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --active: 210 40% 98%;
+    --inactive: 210 40% 50%;
+    --hover: 210 40% 85%;
+    --pressed: 210 40% 80%;
+    --disabled: 215 27.9% 25%;
+  }
+
+  .red {
+    --primary: 0 72.2% 50.6%;
+    --primary-light: 0 72.2% 60.6%;
+    --primary-dark: 0 72.2% 40.6%;
+    --primary-foreground: 0 85.7% 97.3%;
+    --ring: 0 72.2% 50.6%;
+    --active: 0 72.2% 50.6%;
+    --inactive: 0 20% 60%;
+    --hover: 0 72.2% 55.6%;
+    --pressed: 0 72.2% 45.6%;
+    --disabled: 0 20% 85%;
+  }
+
+  .rose {
+    --primary: 346.8 77.2% 49.8%;
+    --primary-light: 346.8 77.2% 59.8%;
+    --primary-dark: 346.8 77.2% 39.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --ring: 346.8 77.2% 49.8%;
+    --active: 346.8 77.2% 49.8%;
+    --inactive: 346.8 20% 60%;
+    --hover: 346.8 77.2% 54.8%;
+    --pressed: 346.8 77.2% 44.8%;
+    --disabled: 346.8 20% 85%;
+  }
+
+  .orange {
+    --primary: 24.6 95% 53.1%;
+    --primary-light: 24.6 95% 63.1%;
+    --primary-dark: 24.6 95% 43.1%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --ring: 24.6 95% 53.1%;
+    --active: 24.6 95% 53.1%;
+    --inactive: 24.6 20% 60%;
+    --hover: 24.6 95% 58.1%;
+    --pressed: 24.6 95% 48.1%;
+    --disabled: 24.6 20% 85%;
+  }
+
+  .green {
+    --primary: 142.1 76.2% 36.3%;
+    --primary-light: 142.1 76.2% 46.3%;
+    --primary-dark: 142.1 76.2% 26.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --ring: 142.1 76.2% 36.3%;
+    --active: 142.1 76.2% 36.3%;
+    --inactive: 142.1 20% 60%;
+    --hover: 142.1 76.2% 41.3%;
+    --pressed: 142.1 76.2% 31.3%;
+    --disabled: 142.1 20% 85%;
+  }
+
+  .blue {
+    --primary: 221.2 83.2% 53.3%;
+    --primary-light: 221.2 83.2% 63.3%;
+    --primary-dark: 221.2 83.2% 43.3%;
+    --primary-foreground: 210 40% 98%;
+    --ring: 221.2 83.2% 53.3%;
+    --active: 221.2 83.2% 53.3%;
+    --inactive: 221.2 20% 60%;
+    --hover: 221.2 83.2% 58.3%;
+    --pressed: 221.2 83.2% 48.3%;
+    --disabled: 221.2 20% 85%;
+  }
+
+  .violet {
+    --primary: 262.1 83.3% 57.8%;
+    --primary-light: 262.1 83.3% 67.8%;
+    --primary-dark: 262.1 83.3% 47.8%;
+    --primary-foreground: 210 20% 98%;
+    --ring: 262.1 83.3% 57.8%;
+    --active: 262.1 83.3% 57.8%;
+    --inactive: 262.1 20% 60%;
+    --hover: 262.1 83.3% 62.8%;
+    --pressed: 262.1 83.3% 52.8%;
+    --disabled: 262.1 20% 85%;
+  }
+}
+
+@layer components {
+  /* iOS safe area utilities - simplified */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Mobile-friendly touch targets */
+  @media (max-width: 768px) {
+    button, .clickable {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Simplified wolfpack styles - only what's needed */
+  .wolfpack-member-avatar {
+    @apply relative w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white border-2 shadow-lg transition-all duration-300 hover:scale-110;
+  }
+
+  /* Theme colors for base elements */
+  .theme-red .theme-color { color: hsl(var(--primary)); }
+  .theme-blue .theme-color { color: hsl(var(--primary)); }
+  .theme-green .theme-color { color: hsl(var(--primary)); }
+  .theme-orange .theme-color { color: hsl(var(--primary)); }
+  .theme-violet .theme-color { color: hsl(var(--primary)); }
+  .theme-rose .theme-color { color: hsl(var(--primary)); }
+  .theme-slate .theme-color { color: hsl(var(--primary)); }
+
+  /* Carousel utilities */
+  .carousel-transform {
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .carousel-pos-0 { transform: translateX(0%); }
+  .carousel-pos-1 { transform: translateX(-100%); }
+  .carousel-pos-2 { transform: translateX(-200%); }
+  .carousel-pos-3 { transform: translateX(-300%); }
+  .carousel-pos-4 { transform: translateX(-400%); }
+  .carousel-pos-5 { transform: translateX(-500%); }
+}
+
+/* Theme color indicator classes */
+.theme-red { background-color: hsl(0, 90%, 65%); }
+.theme-rose { background-color: hsl(346.8, 90%, 65%); }
+.theme-orange { background-color: hsl(24, 95%, 65%); }
+.theme-green { background-color: hsl(142, 90%, 50%); }
+.theme-blue { background-color: hsl(217, 95%, 70%); }
+.theme-violet { background-color: hsl(272, 95%, 75%); }
+.theme-slate { background-color: hsl(0, 0%, 50%); }
+
+/* Ensure same colors in dark mode */
+.dark .theme-red { background-color: hsl(0, 90%, 65%); }
+.dark .theme-rose { background-color: hsl(346.8, 90%, 65%); }
+.dark .theme-orange { background-color: hsl(24, 95%, 65%); }
+.dark .theme-green { background-color: hsl(142, 90%, 50%); }
+.dark .theme-blue { background-color: hsl(217, 95%, 70%); }
+.dark .theme-violet { background-color: hsl(272, 95%, 75%); }
+.dark .theme-slate { background-color: hsl(0, 0%, 50%); }

@@ -1,0 +1,371 @@
+import '@/app/globals.css';
+import type { ReactNode } from 'react';
+import { Metadata, Viewport } from 'next';
+import Script from 'next/script';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import { NotificationProvider } from '@/lib/contexts/unified-notification-context';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { CartProvider } from '@/components/cart/CartContext';
+import { BottomNav } from '@/components/shared/BottomNav';
+import { PwaInitializer } from '@/components/shared/PwaInitializer';
+import { LogoPreloader } from '@/components/shared/LogoPreloader';
+import { ThemeProviderWrapper } from '@/components/shared/ThemeProviderWrapper';
+import { LocationProvider } from '@/lib/hooks/useLocationState';
+
+// Define metadata for the app, including PWA-related tags
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'),
+  title: 'Side Hustle',
+  description: 'Order food and drinks at Side Hustle - A faster, app-like experience with offline access',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', type: 'image/x-icon' },
+      { url: '/icons/favicon-for-public/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/favicon-for-public/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png' }
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+    ],
+    shortcut: [
+      { url: '/favicon.ico', type: 'image/x-icon' }
+    ]
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Side Hustle',
+  },
+  applicationName: "Side Hustle",
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "mobile-web-app-capable": "yes",
+    "msapplication-TileImage": "/icons/favicon-for-public/web-app-manifest-192x192.png",
+    "msapplication-TileColor": "#000000"
+  },
+  // Open Graph tags for better sharing
+  openGraph: {
+    title: 'Side Hustle',
+    description: 'Order food and drinks at Side Hustle',
+    url: 'https://yourdomain.com',
+    siteName: 'Side Hustle',
+    images: [
+      {
+        url: '/icons/og-image.png',
+        width: 1200,
+        height: 630,
+      }
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  // Twitter Card tags
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Side Hustle',
+    description: 'Order food and drinks at Side Hustle',
+    images: ['/icons/og-image.png'],
+  },
+};
+
+// Define viewport configuration separately as recommended by Next.js
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#000000',
+  viewportFit: 'cover', // For iPhone X+ notch support
+};
+
+interface RootLayoutProps {
+  children: ReactNode;
+}
+
+// Service Worker registration script
+const ServiceWorkerScript = () => (
+  <Script
+    id="service-worker"
+    strategy="afterInteractive"
+    dangerouslySetInnerHTML={{
+      __html: `
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(
+              function(registration) {
+                console.log('ServiceWorker registration successful');
+              },
+              function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+              }
+            );
+          });
+        }
+
+        // Register Firebase messaging service worker if needed
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then(function(registration) {
+              console.log('Firebase SW registered');
+            })
+            .catch(function(error) {
+              console.log('Firebase SW registration failed:', error);
+            });
+        }
+
+        // Performance monitoring
+        if ('PerformanceObserver' in window) {
+          try {
+            const observer = new PerformanceObserver((list) => {
+              const entries = list.getEntries();
+              entries.forEach((entry) => {
+                // Log to console or send to analytics
+                if (entry.entryType === 'largest-contentful-paint') {
+                  console.log('LCP:', entry.startTime);
+                }
+                if (entry.entryType === 'first-input') {
+                  console.log('FID:', entry.processingStart - entry.startTime);
+                }
+                if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
+                  console.log('CLS:', entry.value);
+                }
+              });
+            });
+            
+            observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] });
+          } catch (e) {
+            console.log('Performance monitoring not supported');
+          }
+        }
+
+        // Cookie health check and Supabase auth fixes
+        (function() {
+          // Safe base64 decode with error handling
+          function safeBase64Decode(str) {
+            try {
+              const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+              const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+              return atob(padded);
+            } catch (error) {
+              console.warn('Failed to decode base64 string:', error);
+              return null;
+            }
+          }
+
+          // Check if a cookie value is corrupted
+          function isCookieCorrupted(cookieValue) {
+            try {
+              if (cookieValue.includes('.')) {
+                const parts = cookieValue.split('.');
+                for (const part of parts) {
+                  if (part && safeBase64Decode(part) === null) {
+                    return true;
+                  }
+                }
+              } else if (cookieValue.startsWith('base64-')) {
+                const base64Part = cookieValue.replace('base64-', '');
+                return safeBase64Decode(base64Part) === null;
+              }
+              return false;
+            } catch (error) {
+              return true;
+            }
+          }
+
+          // Clear corrupted Supabase cookies
+          function clearCorruptedCookies() {
+            let foundCorrupted = false;
+            const cookies = document.cookie.split(';');
+            
+            for (const cookie of cookies) {
+              const [name, value] = cookie.split('=').map(s => s.trim());
+              
+              if (name && value && (name.includes('sb-') || name.includes('supabase'))) {
+                if (isCookieCorrupted(value)) {
+                  console.warn('Corrupted cookie detected:', name);
+                  foundCorrupted = true;
+                  
+                  // Clear the corrupted cookie
+                  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
+                  
+                  if (window.location.hostname !== 'localhost') {
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + window.location.hostname;
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + window.location.hostname;
+                  }
+                }
+              }
+            }
+            
+            if (foundCorrupted) {
+              console.log('Corrupted Supabase cookies cleared');
+              return true;
+            }
+            
+            return false;
+          }
+
+          // Expose cookie utilities for debugging
+          window.clearCorruptedCookies = clearCorruptedCookies;
+          window.clearAllCookies = function() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+              const eqPos = cookie.indexOf('=');
+              const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+              if (name) {
+                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
+                if (window.location.hostname !== 'localhost') {
+                  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + window.location.hostname;
+                  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + window.location.hostname;
+                }
+              }
+            }
+            console.log('All cookies cleared');
+          };
+
+          // Initialize cookie health check
+          function initCookieHealthCheck() {
+            // Check immediately
+            setTimeout(() => clearCorruptedCookies(), 100);
+            
+            // Check when page becomes visible
+            document.addEventListener('visibilitychange', () => {
+              if (!document.hidden) {
+                setTimeout(() => clearCorruptedCookies(), 100);
+              }
+            });
+          }
+
+          // Start cookie health check
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCookieHealthCheck);
+          } else {
+            initCookieHealthCheck();
+          }
+
+          console.log('Cookie utilities available: clearCorruptedCookies(), clearAllCookies()');
+        })();
+      `,
+    }}
+  />
+);
+
+export default function RootLayout({ children }: RootLayoutProps) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preconnect to external domains */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
+        {/* DNS Prefetch for performance */}
+        <link rel="dns-prefetch" href="https://your-supabase-url.supabase.co" />
+        
+        {/* Preload critical fonts - Removed inter-var.woff2 as file doesn't exist */}
+        
+        {/* PWA splash screens for iOS */}
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-2048-2732.jpg"
+          media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-1668-2388.jpg"
+          media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-1536-2048.jpg"
+          media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-1125-2436.jpg"
+          media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-1242-2688.jpg"
+          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-828-1792.jpg"
+          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-1170-2532.jpg"
+          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-1080-1920.jpg"
+          media="(device-width: 360px) and (device-height: 640px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-750-1334.jpg"
+          media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/icons/apple-splash-640-1136.jpg"
+          media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+        />
+      </head>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <ThemeProviderWrapper>
+          <AuthProvider>
+            <LocationProvider>
+              <CartProvider>
+                <NotificationProvider>
+                  <NuqsAdapter>
+                    <LogoPreloader />
+                    <PwaInitializer />
+                    {children}
+                    <BottomNav />
+                  </NuqsAdapter>
+                </NotificationProvider>
+              </CartProvider>
+            </LocationProvider>
+          </AuthProvider>
+        </ThemeProviderWrapper>
+        
+        {/* Service Worker Registration */}
+        <ServiceWorkerScript />
+        
+        {/* Structured Data for SEO */}
+        <Script
+          id="structured-data"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Restaurant",
+              "name": "Side Hustle",
+              "description": "Mexican food and drinks",
+              "servesCuisine": "Mexican",
+              "priceRange": "$$",
+              "acceptsReservations": "False",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Your Street Address",
+                "addressLocality": "Your City",
+                "addressRegion": "Your State",
+                "postalCode": "Your Zip",
+                "addressCountry": "US"
+              }
+            })
+          }}
+        />
+      </body>
+    </html>
+  );
+}
