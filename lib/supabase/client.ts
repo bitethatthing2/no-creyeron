@@ -8,11 +8,25 @@ export function createClient() {
   )
 }
 
-// Single instance for browser usage
-export const supabase = createClient()
+// Lazy initialization for browser usage to avoid build-time errors
+let _supabase: ReturnType<typeof createClient> | null = null
+
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(target, prop) {
+    if (!_supabase) {
+      _supabase = createClient()
+    }
+    return (_supabase as any)[prop]
+  }
+})
 
 // Alternative function name for consistency
-export const getSupabaseBrowserClient = () => supabase
+export const getSupabaseBrowserClient = () => {
+  if (!_supabase) {
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 // Error handling utilities
 export interface SupabaseError {

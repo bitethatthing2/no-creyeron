@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { WolfpackService } from '@/lib/services/wolfpack';
 import { BroadcastStatusService } from '@/lib/services/broadcast-status.service';
 import type { User } from '@supabase/supabase-js';
