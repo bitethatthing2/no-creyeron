@@ -1,0 +1,1014 @@
+/* ========================================
+   CONSOLIDATED MENU STYLES
+   Single source of truth for all menu styling
+   Browser compatible version
+   ======================================== */
+
+/* ========================================
+   CSS VARIABLES (Unified System)
+   ======================================== */
+:root {
+  /* Touch & Mobile Optimizations */
+  --touch-target-min: 44px;
+  --mobile-spacing-xs: 0.25rem;
+  --mobile-spacing-sm: 0.5rem;
+  --mobile-spacing-base: 1rem;
+  --mobile-spacing-lg: 1.5rem;
+  
+  /* Typography Scale (Mobile First) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  
+  /* Z-Index Management */
+  --z-header: 40;
+  --z-tabs: 30;
+  --z-modal: 50;
+  --z-category-nav: 25;
+  
+  /* Enhanced Shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.16);
+  
+  /* Border Radius System */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  
+  /* Category Colors - Food */
+  --category-orange: 249 115 22;
+  --category-orange-hover: 234 88 12;
+  --category-blue: 59 130 246;
+  --category-blue-hover: 37 99 235;
+  --category-red: 239 68 68;
+  --category-red-hover: 220 38 38;
+  --category-rose: 244 63 94;
+  --category-rose-hover: 225 29 72;
+  --category-violet: 139 92 246;
+  --category-violet-hover: 124 58 237;
+  --category-green: 34 197 94;
+  --category-green-hover: 22 163 74;
+  --category-slate: 100 116 139;
+  --category-slate-hover: 71 85 105;
+  
+  /* Category Colors - Drinks */
+  --category-amber: 251 191 36;
+  --category-amber-hover: 245 158 11;
+  --category-cyan: 6 182 212;
+  --category-cyan-hover: 8 145 178;
+  --category-indigo: 99 102 241;
+  --category-indigo-hover: 79 70 229;
+  --category-pink: 236 72 153;
+  --category-pink-hover: 219 39 119;
+  --category-teal: 20 184 166;
+  --category-teal-hover: 13 148 136;
+  --category-lime: 132 204 22;
+  --category-lime-hover: 101 163 13;
+  
+  /* Main Tab Colors */
+  --food-button: 239 68 68;
+  --food-button-hover: 220 38 38;
+  --drinks-button: 6 182 212;
+  --drinks-button-hover: 8 145 178;
+}
+
+/* ========================================
+   GLOBAL RESET & OPTIMIZATIONS
+   ======================================== */
+
+/* Touch optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Ensure minimum touch targets */
+button, 
+a, 
+[role="button"],
+[data-touch-target] {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  position: relative;
+}
+
+/* ========================================
+   UTILITY CLASSES (Standardized)
+   ======================================== */
+
+/* Scrollbar Hiding - Compatible Implementation */
+.menu-scrollbar-hide {
+  /* Enable scrolling */
+  overflow-x: auto;
+  overflow-y: hidden;
+  
+  /* Hide scrollbar for IE and Edge (legacy) */
+  -ms-overflow-style: none;
+}
+
+/* Modern browsers (Chrome 121+, Firefox) */
+@supports (scrollbar-width: none) {
+  .menu-scrollbar-hide {
+    scrollbar-width: none;
+  }
+}
+
+/* Webkit browsers (Safari, older Chrome) */
+.menu-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* Touch manipulation */
+.menu-touch-target {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Performance optimization */
+.menu-gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Safe area support with fallbacks */
+.menu-safe-area {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Modern browsers with safe-area support */
+@supports (padding: max(0px)) {
+  .menu-safe-area {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* ========================================
+   LAYOUT SYSTEM (Mobile First)
+   ======================================== */
+
+/* Main container */
+.menu-container {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  padding: 0 var(--mobile-spacing-base);
+  min-height: 100vh;
+}
+
+/* Dynamic viewport height for modern browsers */
+@supports (height: 100dvh) {
+  .menu-container {
+    min-height: 100dvh;
+  }
+}
+
+/* Responsive grid system with improved sizing */
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.5rem;
+}
+
+/* Small screens: 1 column */
+@media (min-width: 480px) {
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 640px) {
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .menu-container {
+    padding: 0 1.5rem;
+  }
+}
+
+/* Desktop: flexible columns */
+@media (min-width: 1024px) {
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+  
+  .menu-container {
+    padding: 0 2rem;
+  }
+}
+
+/* Large Desktop: flexible columns */
+@media (min-width: 1280px) {
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Extra Large Desktop */
+@media (min-width: 1536px) {
+  .menu-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    max-width: 1600px;
+  }
+}
+
+/* ========================================
+   ENHANCED HEADER & NAVIGATION
+   ======================================== */
+
+/* Enhanced sticky header */
+.menu-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: hsl(var(--background) / 0.95);
+  border-bottom: 1px solid hsl(var(--border) / 0.6);
+  transform: translateZ(0);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.1);
+}
+
+/* Enhanced header title */
+.menu-header-title {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+/* Connection status indicators */
+.menu-status-connected {
+  color: hsl(142 76% 36%);
+  background: hsl(142 76% 36% / 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.menu-status-disconnected {
+  color: hsl(0 84% 60%);
+  background: hsl(0 84% 60% / 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.menu-status-reconnecting {
+  color: hsl(48 96% 53%);
+  background: hsl(48 96% 53% / 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Legacy iOS smooth scrolling support */
+@supports (-webkit-overflow-scrolling: touch) {
+  .menu-header {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Tab system */
+.menu-tabs {
+  position: sticky;
+  top: 73px; /* Below header */
+  z-index: var(--z-tabs);
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* ========================================
+   CATEGORY NAVIGATION
+   ======================================== */
+
+.menu-category-nav {
+  position: relative;
+  width: 100%;
+  z-index: var(--z-category-nav);
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+.menu-category-scroll {
+  display: flex;
+  gap: var(--mobile-spacing-sm);
+  padding: 0.75rem var(--mobile-spacing-base);
+  scroll-behavior: smooth;
+  /* Performance optimizations */
+  will-change: scroll-position;
+  scroll-padding-inline: 12px;
+  /* Scrolling setup */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Modern browsers scroll snap */
+@supports (scroll-snap-type: x mandatory) {
+  .menu-category-scroll {
+    scroll-snap-type: x mandatory;
+  }
+}
+
+/* Legacy iOS smooth scrolling */
+@supports (-webkit-overflow-scrolling: touch) {
+  .menu-category-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Hide scrollbars */
+.menu-category-scroll {
+  -ms-overflow-style: none;
+}
+
+@supports (scrollbar-width: none) {
+  .menu-category-scroll {
+    scrollbar-width: none;
+  }
+}
+
+.menu-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced category button base styles */
+.menu-category-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 2px solid;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  
+  /* Touch optimization */
+  min-height: var(--touch-target-min);
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  
+  /* Typography enhancement */
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+}
+
+.menu-category-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.menu-category-button:hover::before {
+  opacity: 1;
+}
+
+/* Modern browsers scroll snap */
+@supports (scroll-snap-align: start) {
+  .menu-category-button {
+    scroll-snap-align: start;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .menu-category-button {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Enhanced touch feedback */
+.menu-category-button:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+@media (min-width: 1024px) {
+  .menu-category-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Badge enhancement */
+.menu-category-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  margin-left: 0.25rem;
+}
+
+/* Touch optimization class */
+.menu-category-button-touch {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Category inactive state */
+.menu-category-inactive {
+  background-color: hsl(var(--background));
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+
+.menu-category-inactive:hover {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+/* Category active states - Food */
+.menu-category-orange {
+  background-color: rgb(var(--category-orange)) !important;
+  border-color: rgb(var(--category-orange)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-orange) / 0.25) !important;
+}
+
+.menu-category-blue {
+  background-color: rgb(var(--category-blue)) !important;
+  border-color: rgb(var(--category-blue)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-blue) / 0.25) !important;
+}
+
+.menu-category-red {
+  background-color: rgb(var(--category-red)) !important;
+  border-color: rgb(var(--category-red)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-red) / 0.25) !important;
+}
+
+.menu-category-rose {
+  background-color: rgb(var(--category-rose)) !important;
+  border-color: rgb(var(--category-rose)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-rose) / 0.25) !important;
+}
+
+.menu-category-violet {
+  background-color: rgb(var(--category-violet)) !important;
+  border-color: rgb(var(--category-violet)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-violet) / 0.25) !important;
+}
+
+.menu-category-green {
+  background-color: rgb(var(--category-green)) !important;
+  border-color: rgb(var(--category-green)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-green) / 0.25) !important;
+}
+
+.menu-category-slate {
+  background-color: rgb(var(--category-slate)) !important;
+  border-color: rgb(var(--category-slate)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-slate) / 0.25) !important;
+}
+
+/* Category active states - Drinks */
+.menu-category-amber {
+  background-color: rgb(var(--category-amber)) !important;
+  border-color: rgb(var(--category-amber)) !important;
+  color: rgb(15 23 42) !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-amber) / 0.25) !important;
+}
+
+.menu-category-cyan {
+  background-color: rgb(var(--category-cyan)) !important;
+  border-color: rgb(var(--category-cyan)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-cyan) / 0.25) !important;
+}
+
+.menu-category-indigo {
+  background-color: rgb(var(--category-indigo)) !important;
+  border-color: rgb(var(--category-indigo)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-indigo) / 0.25) !important;
+}
+
+.menu-category-pink {
+  background-color: rgb(var(--category-pink)) !important;
+  border-color: rgb(var(--category-pink)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-pink) / 0.25) !important;
+}
+
+.menu-category-teal {
+  background-color: rgb(var(--category-teal)) !important;
+  border-color: rgb(var(--category-teal)) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-teal) / 0.25) !important;
+}
+
+.menu-category-lime {
+  background-color: rgb(var(--category-lime)) !important;
+  border-color: rgb(var(--category-lime)) !important;
+  color: rgb(15 23 42) !important;
+  box-shadow: 0 4px 6px -1px rgb(var(--category-lime) / 0.25) !important;
+}
+
+/* ========================================
+   ENHANCED MAIN TAB BUTTONS (Food/Drinks)
+   ======================================== */
+
+.menu-main-tab-food {
+  background: linear-gradient(135deg, rgb(var(--food-button)) 0%, rgb(var(--food-button-hover)) 100%) !important;
+  color: white !important;
+  border: 2px solid rgb(var(--food-button)) !important;
+  box-shadow: 0 4px 14px -2px rgb(var(--food-button) / 0.3), 0 2px 4px -1px rgb(var(--food-button) / 0.2) !important;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-main-tab-food::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.menu-main-tab-food:hover::before {
+  left: 100%;
+}
+
+.menu-main-tab-food:hover {
+  background: linear-gradient(135deg, rgb(var(--food-button-hover)) 0%, rgb(var(--category-red-hover)) 100%) !important;
+  border-color: rgb(var(--food-button-hover)) !important;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px -3px rgb(var(--food-button) / 0.4), 0 4px 8px -2px rgb(var(--food-button) / 0.3) !important;
+}
+
+.menu-main-tab-drinks {
+  background: linear-gradient(135deg, rgb(var(--drinks-button)) 0%, rgb(var(--drinks-button-hover)) 100%) !important;
+  color: white !important;
+  border: 2px solid rgb(var(--drinks-button)) !important;
+  box-shadow: 0 4px 14px -2px rgb(var(--drinks-button) / 0.3), 0 2px 4px -1px rgb(var(--drinks-button) / 0.2) !important;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-main-tab-drinks::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.menu-main-tab-drinks:hover::before {
+  left: 100%;
+}
+
+.menu-main-tab-drinks:hover {
+  background: linear-gradient(135deg, rgb(var(--drinks-button-hover)) 0%, rgb(var(--category-cyan-hover)) 100%) !important;
+  border-color: rgb(var(--drinks-button-hover)) !important;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px -3px rgb(var(--drinks-button) / 0.4), 0 4px 8px -2px rgb(var(--drinks-button) / 0.3) !important;
+}
+
+/* ========================================
+   MENU ITEM CARDS
+   ======================================== */
+
+.menu-item-card {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.6);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Performance optimization */
+  will-change: transform;
+  transform: translateZ(0);
+  
+  /* Enhanced visual hierarchy */
+  position: relative;
+}
+
+.menu-item-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, hsl(var(--accent) / 0.02) 100%);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.menu-item-card:hover::before {
+  opacity: 1;
+}
+
+/* Touch feedback for cards */
+.menu-item-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Enhanced desktop hover effects */
+@media (min-width: 1024px) {
+  .menu-item-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-card-hover);
+    border-color: hsl(var(--border));
+  }
+  
+  .menu-item-card:hover .menu-item-image {
+    transform: scale(1.05);
+  }
+}
+
+/* Enhanced image styling */
+.menu-item-image {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Price tag enhancement */
+.menu-item-price {
+  font-weight: 600;
+  color: hsl(var(--primary));
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+}
+
+/* Item name styling */
+.menu-item-name {
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+/* Description styling */
+.menu-item-description {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.4;
+  font-size: var(--text-sm);
+}
+
+/* Enhanced compact list view */
+.menu-item-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--mobile-spacing-sm);
+  padding: var(--mobile-spacing-base);
+  min-height: 4.5rem;
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-item-compact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, hsl(var(--accent) / 0.03) 0%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.menu-item-compact:hover::before {
+  transform: translateX(0);
+}
+
+.menu-item-compact:active {
+  background-color: hsl(var(--accent));
+  transform: scale(0.98);
+}
+
+@media (min-width: 1024px) {
+  .menu-item-compact:hover {
+    border-color: hsl(var(--border));
+    box-shadow: var(--shadow-card);
+    transform: translateX(2px);
+  }
+}
+
+/* ========================================
+   MODAL ENHANCEMENTS
+   ======================================== */
+
+.menu-modal-content {
+  border-radius: 0.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 32rem !important; /* 512px - smaller than before */
+  max-height: calc(100vh - 6rem) !important;
+}
+
+/* Modern browsers with dynamic viewport height */
+@supports (height: 100dvh) {
+  .menu-modal-content {
+    max-height: calc(100dvh - 6rem) !important;
+  }
+}
+
+/* Legacy iOS smooth scrolling */
+@supports (-webkit-overflow-scrolling: touch) {
+  .menu-modal-content {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Modern browsers with overscroll behavior */
+@supports (overscroll-behavior: contain) {
+  .menu-modal-content {
+    overscroll-behavior: contain;
+  }
+}
+
+/* Menu item modal specific sizing */
+.menu-item-modal-container {
+  width: 100% !important;
+  max-width: 28rem !important; /* 448px - even smaller for mobile */
+  max-height: calc(100vh - 6rem) !important;
+  margin-bottom: 5rem !important; /* Space for bottom nav */
+}
+
+/* Modern browsers with dynamic viewport height */
+@supports (height: 100dvh) {
+  .menu-item-modal-container {
+    max-height: calc(100dvh - 6rem) !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .menu-item-modal-container {
+    max-width: 36rem !important; /* 576px - slightly larger on desktop */
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* Menu item image sizing */
+.menu-item-modal-image {
+  height: 10rem !important; /* 160px - much smaller */
+  max-height: 10rem !important;
+}
+
+@media (min-width: 640px) {
+  .menu-item-modal-image {
+    height: 12rem !important; /* 192px - slightly larger on desktop */
+    max-height: 12rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-modal-content {
+    border-radius: 0.5rem;
+  }
+  
+  .menu-modal-content button:not([aria-label="Close"]) {
+    min-height: var(--touch-target-min);
+    font-size: 1rem;
+  }
+  
+  .menu-item-modal-container {
+    max-width: 24rem !important; /* 384px - even smaller on mobile */
+  }
+  
+  .menu-item-modal-image {
+    height: 8rem !important; /* 128px - smaller on mobile */
+    max-height: 8rem !important;
+  }
+}
+
+.menu-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Modern browsers with backdrop filter */
+@supports (backdrop-filter: blur(2px)) {
+  .menu-modal-overlay {
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* Webkit browsers with backdrop filter */
+@supports (-webkit-backdrop-filter: blur(2px)) {
+  .menu-modal-overlay {
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Larger phones (>= 375px) */
+@media (min-width: 375px) {
+  :root {
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.25rem;
+  }
+}
+
+/* Tablets (>= 768px) */
+@media (min-width: 768px) {
+  .menu-container {
+    padding: 0 1rem;
+  }
+  
+  .menu-header {
+    position: static;
+    padding: 1.5rem 0;
+  }
+  
+  .menu-tabs {
+    position: static;
+    max-width: 48rem;
+    margin: 0 auto;
+  }
+}
+
+/* ========================================
+   MENU ITEM CARD STYLES
+   ======================================== */
+
+/* Base menu item card styles */
+.menu-item-card {
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Image container styles for proper aspect ratio */
+.menu-item-card img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain !important;
+}
+
+/* Ensure cards have consistent height */
+@media (min-width: 640px) {
+  .menu-item-card {
+    min-height: 180px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .menu-item-card {
+    min-height: 200px;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY & PERFORMANCE
+   ======================================== */
+
+/* Disable hover effects on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .menu-item-card:hover,
+  .menu-category-button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* Prevent text selection on touch */
+  .menu-item-card {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .menu-item-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Modern browsers with backdrop filter in dark mode */
+@media (prefers-color-scheme: dark) {
+  @supports (backdrop-filter: blur(8px)) {
+    .menu-category-button {
+      backdrop-filter: blur(8px);
+    }
+  }
+  
+  @supports (-webkit-backdrop-filter: blur(8px)) {
+    .menu-category-button {
+      -webkit-backdrop-filter: blur(8px);
+    }
+  }
+}
+
+/* Print styles */
+@media print {
+  .menu-header,
+  .menu-tabs,
+  .menu-category-nav {
+    display: none !important;
+  }
+  
+  .menu-item-card {
+    break-inside: avoid;
+  }
+}
+
+/* ========================================
+   LIVE EVENTS PROGRESS BAR
+   ======================================== */
+
+/* Progress bar using CSS custom properties */
+.bg-primary.h-2.rounded-full.transition-all.duration-300 {
+  width: var(--progress-width, 0%);
+}
