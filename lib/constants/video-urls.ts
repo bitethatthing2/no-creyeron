@@ -26,6 +26,7 @@ export const VIDEO_URLS = {
   'MARGARITA-BOARDS': getSupabaseVideoUrl('MARGARITA-BOARDS.mp4'),
   'margarita-tower': getSupabaseVideoUrl('margarita-tower.mp4.mp4'),
   'watch-it-made-vampiros': getSupabaseVideoUrl('watch-it-made-vampiros.mp4'),
+  'patron-flight': getSupabaseVideoUrl('patron-flight.mp4'),
   
   // Icon/promotional videos (local public folder)
   'first-box': '/videos/first-box.mp4',
@@ -85,6 +86,8 @@ export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
   'vampiros': VIDEO_URLS['watch-it-made-vampiros'],
   'margarita tower': VIDEO_URLS['margarita-tower'],
   'MARGARITA TOWER': VIDEO_URLS['margarita-tower'],
+  'patron flight': VIDEO_URLS['patron-flight'],
+  'PATRON FLIGHT': VIDEO_URLS['patron-flight'],
 };
 
 // Helper function to get video URL for a menu item
@@ -108,6 +111,7 @@ export const ALL_VIDEO_FILES = [
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/MARGARITA-BOARDS.mp4',
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/margarita-tower.mp4.mp4',
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/watch-it-made-vampiros.mp4',
+  'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/patron-flight.mp4',
   // Icon videos (local - if any)
   '/videos/first-box.mp4',
   '/videos/main-page-only.mp4',
