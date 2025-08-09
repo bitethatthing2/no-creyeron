@@ -19,7 +19,6 @@ import { FoodDrinkCarousel } from '@/components/shared/FoodDrinkCarousel';
 import { Footer } from '@/components/shared/Footer';
 import { TopNav } from '@/components/shared/TopNav';
 import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
-import VarietyImageGallery, { CHEF_VARIETY_IMAGES } from '@/components/shared/VarietyImageGallery';
 
 // Dynamically import components that use browser APIs
 const NotificationIndicator = dynamic(
@@ -298,20 +297,6 @@ export default function Page() {
             </div>
           </div>
           
-          {/* Signature Dishes Gallery */}
-          <div className="mb-16">
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-serif text-center mb-8 text-white">
-              Signature <span className="text-red-400">Dishes & Drinks</span>
-            </h3>
-            <VarietyImageGallery 
-              images={CHEF_VARIETY_IMAGES} 
-              showTitles={true}
-              columns={3}
-              aspectRatio="landscape"
-              className="mb-8"
-            />
-          </div>
-
           {/* Food & Drink Carousel - Menu Items */}
           <div className="mb-16">
             <h3 className="text-xl sm:text-2xl md:text-3xl font-serif text-center mb-8 text-white">
