@@ -81,7 +81,7 @@ export default function Page() {
     <div className="main-content bg-black text-white min-h-screen">
       <TopNav />
       {/* Hero Section with Video Background - Responsive Height */}
-      <div className="relative h-[85vh] sm:h-[90vh] md:h-screen w-full overflow-hidden mb-8 sm:mb-16">
+      <div className="relative h-screen w-full overflow-hidden mb-8 sm:mb-16">
         <div className="absolute inset-0 -top-14">
           <VideoBackground 
             wolfpack_videosrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/main-page-only.mp4"
@@ -90,162 +90,83 @@ export default function Page() {
         </div>
         
         {/* Hero Content */}
-        <div className="absolute inset-0 flex flex-col justify-center items-center z-10 px-4 text-center pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 overflow-y-auto">
-          {/* Combined Logo with Wolf and Title */}
-          <div className="mb-2 sm:mb-4 mt-2 sm:mt-4 md:mt-8 animate-fade-in">
+        <div className="absolute inset-0 flex flex-col z-10 px-2 sm:px-4 text-center pt-8 sm:pt-12 md:pt-16 pb-8 sm:pb-12 md:pb-16 min-h-screen">
+          {/* Logo - Even Lower */}
+          <div className="mb-2 sm:mb-3 md:mb-4 mt-16 sm:mt-20 md:mt-24 animate-fade-in">
             <Image 
               src={getSmartCacheBustedUrl('/icons/wolf-and-title.png')}
               alt="Side Hustle Bar"
               width={400}
               height={200}
-              className="mx-auto w-full max-w-[220px] sm:max-w-[280px] md:max-w-[350px] lg:max-w-[450px] h-auto"
+              className="mx-auto w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px] xl:max-w-[700px] h-auto"
               priority
               unoptimized
             />
           </div>
           
-          {/* Main Hero Text */}
-          <h1 className="text-base sm:text-xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 max-w-4xl leading-tight drop-shadow-2xl px-2 sm:px-4">
-            Experience Salem's Best Tacos
-            <br />
-            <span className="text-red-500 font-serif">7 Days a Week</span>
-          </h1>
-          
-          {/* Subtitle */}
-          <p className="text-[11px] sm:text-sm md:text-lg text-white/90 mb-3 sm:mb-6 max-w-2xl leading-relaxed drop-shadow-lg px-2 sm:px-4">
-            Authentic flavors, vibrant atmosphere, and unforgettable experiences at both locations
-          </p>
-          
-          {/* Dual Location & Hours Cards */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 max-w-4xl lg:max-w-6xl mb-4 sm:mb-6 mx-auto px-2">
-            {/* Salem Location Card */}
-            <div className="backdrop-blur-lg bg-black/50 rounded-lg sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-6 shadow-2xl border border-white/20">
-              <div className="text-white text-center">
-                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-red-500 mb-2 lg:mb-3">Salem Location</h3>
-                <div className="space-y-1 lg:space-y-2 text-[10px] sm:text-xs lg:text-sm">
-                  <p className="font-medium hidden sm:block">145 Liberty St NE Suite #101</p>
-                  <p className="font-medium block sm:hidden">145 Liberty St NE</p>
-                  <p className="font-medium">Salem, OR 97301</p>
-                  <p className="font-semibold text-yellow-400">📞 (503) 391-9977</p>
-                </div>
-                <div className="mt-2 lg:mt-4 pt-2 lg:pt-3 border-t border-white/20">
-                  <h4 className="text-xs sm:text-sm font-bold text-red-400 mb-1 lg:mb-2">Hours</h4>
-                  <div className="space-y-0.5 lg:space-y-1 text-[9px] sm:text-[10px] lg:text-xs">
-                    <p><span className="font-medium">M-Th:</span> 10AM-12AM</p>
-                    <p><span className="font-medium">F-Sa:</span> 10AM-2AM</p>
-                    <p><span className="font-medium">Sun:</span> 10AM-12AM</p>
-                  </div>
-                </div>
+          {/* Main Content Area - Centered */}
+          <div className="flex-1 flex flex-col justify-center items-center">
+            {/* All Text - Identical Styling */}
+            <div className="w-full text-center">
+              <div className="font-serif font-light text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-white leading-tight drop-shadow-2xl px-2 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] lg:tracking-[0.6em] xl:tracking-[0.7em] mb-4 sm:mb-6 md:mb-8">
+                Expect Everything.
+                <br />
+                <span className="text-red-500">Experience More.</span>
               </div>
-            </div>
-
-            {/* Portland Location Card */}
-            <div className="backdrop-blur-lg bg-black/50 rounded-lg sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-6 shadow-2xl border border-white/20">
-              <div className="text-white text-center">
-                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-red-500 mb-2 lg:mb-3">Portland Location</h3>
-                <div className="space-y-1 lg:space-y-2 text-[10px] sm:text-xs lg:text-sm">
-                  <p className="font-medium hidden sm:block">327 SW Morrison Street</p>
-                  <p className="font-medium block sm:hidden">327 SW Morrison</p>
-                  <p className="font-medium">Portland, OR 97204</p>
-                  <p className="font-semibold text-yellow-400">📞 (503) 555-0123</p>
-                </div>
-                <div className="mt-2 lg:mt-4 pt-2 lg:pt-3 border-t border-white/20">
-                  <h4 className="text-xs sm:text-sm font-bold text-red-400 mb-1 lg:mb-2">Hours</h4>
-                  <div className="space-y-0.5 lg:space-y-1 text-[9px] sm:text-[10px] lg:text-xs">
-                    <p><span className="font-medium">M-Th:</span> 11AM-1AM</p>
-                    <p><span className="font-medium">F-Sa:</span> 11AM-3AM</p>
-                    <p><span className="font-medium">Sun:</span> 11AM-1AM</p>
-                  </div>
-                </div>
+              <div className="font-serif font-light text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-white/90 leading-tight drop-shadow-2xl px-2 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] lg:tracking-[0.6em] xl:tracking-[0.7em] mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+                The place where memories are born
+                <br />
+                and family means everyone.
               </div>
             </div>
           </div>
-          
-          {/* App Install & Notifications Section */}
-          <div className="mb-3 sm:mb-4 px-4 w-full max-w-md">
-            <div className="flex gap-2">
-              {/* Install App Button */}
-              <PwaInstallGuide className="flex-1 bg-red-600/90 hover:bg-red-700/90 backdrop-blur-sm text-white py-1.5 px-3 text-xs font-medium rounded-full border border-white/20 flex items-center justify-center gap-1.5 transition-all" 
-                buttonText={
-                  <div className="flex items-center gap-1.5">
-                    <Download className="h-3 w-3" />
-                    <span>Install App</span>
-                  </div>
-                }
-              />
 
-              {/* Enable Notifications Button */}
-              <Button 
-                className="flex-1 bg-green-600/90 hover:bg-green-700/90 backdrop-blur-sm text-white py-1.5 px-3 text-xs font-medium rounded-full border border-white/20 transition-all"
-                onClick={async () => {
-                  try {
-                    const permission = await Notification.requestPermission();
-                    if (permission === 'granted') {
-                      alert('🎉 Notifications enabled!');
-                    } else if (permission === 'denied') {
-                      alert('Notifications blocked. Enable in browser settings.');
-                    } else {
-                      alert('Notification permission dismissed.');
-                    }
-                  } catch (error) {
-                    alert('Error enabling notifications.');
-                  }
-                }}
-              >
-                <Bell className="h-3 w-3 mr-1" />
-                Notifications
-              </Button>
+          {/* Order Online Button - Higher Up */}
+          <div className="relative order-dropdown max-w-sm mx-auto mb-8 sm:mb-12 md:mb-16">
+            <div 
+              onClick={handleToggleDropdown}
+              className="bg-transparent hover:bg-white/10 text-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-4 text-base sm:text-lg md:text-xl font-semibold rounded border-2 border-white/80 hover:border-white transition-all shadow-lg cursor-pointer"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <span>Order Online</span>
+                <svg className={`w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform ${orderDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 relative z-20 px-4 w-full max-w-md sm:max-w-none">
-            <div className="relative order-dropdown w-full sm:w-auto">
-              <div 
-                onClick={handleToggleDropdown}
-                className="w-full bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold rounded-full border-2 border-white/30 hover:border-white/50 transition-all shadow-lg hover:shadow-xl cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <span>Order Online</span>
-                  <svg className={`w-5 h-5 text-white transition-transform ${orderDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+            {orderDropdownOpen && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black/90 backdrop-blur-sm rounded-lg border border-white/20 shadow-xl z-[1000] min-w-full">
+                <div className="py-1">
+                  <div 
+                    onClick={handleDoorDashClick}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors whitespace-nowrap"
+                  >
+                    <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
+                      <Image src={getSmartCacheBustedUrl('/icons/doordash_icon.png')} alt="DoorDash" width={16} height={16} className="rounded" style={{width: 'auto', height: 'auto'}} />
+                    </div>
+                    <span className="text-sm text-white">DoorDash</span>
+                  </div>
+                  <div 
+                    onClick={handleUberEatsClick}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors whitespace-nowrap"
+                  >
+                    <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
+                      <Image src={getSmartCacheBustedUrl('/icons/uber-eats.png')} alt="Uber Eats" width={16} height={16} className="rounded" />
+                    </div>
+                    <span className="text-sm text-white">Uber Eats</span>
+                  </div>
+                  <div 
+                    onClick={handlePostmatesClick}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors whitespace-nowrap"
+                  >
+                    <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
+                      <Image src={getSmartCacheBustedUrl('/icons/postmates.png')} alt="Postmates" width={16} height={16} className="rounded" style={{width: 'auto', height: 'auto'}} />
+                    </div>
+                    <span className="text-sm text-white">Postmates</span>
+                  </div>
                 </div>
               </div>
-              {orderDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-black/90 backdrop-blur-sm rounded-lg border border-white/20 shadow-xl z-[1000]">
-                  <div className="py-1">
-                    <div 
-                      onClick={handleDoorDashClick}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors"
-                    >
-                      <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
-                        <Image src={getSmartCacheBustedUrl('/icons/doordash_icon.png')} alt="DoorDash" width={16} height={16} className="rounded" style={{width: 'auto', height: 'auto'}} />
-                      </div>
-                      <span className="text-sm text-white">DoorDash</span>
-                    </div>
-                    <div 
-                      onClick={handleUberEatsClick}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors"
-                    >
-                      <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
-                        <Image src={getSmartCacheBustedUrl('/icons/uber-eats.png')} alt="Uber Eats" width={16} height={16} className="rounded" />
-                      </div>
-                      <span className="text-sm text-white">Uber Eats</span>
-                    </div>
-                    <div 
-                      onClick={handlePostmatesClick}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors"
-                    >
-                      <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
-                        <Image src={getSmartCacheBustedUrl('/icons/postmates.png')} alt="Postmates" width={16} height={16} className="rounded" style={{width: 'auto', height: 'auto'}} />
-                      </div>
-                      <span className="text-sm text-white">Postmates</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
         
@@ -263,6 +184,36 @@ export default function Page() {
             With house-made salsas prepared fresh daily and locally-sourced ingredients whenever possible, 
             we're not just serving food – we're creating experiences.
           </p>
+          
+          {/* Variety Image Section with Overlay */}
+          <div className="mb-12">
+            <div className="max-w-4xl mx-auto">
+              <div className="relative rounded-xl overflow-hidden shadow-2xl">
+                <Image 
+                  src={getSmartCacheBustedUrl('/food-menu-images/variety.png')}
+                  alt="Our Diverse Menu Selection"
+                  width={1200}
+                  height={600}
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50"></div>
+                
+                {/* Overlay Content */}
+                <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-4">
+                  <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-white mb-6 leading-tight">
+                    Experience Our Kitchen's
+                    <br />
+                    <span className="text-red-400">Signature Creations</span>
+                  </h3>
+                  <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 max-w-2xl leading-relaxed">
+                    From legendary birria to innovative fusion dishes,
+                    <br className="hidden sm:block" />
+                    every plate tells a story of passion and authenticity
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-16">
             <div className="text-center p-3">
