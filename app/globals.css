@@ -50,6 +50,34 @@ html, body {
   backface-visibility: hidden;
 }
 
+/* Hero video responsive optimizations */
+.hero-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translateX(-50%) translateY(-50%);
+  object-fit: cover;
+}
+
+/* Ensure video covers full container on all screen sizes */
+@media (max-aspect-ratio: 16/9) {
+  .hero-video {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (min-aspect-ratio: 16/9) {
+  .hero-video {
+    width: auto;
+    height: 100%;
+  }
+}
+
 /* Prevent layout shift during infinite scroll */
 .feed-container {
   contain: layout style paint;

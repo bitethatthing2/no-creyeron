@@ -106,6 +106,7 @@ export default function WatchItMadeModal({
       setIsLoading(true);
       setHasError(false);
       videoRef.current.currentTime = 0;
+      videoRef.current.playbackRate = 1.0; // Ensure normal playback speed
       videoRef.current.loop = true; // Enable looping
       setCurrentTime(0);
       setShowControls(false); // Hide controls by default
@@ -202,11 +203,11 @@ export default function WatchItMadeModal({
           onClick={onClose}
         >
           <div 
-            className="relative max-w-4xl w-[90vw] h-[80vh] bg-black border border-zinc-700 rounded-lg overflow-hidden"
+            className="relative max-w-4xl w-[95vw] md:w-[90vw] h-[60vh] md:h-[80vh] bg-black border border-zinc-700 rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-50 bg-gradient-to-b from-black/80 to-transparent">
-              <h2 className="text-white text-lg font-semibold">
+            <div className="absolute top-0 left-0 right-0 p-2 md:p-4 flex items-center justify-between z-50 bg-gradient-to-b from-black/80 to-transparent">
+              <h2 className="text-white text-sm md:text-lg font-semibold">
                 Watch {itemName} Being Made
               </h2>
               <Button
@@ -253,22 +254,22 @@ export default function WatchItMadeModal({
                     e.stopPropagation();
                     togglePlayPause();
                   }}
-                  className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                  className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-black/50 hover:bg-black/70 text-white"
                 >
                   {isPlaying ? (
-                    <Pause className="w-8 h-8" />
+                    <Pause className="w-6 h-6 md:w-8 md:h-8" />
                   ) : (
-                    <Play className="w-8 h-8 ml-1" />
+                    <Play className="w-6 h-6 md:w-8 md:h-8 ml-1" />
                   )}
                 </Button>
               </div>
             )}
 
             {/* Bottom Controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+            <div className="absolute bottom-0 left-0 right-0 p-2 md:p-4 space-y-1 md:space-y-2">
               {/* Progress Bar */}
               <div
-                className="w-full h-2 bg-white/20 rounded-full cursor-pointer"
+                className="w-full h-1 md:h-2 bg-white/20 rounded-full cursor-pointer"
                 onClick={handleSeek}
               >
                 <div
@@ -290,9 +291,9 @@ export default function WatchItMadeModal({
                     className="text-white hover:bg-white/20"
                   >
                     {isPlaying ? (
-                      <Pause className="w-5 h-5" />
+                      <Pause className="w-4 h-4 md:w-5 md:h-5" />
                     ) : (
-                      <Play className="w-5 h-5" />
+                      <Play className="w-4 h-4 md:w-5 md:h-5" />
                     )}
                   </Button>
 
@@ -306,13 +307,13 @@ export default function WatchItMadeModal({
                     className="text-white hover:bg-white/20"
                   >
                     {isMuted ? (
-                      <VolumeX className="w-5 h-5" />
+                      <VolumeX className="w-4 h-4 md:w-5 md:h-5" />
                     ) : (
-                      <Volume2 className="w-5 h-5" />
+                      <Volume2 className="w-4 h-4 md:w-5 md:h-5" />
                     )}
                   </Button>
 
-                  <span className="text-white text-sm">
+                  <span className="text-white text-xs md:text-sm">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                 </div>
@@ -326,7 +327,7 @@ export default function WatchItMadeModal({
                   }}
                   className="text-white hover:bg-white/20"
                 >
-                  <Maximize className="w-5 h-5" />
+                  <Maximize className="w-4 h-4 md:w-5 md:h-5" />
                 </Button>
               </div>
             </div>

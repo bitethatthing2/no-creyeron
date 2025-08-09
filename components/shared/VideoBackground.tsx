@@ -40,6 +40,9 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
     if (wolfpack_videosrc && videoRef.current) {
       const video = videoRef.current;
       
+      // Ensure normal playback speed
+      video.playbackRate = 1.0;
+      
       // Add event listeners for loading states
       video.addEventListener('loadstart', () => setIsLoading(true));
       video.addEventListener('canplay', () => setIsLoading(false));
@@ -132,9 +135,19 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
         webkit-playsinline="true"
         x5-playsinline="true"
         style={{
-          // Mobile optimizations
-          WebkitTransform: 'translateZ(0)',
-          transform: 'translateZ(0)',
+          // Mobile optimizations and responsive video scaling
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          minWidth: '100%',
+          minHeight: '100%',
+          width: 'auto',
+          height: 'auto',
+          transform: 'translateX(-50%) translateY(-50%)',
+          objectFit: 'cover',
+          WebkitTransform: 'translateX(-50%) translateY(-50%)',
+          // Ensure normal playback speed
+          playbackRate: 1.0,
         }}
       />
       {overlay && (

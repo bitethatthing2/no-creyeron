@@ -21,6 +21,7 @@ export const VIDEO_URLS = {
   'watch-it-be-made-general': getSupabaseVideoUrl('watch-it-be-made.mp4'),
   'watch-it-made-breakfast-burrito': getSupabaseVideoUrl('watch-it-made-breakfast-burrito.mp4'),
   'watch-it-made-pizza': getSupabaseVideoUrl('watch-it-made-pizza.mp4'),
+  'watch-it-being-made-torta': getSupabaseVideoUrl('watch-it-being-made-torta.mp4'),
   
   // Drink videos (stored in Supabase menu-videos bucket)
   'MARGARITA-BOARDS': getSupabaseVideoUrl('MARGARITA-BOARDS.mp4'),
@@ -80,6 +81,10 @@ export const MENU_VIDEO_MAPPING: { [key: string]: string } = {
   'queso tacos': VIDEO_URLS['watch-it-being-made-queso-tacos'],
   'queso taco': VIDEO_URLS['watch-it-being-made-queso-tacos'],
   
+  // Torta
+  'torta': VIDEO_URLS['watch-it-being-made-torta'],
+  'TORTA': VIDEO_URLS['watch-it-being-made-torta'],
+  
   // Drinks
   'margarita board': VIDEO_URLS['MARGARITA-BOARDS'],
   'MARGARITA BOARD': VIDEO_URLS['MARGARITA-BOARDS'],
@@ -107,6 +112,7 @@ export const ALL_VIDEO_FILES = [
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/watch-it-be-made.mp4',
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/watch-it-made-breakfast-burrito.mp4',
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/watch-it-made-pizza.mp4',
+  'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/watch-it-being-made-torta.mp4',
   // Drink videos (user's exact file names in Supabase menu-videos bucket)
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/MARGARITA-BOARDS.mp4',
   'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/margarita-tower.mp4.mp4',

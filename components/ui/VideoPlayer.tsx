@@ -37,6 +37,8 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
         setHasInteracted(true);
         // Try to play video after user interaction
         if (videoRef.current && showPlayButton) {
+          // Ensure normal playback speed
+          videoRef.current.playbackRate = 1.0;
           videoRef.current.play().catch(err => {
             console.log('Video play failed:', err);
           });
@@ -63,6 +65,8 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
 
       try {
         if (videoRef.current.paused) {
+          // Ensure normal playback speed before playing
+          videoRef.current.playbackRate = 1.0;
           await videoRef.current.play();
           setIsPlaying(true);
           setShowPlayButton(false);
@@ -131,14 +135,14 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
                 className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer transition-opacity duration-200"
                 onClick={handleVideoClick}
               >
-                <div className="bg-white/90 rounded-full p-4 shadow-lg hover:bg-white transition-colors">
-                  <Play className="w-8 h-8 text-black ml-1" fill="currentColor" />
+                <div className="bg-white/90 rounded-full p-3 md:p-4 shadow-lg hover:bg-white transition-colors">
+                  <Play className="w-6 h-6 md:w-8 md:h-8 text-black ml-1" fill="currentColor" />
                 </div>
               </div>
             )}
 
             {/* Controls Bar */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 md:p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <div className="flex items-center justify-between">
                 <button
                   onClick={handleVideoClick}
@@ -146,9 +150,9 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
                   aria-label={isPlaying ? 'Pause' : 'Play'}
                 >
                   {isPlaying ? (
-                    <Pause className="w-6 h-6" fill="currentColor" />
+                    <Pause className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
                   ) : (
-                    <Play className="w-6 h-6" fill="currentColor" />
+                    <Play className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" />
                   )}
                 </button>
 
@@ -158,9 +162,9 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
                   aria-label={isMuted ? 'Unmute' : 'Mute'}
                 >
                   {isMuted ? (
-                    <VolumeX className="w-6 h-6" />
+                    <VolumeX className="w-5 h-5 md:w-6 md:h-6" />
                   ) : (
-                    <Volume2 className="w-6 h-6" />
+                    <Volume2 className="w-5 h-5 md:w-6 md:h-6" />
                   )}
                 </button>
               </div>
@@ -206,6 +210,8 @@ export const SimpleVideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
         setHasInteracted(true);
         // Try to play video after user interaction
         if (videoRef.current) {
+          // Ensure normal playback speed
+          videoRef.current.playbackRate = 1.0;
           videoRef.current.play().catch(err => {
             console.log('Video play failed:', err);
           });
@@ -225,6 +231,8 @@ export const SimpleVideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
     const handleVideoClick = () => {
       if (videoRef.current) {
         if (videoRef.current.paused) {
+          // Ensure normal playback speed before playing
+          videoRef.current.playbackRate = 1.0;
           videoRef.current.play().catch(err => {
             console.log('Video play failed:', err);
           });

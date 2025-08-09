@@ -45,7 +45,7 @@ const storeTokenInSupabase = async (tokenToStore: string): Promise<boolean> => {
     }
 
     // Call the Edge Function to store the token
-    const { data, error } = await supabase.functions.invoke(' user_fcm_tokens', {
+    const { data, error } = await supabase.functions.invoke('user_fcm_tokens', {
       body: { 
         token: tokenToStore,
         platform: 'web' // You can detect the actual platform here

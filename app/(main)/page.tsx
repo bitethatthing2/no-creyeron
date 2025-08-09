@@ -19,6 +19,7 @@ import { FoodDrinkCarousel } from '@/components/shared/FoodDrinkCarousel';
 import { Footer } from '@/components/shared/Footer';
 import { TopNav } from '@/components/shared/TopNav';
 import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
+import VarietyImageGallery, { CHEF_VARIETY_IMAGES } from '@/components/shared/VarietyImageGallery';
 
 // Dynamically import components that use browser APIs
 const NotificationIndicator = dynamic(
@@ -81,41 +82,43 @@ export default function Page() {
     <div className="main-content bg-black text-white min-h-screen">
       <TopNav />
       {/* Hero Section with Video Background - Responsive Height */}
-      <div className="relative h-[100dvh] sm:h-screen w-full overflow-visible mb-8 sm:mb-16 pt-14">
-        <VideoBackground 
-          wolfpack_videosrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/main-page-only.mp4"
-          overlayOpacity={0.4}
-        />
+      <div className="relative h-[85vh] sm:h-[90vh] md:h-screen w-full overflow-hidden mb-8 sm:mb-16">
+        <div className="absolute inset-0 -top-14">
+          <VideoBackground 
+            wolfpack_videosrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/main-page-only.mp4"
+            overlayOpacity={0.4}
+          />
+        </div>
         
         {/* Hero Content */}
-        <div className="absolute inset-0 flex flex-col justify-center items-center z-10 px-4 text-center pt-24 sm:pt-32 md:pt-40 pb-20 sm:pb-32 overflow-y-auto">
+        <div className="absolute inset-0 flex flex-col justify-center items-center z-10 px-4 text-center pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 overflow-y-auto">
           {/* Combined Logo with Wolf and Title */}
-          <div className="mb-2 sm:mb-4 mt-4 sm:mt-8 md:mt-12 animate-fade-in">
+          <div className="mb-2 sm:mb-4 mt-2 sm:mt-4 md:mt-8 animate-fade-in">
             <Image 
               src={getSmartCacheBustedUrl('/icons/wolf-and-title.png')}
               alt="Side Hustle Bar"
               width={400}
               height={200}
-              className="mx-auto w-full max-w-[240px] sm:max-w-[280px] md:max-w-[350px] lg:max-w-[450px] h-auto"
+              className="mx-auto w-full max-w-[220px] sm:max-w-[280px] md:max-w-[350px] lg:max-w-[450px] h-auto"
               priority
               unoptimized
             />
           </div>
           
           {/* Main Hero Text */}
-          <h1 className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 max-w-4xl leading-tight drop-shadow-2xl px-2 sm:px-4">
+          <h1 className="text-base sm:text-xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 max-w-4xl leading-tight drop-shadow-2xl px-2 sm:px-4">
             Experience Salem's Best Tacos
             <br />
             <span className="text-red-500 font-serif">7 Days a Week</span>
           </h1>
           
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm md:text-lg text-white/90 mb-3 sm:mb-6 max-w-2xl leading-relaxed drop-shadow-lg px-2 sm:px-4">
+          <p className="text-[11px] sm:text-sm md:text-lg text-white/90 mb-3 sm:mb-6 max-w-2xl leading-relaxed drop-shadow-lg px-2 sm:px-4">
             Authentic flavors, vibrant atmosphere, and unforgettable experiences at both locations
           </p>
           
           {/* Dual Location & Hours Cards */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 max-w-4xl lg:max-w-6xl mb-6 mx-auto px-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 max-w-4xl lg:max-w-6xl mb-4 sm:mb-6 mx-auto px-2">
             {/* Salem Location Card */}
             <div className="backdrop-blur-lg bg-black/50 rounded-lg sm:rounded-xl lg:rounded-2xl p-2 sm:p-3 lg:p-6 shadow-2xl border border-white/20">
               <div className="text-white text-center">
@@ -160,7 +163,7 @@ export default function Page() {
           </div>
           
           {/* App Install & Notifications Section */}
-          <div className="mb-4 px-4 w-full max-w-md">
+          <div className="mb-3 sm:mb-4 px-4 w-full max-w-md">
             <div className="flex gap-2">
               {/* Install App Button */}
               <PwaInstallGuide className="flex-1 bg-red-600/90 hover:bg-red-700/90 backdrop-blur-sm text-white py-1.5 px-3 text-xs font-medium rounded-full border border-white/20 flex items-center justify-center gap-1.5 transition-all" 
@@ -295,9 +298,18 @@ export default function Page() {
             </div>
           </div>
           
-          {/* Food & Drink Carousel */}
+          {/* Signature Dishes Gallery */}
           <div className="mb-16">
-            <FoodDrinkCarousel />
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-serif text-center mb-8 text-white">
+              Signature <span className="text-red-400">Dishes & Drinks</span>
+            </h3>
+            <VarietyImageGallery 
+              images={CHEF_VARIETY_IMAGES} 
+              showTitles={true}
+              columns={3}
+              aspectRatio="landscape"
+              className="mb-8"
+            />
           </div>
 
           {/* Text Content - Salem Flagship */}
