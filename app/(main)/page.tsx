@@ -312,6 +312,14 @@ export default function Page() {
             />
           </div>
 
+          {/* Food & Drink Carousel - Menu Items */}
+          <div className="mb-16">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-serif text-center mb-8 text-white">
+              Browse Our <span className="text-red-400">Full Menu</span>
+            </h3>
+            <FoodDrinkCarousel />
+          </div>
+
           {/* Text Content - Salem Flagship */}
           <div className="max-w-6xl mx-auto mb-20">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">
