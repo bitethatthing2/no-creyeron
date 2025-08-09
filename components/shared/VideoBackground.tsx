@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface VideoBackgroundProps {
   wolfpack_videosrc?: string;
@@ -21,10 +21,33 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (wolfpack_videosrc && videoRef.current) {
       const video = videoRef.current;
+      
+      // Add event listeners for loading states
+      video.addEventListener('loadstart', () => setIsLoading(true));
+      video.addEventListener('canplay', () => setIsLoading(false));
+      video.addEventListener('error', () => {
+        setHasError(true);
+        setIsLoading(false);
+      });
+      
       const playPromise = video.play();
       
       if (playPromise !== undefined) {
@@ -33,10 +56,8 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
           if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
             console.log('Video autoplay failed:', error.name, error.message);
           }
-          // Fallback: show poster image if available
-          if (video.poster) {
-            video.controls = true;
-          }
+          // On mobile, videos might not autoplay
+          setIsLoading(false);
         });
       }
     }
@@ -82,6 +103,22 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
+      {/* Loading state with skeleton */}
+      {isLoading && !hasError && (
+        <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
+          <div className="text-white/50 text-sm">Loading video...</div>
+        </div>
+      )}
+      
+      {/* Error fallback */}
+      {hasError && posterSrc && (
+        <img 
+          src={posterSrc} 
+          alt="Video poster"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
+      
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
@@ -91,10 +128,18 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
         loop
         playsInline
         autoPlay
+        preload="metadata"
+        webkit-playsinline="true"
+        x5-playsinline="true"
+        style={{
+          // Mobile optimizations
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)',
+        }}
       />
       {overlay && (
         <div 
-          className="absolute inset-0 bg-black" 
+          className="absolute inset-0 bg-black pointer-events-none" 
           style={{ opacity: overlayOpacity }}
         />
       )}

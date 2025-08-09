@@ -80,8 +80,8 @@ export default function Page() {
   return (
     <div className="main-content bg-black text-white min-h-screen">
       <TopNav />
-      {/* Hero Section with Video Background - Full Screen */}
-      <div className="relative h-screen w-full overflow-visible mb-16 pt-14">
+      {/* Hero Section with Video Background - Responsive Height */}
+      <div className="relative h-[100dvh] sm:h-screen w-full overflow-visible mb-8 sm:mb-16 pt-14">
         <VideoBackground 
           wolfpack_videosrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/main-page-only.mp4"
           overlayOpacity={0.4}
@@ -324,15 +324,19 @@ export default function Page() {
                     muted 
                     loop 
                     playsInline
+                    preload="metadata"
+                    webkit-playsinline="true"
+                    x5-playsinline="true"
                     className="absolute inset-0 w-full h-full object-cover"
                     style={{ 
                       objectFit: 'cover',
                       objectPosition: 'center',
-                      transform: 'scale(1.1)',
-                      width: '110%',
-                      height: '110%',
-                      left: '-5%',
-                      top: '-5%'
+                      transform: 'scale(1.05)',
+                      WebkitTransform: 'scale(1.05)',
+                      width: '105%',
+                      height: '105%',
+                      left: '-2.5%',
+                      top: '-2.5%'
                     }}
                   >
                     <source src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/entertainment-destination.mp4" type="video/mp4" />
@@ -419,7 +423,7 @@ export default function Page() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="relative h-[500px] rounded-xl overflow-hidden shadow-2xl">
+            <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] rounded-xl overflow-hidden shadow-2xl bg-black">
               <video
                 className="absolute inset-0 w-full h-full object-cover"
                 src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/welcome-to%20-sidehustle.mp4"
@@ -427,6 +431,13 @@ export default function Page() {
                 muted
                 loop
                 playsInline
+                preload="metadata"
+                webkit-playsinline="true"
+                x5-playsinline="true"
+                style={{
+                  WebkitTransform: 'translateZ(0)',
+                  transform: 'translateZ(0)'
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6">
