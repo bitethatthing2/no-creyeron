@@ -193,6 +193,17 @@ const carouselItems: CarouselItem[] = [
     category: 'Main',
     features: ['Golden Pastry', 'Multiple Fillings']
   },
+  {
+    id: '16.5',
+    name: 'Burrito',
+    image: '/food-menu-images/asada-burrito.png',
+    type: 'food',
+    description: 'Large flour tortilla filled with your choice of meat, rice, beans, cheese, lettuce, pico de gallo, and sour cream.',
+    price: '$14.00',
+    category: 'Main',
+    features: ['Large Portion', 'Fully Loaded'],
+    hasWatchItMade: true
+  },
   { 
     id: '17', 
     name: 'Flautas (4)', 
