@@ -421,7 +421,7 @@ export default function Page() {
             <div className="relative h-[500px] rounded-xl overflow-hidden shadow-2xl">
               <video
                 className="absolute inset-0 w-full h-full object-cover"
-                src="/icons/welcome-to-hustle.mp4"
+                src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/welcome-to%20-sidehustle.mp4"
                 autoPlay
                 muted
                 loop

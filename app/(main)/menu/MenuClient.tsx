@@ -116,6 +116,7 @@ export default function MenuClient({
       
       setItems(allItems);
       console.log('✅ All items loaded, Count:', allItems.length);
+      console.log('🌯 DEBUG: Looking for Burrito in allItems:', allItems.find(item => item.name === 'Burrito'));
       
     } catch (err) {
       console.error('Error fetching all menu items:', err);
@@ -160,6 +161,7 @@ export default function MenuClient({
 
       setItems(itemsData);
       console.log('✅ Items loaded for category:', categoryId, 'Count:', itemsData.length);
+      console.log('🌯 DEBUG: Looking for Burrito in category items:', itemsData.find(item => item.name === 'Burrito'));
 
     } catch (err) {
       console.error('Error fetching menu items:', err);
@@ -198,6 +200,7 @@ export default function MenuClient({
   useEffect(() => {
     if (!isSearching) {
       setFilteredItems(items);
+      console.log('🌯 DEBUG: Setting filtered items, Burrito present?', items.find(item => item.name === 'Burrito') ? 'YES' : 'NO');
     }
   }, [items, isSearching]);
 
