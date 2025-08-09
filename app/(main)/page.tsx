@@ -318,20 +318,21 @@ export default function Page() {
                 </p>
               </div>
               <div className="lg:col-span-3 relative">
-                <div className="aspect-[4/3] lg:aspect-video rounded-xl overflow-hidden shadow-2xl bg-black">
+                <div className="aspect-[4/3] lg:aspect-video rounded-xl overflow-hidden shadow-2xl bg-black relative">
                   <video 
                     autoPlay 
                     muted 
                     loop 
                     playsInline
-                    className="absolute inset-0 w-full h-full"
+                    className="absolute inset-0 w-full h-full object-cover"
                     style={{ 
                       objectFit: 'cover',
                       objectPosition: 'center',
-                      width: '100%',
-                      height: '100%',
-                      minWidth: '100%',
-                      minHeight: '100%'
+                      transform: 'scale(1.1)',
+                      width: '110%',
+                      height: '110%',
+                      left: '-5%',
+                      top: '-5%'
                     }}
                   >
                     <source src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/entertainment-destination.mp4" type="video/mp4" />
