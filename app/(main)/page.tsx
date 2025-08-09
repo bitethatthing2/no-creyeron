@@ -334,7 +334,7 @@ export default function Page() {
                       minHeight: '100%'
                     }}
                   >
-                    <source src="/icons/priemer-destination.mp4" type="video/mp4" />
+                    <source src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/entertainment-destination.mp4" type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                 </div>
