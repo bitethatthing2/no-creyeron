@@ -83,7 +83,7 @@ export default function Page() {
       {/* Hero Section with Video Background - Full Screen */}
       <div className="relative h-screen w-full overflow-visible mb-16 pt-14">
         <VideoBackground 
-          wolfpack_videosrc="/icons/main-page-only.mp4"
+          wolfpack_videosrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/main-page-only.mp4"
           overlayOpacity={0.4}
         />
         
