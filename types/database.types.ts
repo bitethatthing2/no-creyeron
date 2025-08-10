@@ -1317,7 +1317,7 @@ export type Database = {
           created_at: string | null;
           deleted_at: string | null;
           id: string;
-          image_type: string | null;
+          replacement_type: string | null;
           metadata: Json | null;
           mime_type: string | null;
           name: string;
@@ -1331,7 +1331,7 @@ export type Database = {
           created_at?: string | null;
           deleted_at?: string | null;
           id?: string;
-          image_type?: string | null;
+          replacement_type?: string | null;
           metadata?: Json | null;
           mime_type?: string | null;
           name: string;
@@ -1345,7 +1345,7 @@ export type Database = {
           created_at?: string | null;
           deleted_at?: string | null;
           id?: string;
-          image_type?: string | null;
+          replacement_type?: string | null;
           metadata?: Json | null;
           mime_type?: string | null;
           name?: string;

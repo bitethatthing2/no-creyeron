@@ -95,7 +95,7 @@ BEGIN
     v_public_url := 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/images/' || v_file_path;
     
     -- Insert image record
-    INSERT INTO images (id, user_id, name, url, size, mime_type, image_type)
+    INSERT INTO images (id, user_id, name, url, size, mime_type,replacement_type)
     VALUES (v_image_id, p_user_id, p_file_name, v_public_url, p_file_size, p_mime_type, p_image_type);
     
     RETURN v_image_id;
@@ -124,7 +124,7 @@ BEGIN
     v_image_id := gen_random_uuid();
     
     -- Insert image record
-    INSERT INTO images (id, user_id, name, url, size, mime_type, image_type)
+    INSERT INTO images (id, user_id, name, url, size, mime_type,replacement_type)
     VALUES (v_image_id, v_user_id, p_name, p_url, p_size, 'image/jpeg', p_type);
     
     RETURN v_image_id;

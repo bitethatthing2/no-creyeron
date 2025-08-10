@@ -204,46 +204,57 @@ class UnifiedNotificationService {
   private async storeFCMToken(token: string) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.warn('No authenticated user found for FCM token storage');
+        return;
+      }
 
-      // First, try to find existing token for this user
-      const { data: existingToken } = await supabase
-        .from("user_fcm_tokens")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("token", token)
+      // Get the user's profile to get their actual user ID
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
         .single();
 
-      if (existingToken) {
-        // Update existing token
-        const { error } = await supabase
-          .from("user_fcm_tokens")
-          .update({
-            device_info: navigator.userAgent,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingToken.id);
+      if (profileError || !profile) {
+        console.error('Error fetching user profile for FCM token:', profileError);
+        return;
+      }
 
-        if (error) {
-          console.error("Error updating FCM token:", error);
+      // Build device info object
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform || 'web',
+        language: navigator.language,
+        vendor: navigator.vendor,
+        screen: {
+          width: window.screen.width,
+          height: window.screen.height
         }
+      };
+
+      // Use the upsert function to store the token (handles duplicates automatically)
+      const { data, error } = await supabase
+        .rpc('upsert_fcm_token', {
+          p_user_id: profile.id,
+          p_token: token,
+          p_device_info: deviceInfo,
+          p_platform: 'web'
+        });
+
+      if (error) {
+        console.error('Error storing FCM token:', error);
+        // Log more details for debugging
+        console.error('FCM token storage details:', {
+          userId: profile.id,
+          tokenLength: token.length,
+          error: error
+        });
       } else {
-        // Insert new token
-        const { error } = await supabase
-          .from("user_fcm_tokens")
-          .insert({
-            user_id: user.id,
-            token,
-            device_info: navigator.userAgent,
-            updated_at: new Date().toISOString(),
-          });
-
-        if (error) {
-          console.error("Error inserting FCM token:", error);
-        }
+        console.log('FCM token stored successfully');
       }
     } catch (error) {
-      console.error("Error storing FCM token:", error);
+      console.error('Error in storeFCMToken:', error);
     }
   }
 

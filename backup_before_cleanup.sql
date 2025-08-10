@@ -3376,7 +3376,7 @@ BEGIN
 
   -- Create new image record
   INSERT INTO images (
-    name, url, uploaded_by, image_type
+    name, url, uploaded_by,replacement_type
   ) VALUES (
     'menu_item_' || p_item_id,
     p_image_url,
@@ -17438,7 +17438,7 @@ BEGIN
     SELECT json_agg(
         json_build_object(
             'id', id,
-            'type', image_type,
+            'type',replacement_type,
             'old_url', old_url,
             'new_url', new_url,
             'replaced_at', replaced_at,
@@ -17447,7 +17447,7 @@ BEGIN
     ) INTO v_history
     FROM image_replacements
     WHERE user_id = p_user_id
-    AND (p_image_type IS NULL OR image_type = p_image_type)
+    AND (p_image_type IS NULL ORreplacement_type = p_image_type)
     LIMIT 50;
     
     RETURN COALESCE(v_history, '[]'::json);
@@ -19378,7 +19378,7 @@ BEGIN
         mime_type,
         uploaded_by,
         storage_path,
-        image_type
+       replacement_type
     ) VALUES (
         v_image_id,
         p_file_name,
@@ -25068,7 +25068,7 @@ BEGIN
     -- Record the replacement
     INSERT INTO image_replacements (
         user_id,
-        image_type,
+       replacement_type,
         old_url,
         new_url,
         metadata
@@ -25141,7 +25141,7 @@ BEGIN
     -- Record the replacement
     INSERT INTO image_replacements (
         user_id,
-        image_type,
+       replacement_type,
         old_url,
         new_url,
         old_storage_path,

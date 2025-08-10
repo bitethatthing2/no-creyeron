@@ -37,29 +37,55 @@ const storeTokenInSupabase = async (tokenToStore: string): Promise<boolean> => {
   if (!tokenToStore) return false;
   
   try {
-    // Get the current session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.error('No active session');
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
       return false;
     }
 
-    // Call the Edge Function to store the token
-    const { data, error } = await supabase.functions.invoke('user_fcm_tokens', {
-      body: { 
-        token: tokenToStore,
-        platform: 'web' // You can detect the actual platform here
-      }
-    });
+    // Get the user's profile to get their actual user ID
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single();
 
-    if (error) {
-      throw error;
+    if (profileError || !profile) {
+      console.error('Error fetching user profile:', profileError);
+      return false;
     }
 
-    console.log('FCM token stored successfully:', data);
+    // Build device info
+    const deviceInfo = {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform || 'web',
+      language: navigator.language,
+      vendor: navigator.vendor,
+      screen: {
+        width: window.screen.width,
+        height: window.screen.height
+      }
+    };
+
+    // Use the upsert_fcm_token RPC function
+    const { data, error } = await supabase
+      .rpc('upsert_fcm_token', {
+        p_user_id: profile.id,
+        p_token: tokenToStore,
+        p_device_info: deviceInfo,
+        p_platform: 'web'
+      });
+
+    if (error) {
+      console.error('Error storing FCM token:', error);
+      return false;
+    }
+
+    console.log('FCM token stored successfully');
     
-    // Now subscribe to the all_devices topic
-    await subscribeToTopic(tokenToStore, 'all_devices');
+    // Topic subscription removed as it requires Firebase Admin SDK
+    // This should be handled server-side if needed
     return true;
   } catch (error) {
     console.error('Error storing FCM token:', error);
@@ -67,35 +93,7 @@ const storeTokenInSupabase = async (tokenToStore: string): Promise<boolean> => {
   }
 };
 
-// Helper to subscribe to a topic
-const subscribeToTopic = async (tokenToSubscribe: string, topic: string): Promise<boolean> => {
-  try {
-    // Get the current session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.error('No active session for topic subscription');
-      return false;
-    }
-
-    // Call the Edge Function to subscribe to topic
-    const { data, error } = await supabase.functions.invoke('subscribe-to-topic', {
-      body: { 
-        token: tokenToSubscribe,
-        topic 
-      }
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    console.log(`Successfully subscribed to topic '${topic}':`, data);
-    return true;
-  } catch (error) {
-    console.error(`Error subscribing to topic '${topic}':`, error);
-    return false;
-  }
-};
+// Topic subscription removed - requires Firebase Admin SDK on server-side
 
 // Export this function to be used by other components that need to get permission and token
 export async function getNotificationPermissionAndToken(): Promise<string | null> {

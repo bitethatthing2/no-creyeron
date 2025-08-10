@@ -1108,7 +1108,7 @@ export type Database = {
           storage_path: string | null;
           mime_type: string | null;
           size: number | null;
-          image_type: string | null;
+          replacement_type: string | null;
           uploaded_by: string | null;
           metadata: Json | null;
           created_at: string | null;
@@ -1122,7 +1122,7 @@ export type Database = {
           storage_path?: string | null;
           mime_type?: string | null;
           size?: number | null;
-          image_type?: string | null;
+          replacement_type?: string | null;
           uploaded_by?: string | null;
           metadata?: Json | null;
           created_at?: string | null;
@@ -1136,7 +1136,7 @@ export type Database = {
           storage_path?: string | null;
           mime_type?: string | null;
           size?: number | null;
-          image_type?: string | null;
+          replacement_type?: string | null;
           uploaded_by?: string | null;
           metadata?: Json | null;
           created_at?: string | null;
