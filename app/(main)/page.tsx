@@ -92,7 +92,7 @@ export default function Page() {
         {/* Hero Content */}
         <div className="absolute inset-0 flex flex-col z-10 px-2 sm:px-4 text-center pt-8 sm:pt-12 md:pt-16 pb-8 sm:pb-12 md:pb-16 min-h-screen">
           {/* Logo - Even Lower */}
-          <div className="mb-2 sm:mb-3 md:mb-4 mt-16 sm:mt-20 md:mt-24 animate-fade-in">
+          <div className="mb-2 sm:mb-3 md:mb-4 mt-28 sm:mt-36 md:mt-44 animate-fade-in">
             <Image 
               src={getSmartCacheBustedUrl('/icons/wolf-and-title.png')}
               alt="Side Hustle Bar"
@@ -106,17 +106,61 @@ export default function Page() {
           
           {/* Main Content Area - Centered */}
           <div className="flex-1 flex flex-col justify-center items-center">
-            {/* All Text - Identical Styling */}
-            <div className="w-full text-center">
-              <div className="font-serif font-light text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-white leading-tight drop-shadow-2xl px-2 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] lg:tracking-[0.6em] xl:tracking-[0.7em] mb-4 sm:mb-6 md:mb-8">
+            {/* Better Typography */}
+            <div className="w-full text-center max-w-6xl mx-auto">
+              <h1 className="font-bold text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white leading-none drop-shadow-2xl mb-6 sm:mb-8 md:mb-10 tracking-wide">
                 Expect Everything.
                 <br />
-                <span className="text-red-500">Experience More.</span>
-              </div>
-              <div className="font-serif font-light text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl text-white/90 leading-tight drop-shadow-2xl px-2 tracking-[0.3em] sm:tracking-[0.4em] md:tracking-[0.5em] lg:tracking-[0.6em] xl:tracking-[0.7em] mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+                <span className="text-red-500 font-medium">Experience More.</span>
+              </h1>
+              
+              <p className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white/90 leading-relaxed drop-shadow-lg mb-8 sm:mb-10 md:mb-12">
                 The place where memories are born
                 <br />
                 and family means everyone.
+              </p>
+              
+              {/* Dual Location Cards - Always Side by Side */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto px-2">
+                {/* Salem Location Card */}
+                <div className="backdrop-blur-lg bg-black/40 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-2xl border border-white/20">
+                  <div className="text-white text-center">
+                    <h3 className="text-sm sm:text-lg md:text-xl font-bold text-red-500 mb-2 sm:mb-3">Salem</h3>
+                    <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-sm md:text-base">
+                      <p className="font-medium hidden sm:block">145 Liberty St NE #101</p>
+                      <p className="font-medium block sm:hidden">145 Liberty St</p>
+                      <p className="font-medium">Salem, OR 97301</p>
+                      <p className="font-semibold text-yellow-400 text-xs sm:text-sm">📞 (503) 391-9977</p>
+                    </div>
+                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/20">
+                      <div className="space-y-0.5 sm:space-y-1 text-[9px] sm:text-xs md:text-sm">
+                        <p><span className="font-medium">M-Th:</span> 10AM-12AM</p>
+                        <p><span className="font-medium">F-Sa:</span> 10AM-2AM</p>
+                        <p><span className="font-medium">Sun:</span> 10AM-12AM</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Portland Location Card */}
+                <div className="backdrop-blur-lg bg-black/40 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-2xl border border-white/20">
+                  <div className="text-white text-center">
+                    <h3 className="text-sm sm:text-lg md:text-xl font-bold text-red-500 mb-2 sm:mb-3">Portland</h3>
+                    <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-sm md:text-base">
+                      <p className="font-medium hidden sm:block">327 SW Morrison St</p>
+                      <p className="font-medium block sm:hidden">327 Morrison</p>
+                      <p className="font-medium">Portland, OR 97204</p>
+                      <p className="font-semibold text-yellow-400 text-xs sm:text-sm">📞 (503) 555-0123</p>
+                    </div>
+                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/20">
+                      <div className="space-y-0.5 sm:space-y-1 text-[9px] sm:text-xs md:text-sm">
+                        <p><span className="font-medium">M-Th:</span> 11AM-1AM</p>
+                        <p><span className="font-medium">F-Sa:</span> 11AM-3AM</p>
+                        <p><span className="font-medium">Sun:</span> 11AM-1AM</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
