@@ -28,53 +28,60 @@ export async function GET(request: NextRequest) {
 
     console.log('🚀 Fetching conversations for user:', user.id, 'at', new Date().toISOString());
 
-    // Fetch conversations for the authenticated user using the RPC function
-    const { data: conversationsData, error } = await supabase.rpc('get_user_conversations', {
-      input_user_id: user.id
-    });
+    // Get the current user's database record first
+    const { data: currentUserRecord, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .maybeSingle();
+
+    if (userError || !currentUserRecord) {
+      console.error('Current user not found in database:', userError);
+      return NextResponse.json({ error: 'Current user not found' }, { status: 404 });
+    }
+
+    // Fetch conversations using the new user_conversations_view
+    const { data: conversationsData, error } = await supabase
+      .from('user_conversations_view')
+      .select('*')
+      .eq('user_id', currentUserRecord.id)
+      .order('updated_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching conversations:', error);
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
     }
 
-    console.log('Raw conversations data:', conversationsData);
+    console.log('Raw conversations data from user_conversations_view:', conversationsData);
 
-    // Transform the data to match frontend expectations (flattened structure)
+    // Transform the data from user_conversations_view to match frontend expectations
     const flattenedConversations = (conversationsData || []).map((conv: any) => {
-      // For direct messages, get the other participant
-      const otherParticipant = conv.other_participants && conv.other_participants.length > 0 
-        ? conv.other_participants[0] 
-        : null;
-
       return {
-        // New format fields
-        id: conv.id,
+        // New format fields from view
+        id: conv.conversation_id,
         conversation_type: conv.conversation_type,
-        name: conv.name || (otherParticipant ? (otherParticipant.display_name || otherParticipant.username || 'Anonymous User') : 'Unknown'),
+        name: conv.conversation_name || 'Conversation',
         last_message_at: conv.last_message_at,
         last_message_preview: conv.last_message_preview,
         created_at: conv.created_at,
         updated_at: conv.updated_at,
         unread_count: conv.unread_count || 0,
         
-        // Flattened participant info for direct messages
-        other_user_id: otherParticipant?.id,
-        other_user_name: otherParticipant?.display_name || otherParticipant?.username || 'Anonymous User',
-        other_user_avatar: otherParticipant?.avatar_url || '/icons/wolf-icon.png',
-        other_user_username: otherParticipant?.username,
-        other_user_is_online: otherParticipant?.is_online || false,
-        other_participants: conv.other_participants,
-        last_message_sender: conv.last_message_sender,
+        // Other participant info from view
+        other_user_id: conv.other_user_id,
+        other_user_name: conv.other_user_name || 'Anonymous User',
+        other_user_avatar: conv.other_user_avatar || '/icons/wolf-icon.png',
+        other_user_username: conv.other_user_username,
+        other_user_is_online: conv.other_user_is_online || false,
         
         // Legacy format for backward compatibility
-        user_id: otherParticipant?.id,
-        display_name: otherParticipant?.display_name || otherParticipant?.username || 'Anonymous User',
-        username: otherParticipant?.username,
-        avatar_url: otherParticipant?.avatar_url || '/icons/wolf-icon.png',
+        user_id: conv.other_user_id,
+        display_name: conv.other_user_name || 'Anonymous User',
+        username: conv.other_user_username,
+        avatar_url: conv.other_user_avatar || '/icons/wolf-icon.png',
         last_message: conv.last_message_preview,
         last_message_time: conv.last_message_at,
-        is_online: otherParticipant?.is_online || false
+        is_online: conv.other_user_is_online || false
       };
     });
 

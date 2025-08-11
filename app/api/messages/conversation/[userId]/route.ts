@@ -96,25 +96,10 @@ export async function GET(request: NextRequest, { params }: Params) {
     const conversationId = conversationResult;
     console.log('Conversation ID:', conversationId);
 
-    // Fetch messages for this conversation
+    // Fetch messages using the new messages_with_sender_view
     const { data: messages, error: messagesError } = await supabase
-      .from('wolfpack_messages')
-      .select(`
-        id,
-        sender_id,
-        content,
-        created_at,
-        message_type,
-        media_url,
-        media_type,
-        media_thumbnail_url,
-        attachments,
-        is_read,
-        status,
-        is_deleted,
-        is_edited,
-        reply_to_id
-      `)
+      .from('messages_with_sender_view')
+      .select('*')
       .eq('conversation_id', conversationId)
       .eq('is_deleted', false)
       .order('created_at', { ascending: true })
