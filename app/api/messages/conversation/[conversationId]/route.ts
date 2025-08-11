@@ -19,34 +19,60 @@ export async function GET(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch messages with sender info using direct join
+    // Fetch messages using the messages_with_sender_view 
     const { data: messages, error: messagesError } = await supabase
-      .from('wolfpack_messages')
-      .select(`
-        id,
-        conversation_id,
-        sender_id,
-        content,
-        created_at,
-        message_type,
-        media_url,
-        is_deleted,
-        users!sender_id(
-          display_name,
-          first_name,
-          avatar_url
-        )
-      `)
+      .from('messages_with_sender_view')
+      .select('*')
       .eq('conversation_id', conversationId)
-      .eq('is_deleted', false)
       .order('created_at', { ascending: true });
 
     if (messagesError) {
-      return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
+      console.error('Error fetching messages:', messagesError);
+      return NextResponse.json({ 
+        error: 'Failed to fetch messages',
+        details: messagesError.message 
+      }, { status: 500 });
     }
+
+    console.log(`Fetched ${messages?.length || 0} messages for conversation ${conversationId}`);
+
+    // Get conversation metadata with participants
+    const { data: conversationData } = await supabase
+      .from('wolfpack_conversations')
+      .select('*')
+      .eq('id', conversationId)
+      .single();
+
+    // Get other participants in this conversation (exclude current user)
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: currentUserRecord } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', authUser?.id!)
+      .single();
+
+    const { data: participants } = await supabase
+      .from('wolfpack_conversation_participants')
+      .select(`
+        user_id,
+        users!inner(
+          id,
+          auth_id,
+          first_name,
+          last_name,
+          display_name,
+          username,
+          avatar_url,
+          wolfpack_status
+        )
+      `)
+      .eq('conversation_id', conversationId)
+      .neq('user_id', currentUserRecord?.id);
 
     return NextResponse.json({ 
       messages: messages || [],
+      conversation: conversationData,
+      participants: participants || [],
       conversationId
     });
 

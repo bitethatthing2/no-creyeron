@@ -5,19 +5,62 @@ import { useParams, useRouter } from 'next/navigation';
 import { useMessaging } from '@/lib/hooks/useMessaging';
 import { ArrowLeft, Send, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
+import { ConnectionStatus } from '@/components/shared/ConnectionStatus';
+import { debugLog } from '@/lib/debug';
 
 export default function ConversationPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params.conversationId as string;
   
-  // Use our simplified messaging hook
-  const { messages, loading, error, sendMessage } = useMessaging(conversationId);
+  // Use our unified messaging hook
+  const { 
+    messages, 
+    currentUserId,
+    loading, 
+    error, 
+    loadMessages, 
+    sendMessage,
+    subscribeToMessages 
+  } = useMessaging();
   
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
+  const [conversationData, setConversationData] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (conversationId) {
+      debugLog.messaging('ConversationPage mount', { conversationId });
+      loadMessages(conversationId);
+      
+      // Load conversation metadata
+      loadConversationData(conversationId);
+      
+      // Enhanced subscription with connection monitoring
+      const unsubscribe = subscribeToMessages(conversationId);
+      setConnectionStatus('connected');
+      
+      return () => {
+        debugLog.messaging('ConversationPage unmount', { conversationId });
+        unsubscribe();
+      };
+    }
+  }, [conversationId, loadMessages, subscribeToMessages]);
+
+  const loadConversationData = async (conversationId: string) => {
+    try {
+      const response = await fetch(`/api/messages/conversation/${conversationId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setConversationData(data);
+      }
+    } catch (error) {
+      console.error('Error loading conversation data:', error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -29,7 +72,7 @@ export default function ConversationPage() {
     try {
       setSending(true);
       
-      const success = await sendMessage(newMessage.trim());
+      const success = await sendMessage(conversationId, newMessage.trim());
       if (success) {
         setNewMessage('');
       }
@@ -45,7 +88,30 @@ export default function ConversationPage() {
   };
 
   const getDisplayName = () => {
-    return 'Chat Participant'; // TODO: Get from conversation data
+    if (!conversationData?.conversation) return 'Loading...';
+    
+    // For direct conversations, show the other participant's name
+    if (conversationData.conversation.conversation_type === 'direct') {
+      // First try to get from participant data
+      const otherParticipant = conversationData.participants?.[0]?.users;
+      if (otherParticipant) {
+        return otherParticipant.display_name || 
+               `${otherParticipant.first_name || ''} ${otherParticipant.last_name || ''}`.trim() ||
+               otherParticipant.username ||
+               'Wolf Pack Member';
+      }
+      
+      // Fall back to getting name from messages (sender info)
+      const otherUserMessage = messages.find(m => m.sender_id !== currentUserId);
+      if (otherUserMessage) {
+        return otherUserMessage.sender_display_name || 
+               `${otherUserMessage.sender_first_name || ''} ${otherUserMessage.sender_last_name || ''}`.trim() ||
+               'Wolf Pack Member';
+      }
+    }
+    
+    // Fall back to conversation name or default
+    return conversationData.conversation.name || 'Wolf Pack Chat';
   };
 
   const formatTime = (timestamp: string) => {
@@ -101,6 +167,8 @@ export default function ConversationPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      <ConnectionStatus />
+      
       {/* TikTok-Style Header */}
       <div className="flex items-center justify-between p-4 bg-black border-b border-gray-900">
         <div className="flex items-center gap-3">
@@ -149,8 +217,7 @@ export default function ConversationPage() {
         ) : (
           <div className="p-4 space-y-3">
             {messages.map((message, index) => {
-              // TODO: Get current user ID properly from useMessaging hook
-              const isFromCurrentUser = false; // Temporary - need to implement properly
+              const isFromCurrentUser = message.sender_id === currentUserId;
               const showAvatar = !isFromCurrentUser && (index === 0 || messages[index - 1]?.sender_id !== message.sender_id);
               
               return (
@@ -163,8 +230,8 @@ export default function ConversationPage() {
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
                       {showAvatar ? (
                         <Image
-                          src="/icons/wolf-icon.png"
-                          alt={getDisplayName()}
+                          src={message.sender_avatar_url || '/icons/wolf-icon.png'}
+                          alt={message.sender_display_name || 'User'}
                           width={32}
                           height={32}
                           className="w-full h-full object-cover"

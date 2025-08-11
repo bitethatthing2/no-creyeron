@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { debugLog, performanceLog } from '@/lib/debug';
 
 export interface Message {
   id: string;
@@ -14,23 +15,20 @@ export interface Message {
   updated_at: string;
   is_deleted: boolean;
   is_edited: boolean;
-  sender?: {
-    username: string;
-    display_name: string;
-    avatar_url: string;
-  };
+  sender_first_name?: string;
+  sender_last_name?: string;
+  sender_display_name?: string;
+  sender_avatar_url?: string;
 }
 
 export interface Conversation {
   conversation_id: string;
-  conversation_type: string;
   conversation_name: string | null;
-  other_user_id: string;
-  other_user_name: string;
-  other_user_avatar: string;
-  last_message_preview: string;
-  last_message_at: string;
+  conversation_type: string;
+  last_message_preview: string | null;
+  last_message_at: string | null;
   unread_count: number;
+  participants?: any[];
 }
 
 interface UseMessagingReturn {
@@ -38,197 +36,199 @@ interface UseMessagingReturn {
   messages: Message[];
   loading: boolean;
   error: string | null;
-  sendMessage: (content: string, conversationId?: string) => Promise<boolean>;
-  loadConversation: (conversationId: string) => Promise<void>;
-  refreshConversations: () => Promise<void>;
+  currentUserId: string | null;
+  loadConversations: () => Promise<void>;
+  loadMessages: (conversationId: string) => Promise<void>;
+  sendMessage: (conversationId: string, content: string) => Promise<boolean>;
+  getOrCreateDirectConversation: (otherUserId: string) => Promise<string | null>;
+  subscribeToMessages: (conversationId: string) => () => void;
 }
 
-export function useMessaging(conversationId?: string): UseMessagingReturn {
-  const { user } = useAuth();
+export function useMessaging(): UseMessagingReturn {
+  const { currentUser } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const loadConversations = async () => {
-    if (!user) return;
+  // Get current user's database ID from context
+  useEffect(() => {
+    if (currentUser) {
+      setCurrentUserId(currentUser.id);
+    } else {
+      setCurrentUserId(null);
+    }
+  }, [currentUser]);
 
+  // Load all conversations for the current user
+  const loadConversations = useCallback(async () => {
+    if (!currentUserId) {
+      debugLog.messaging('loadConversations', 'No current user ID available');
+      return;
+    }
+    
+    const startTime = performanceLog.start('loadConversations');
+    debugLog.messaging('loadConversations', { currentUserId });
+    
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-
-      // Use the new API endpoint instead of RPC function
-      const response = await fetch('/api/messages/conversations', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
+      // Use the API route which uses the proper database view with real names
+      const response = await fetch('/api/messages/conversations');
       if (!response.ok) {
-        throw new Error('Failed to load conversations');
+        throw new Error(`API failed: ${response.status}`);
       }
-
-      const data = await response.json();
-      setConversations(data.conversations || []);
+      
+      const apiData = await response.json();
+      setConversations(apiData.conversations || []);
+      debugLog.success('loadConversations', { 
+        count: apiData.conversations?.length || 0,
+        conversations: apiData.conversations
+      });
+      performanceLog.end('loadConversations', startTime);
     } catch (err) {
-      console.error('Unexpected error loading conversations:', err);
-      setError('Failed to load conversations');
+      debugLog.error('loadConversations', err, { currentUserId });
+      setError(err instanceof Error ? err.message : 'Failed to load conversations');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUserId]);
 
-  const loadConversation = async (conversationId: string) => {
-    if (!user) return;
-
+  // Load messages for a specific conversation
+  const loadMessages = useCallback(async (conversationId: string) => {
+    const startTime = performanceLog.start('loadMessages');
+    debugLog.messaging('loadMessages', { conversationId });
+    
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-
-      // Use the new messages_with_sender_view
-      const { data, error: fetchError } = await supabase
-        .from('messages_with_sender_view')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: true });
-
-      if (fetchError) {
-        console.error('Error loading messages:', fetchError);
-        setError('Failed to load messages');
-        return;
+      // Use the API route which uses the proper database view with real sender names
+      const response = await fetch(`/api/messages/conversation/${conversationId}`);
+      if (!response.ok) {
+        throw new Error(`API failed: ${response.status}`);
       }
-
-      // Transform data from view to match hook interface
-      const transformedMessages = (data || []).map(msg => ({
-        id: msg.id,
-        conversation_id: msg.conversation_id,
-        sender_id: msg.sender_id,
-        content: msg.content,
-        message_type: msg.message_type,
-        media_url: msg.media_url,
-        reply_to_id: msg.reply_to_id,
-        created_at: msg.created_at,
-        updated_at: msg.updated_at,
-        is_deleted: msg.is_deleted,
-        is_edited: msg.is_edited,
-        sender: {
-          username: msg.sender_username,
-          display_name: msg.sender_first_name || msg.sender_display_name,
-          avatar_url: msg.sender_avatar_url || '/icons/wolf-icon.png'
-        }
-      }));
-
-      setMessages(transformedMessages);
-
-      // Mark messages as read using RPC function (this should still work)
-      await markAsRead(conversationId);
+      
+      const apiData = await response.json();
+      setMessages(apiData.messages || []);
+      debugLog.success('loadMessages', { 
+        count: apiData.messages?.length || 0,
+        conversationId,
+        messages: apiData.messages
+      });
+      performanceLog.end('loadMessages', startTime);
     } catch (err) {
-      console.error('Unexpected error loading conversation:', err);
-      setError('Failed to load conversation');
+      debugLog.error('loadMessages', err, { conversationId });
+      setError(err instanceof Error ? err.message : 'Failed to load messages');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const sendMessage = async (content: string, targetConversationId?: string): Promise<boolean> => {
-    if (!user) {
-      setError('You must be logged in to send messages');
-      return false;
-    }
-
-    if (!content.trim()) {
-      setError('Message cannot be empty');
-      return false;
-    }
-
-    const useConversationId = targetConversationId || conversationId;
-    if (!useConversationId) {
-      setError('No conversation specified');
-      return false;
-    }
-
+  // Send a message to a conversation
+  const sendMessage = useCallback(async (conversationId: string, content: string) => {
+    if (!currentUserId || !content.trim()) return false;
+    
     try {
-      // Get current user's database ID
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (!userData) {
-        setError('User not found');
-        return false;
-      }
-
-      // Insert message directly into wolfpack_messages
-      const { error: messageError } = await supabase
+      const { error } = await supabase
         .from('wolfpack_messages')
         .insert({
-          conversation_id: useConversationId,
-          sender_id: userData.id,
+          conversation_id: conversationId,
+          sender_id: currentUserId,
           content: content.trim(),
           message_type: 'text',
           status: 'sent'
         });
-
-      if (messageError) {
-        console.error('Error sending message:', messageError);
-        setError('Failed to send message');
-        return false;
-      }
-
-      // Refresh messages if we're in a conversation view
-      if (conversationId) {
-        await loadConversation(conversationId);
-      } else {
-        await loadConversations();
-      }
       
+      if (error) throw error;
+      
+      // Reload messages
+      await loadMessages(conversationId);
       return true;
     } catch (err) {
-      console.error('Unexpected error sending message:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
       return false;
     }
-  };
+  }, [currentUserId, loadMessages]);
 
-  const markAsRead = async (conversationId: string) => {
-    if (!user) return;
-
+  // Create or get a direct conversation with another user
+  const getOrCreateDirectConversation = useCallback(async (otherUserIdOrAuthId: string) => {
+    if (!currentUserId) return null;
+    
     try {
-      await supabase.rpc('mark_messages_as_read', {
-        conv_id: conversationId,
-        user_uuid: user.id
+      // First, resolve the auth_id to database user_id if needed
+      let otherUserId = otherUserIdOrAuthId;
+      
+      // Check if the provided ID looks like an auth_id (Firebase format) or a database ID
+      // Firebase auth IDs are typically longer and contain hyphens
+      if (otherUserIdOrAuthId.includes('-') && otherUserIdOrAuthId.length > 20) {
+        const { data: otherUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', otherUserIdOrAuthId)
+          .single();
+        
+        if (!otherUser) {
+          setError('User not found');
+          return null;
+        }
+        
+        otherUserId = otherUser.id;
+      }
+      
+      // First check if a direct conversation already exists
+      const { data: existing } = await supabase
+        .from('wolfpack_conversations')
+        .select(`
+          *,
+          wolfpack_conversation_participants!inner(user_id)
+        `)
+        .eq('conversation_type', 'direct')
+        .eq('wolfpack_conversation_participants.user_id', currentUserId);
+      
+      // Find conversation that includes both users
+      const existingConversation = existing?.find(conv => {
+        const participants = conv.wolfpack_conversation_participants as any[];
+        return participants.some(p => p.user_id === otherUserId);
       });
-
-      // Refresh conversations to update unread counts
-      await loadConversations();
+      
+      if (existingConversation) {
+        return existingConversation.id;
+      }
+      
+      // Create new conversation
+      const { data: newConv, error: convError } = await supabase
+        .from('wolfpack_conversations')
+        .insert({
+          conversation_type: 'direct',
+          created_by: currentUserId
+        })
+        .select()
+        .single();
+      
+      if (convError) throw convError;
+      
+      // Add participants
+      const { error: partError } = await supabase
+        .from('wolfpack_conversation_participants')
+        .insert([
+          { conversation_id: newConv.id, user_id: currentUserId },
+          { conversation_id: newConv.id, user_id: otherUserId }
+        ]);
+      
+      if (partError) throw partError;
+      
+      return newConv.id;
     } catch (err) {
-      console.error('Error marking messages as read:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create conversation');
+      return null;
     }
-  };
+  }, [currentUserId]);
 
-  const refreshConversations = async () => {
-    await loadConversations();
-  };
-
-  // Initial load - either conversations or messages for specific conversation
-  useEffect(() => {
-    if (!user) return;
-
-    if (conversationId) {
-      loadConversation(conversationId);
-    } else {
-      loadConversations();
-    }
-  }, [user, conversationId]);
-
-  // Set up real-time subscription for specific conversation
-  useEffect(() => {
-    if (!user || !conversationId) return;
-
+  // Subscribe to real-time messages
+  const subscribeToMessages = useCallback((conversationId: string) => {
     const channel = supabase
       .channel(`messages:${conversationId}`)
       .on(
@@ -240,37 +240,30 @@ export function useMessaging(conversationId?: string): UseMessagingReturn {
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          console.log('New message received:', payload);
-          // Add new message to current messages
-          setMessages(prev => [...prev, {
-            id: payload.new.id,
-            conversation_id: payload.new.conversation_id,
-            sender_id: payload.new.sender_id,
-            content: payload.new.content,
-            message_type: payload.new.message_type,
-            created_at: payload.new.created_at,
-            updated_at: payload.new.updated_at,
-            is_deleted: payload.new.is_deleted,
-            is_edited: payload.new.is_edited,
-            reply_to_id: payload.new.reply_to_id,
-            media_url: payload.new.media_url
-          }]);
+          // Reload messages to get full sender info
+          loadMessages(conversationId);
         }
       )
       .subscribe();
-
+    
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, conversationId]);
+  }, [loadMessages]);
 
   return {
+    // Data
     conversations,
     messages,
     loading,
     error,
+    currentUserId,
+    
+    // Actions
+    loadConversations,
+    loadMessages,
     sendMessage,
-    loadConversation,
-    refreshConversations: conversationId ? () => loadConversation(conversationId) : loadConversations
+    getOrCreateDirectConversation,
+    subscribeToMessages
   };
 }

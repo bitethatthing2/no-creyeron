@@ -3,13 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
-import { ArrowLeft, Search, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, Search, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
+import { ConnectionStatus } from '@/components/shared/ConnectionStatus';
 
+// Defines the structure for a conversation.
+// Includes properties for both the new and legacy API formats.
 interface Conversation {
   id: string;
+  conversation_id: string;
   conversation_type: string;
+  conversation_name?: string;
   name: string;
   last_message_at: string;
   last_message_preview: string;
@@ -33,16 +37,33 @@ interface Conversation {
   is_online?: boolean;
 }
 
+// Defines the structure for a user returned from the search API.
+interface UserSearchResult {
+  id: string;
+  auth_id?: string;
+  displayName?: string;
+  display_name?: string;
+  username?: string;
+  avatarUrl?: string;
+  avatar_url?: string;
+  wolfpack_status?: string;
+  location?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export default function MessagesInboxPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
-  
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [searchUsers, setSearchUsers] = useState<any[]>([]);
+  const [searchUsers, setSearchUsers] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchingUsers, setSearchingUsers] = useState(false);
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -53,7 +74,6 @@ export default function MessagesInboxPage() {
     loadConversations();
   }, [currentUser, router]);
 
-  // Search for users when search query changes or showAllMembers is true
   useEffect(() => {
     if (searchQuery.trim().length > 0 || showAllMembers) {
       searchForUsers();
@@ -62,10 +82,12 @@ export default function MessagesInboxPage() {
     }
   }, [searchQuery, showAllMembers]);
 
-  const loadConversations = async () => {
+  const loadConversations = async (isRetry = false) => {
     try {
       setLoading(true);
-      
+      setError(null);
+      if (isRetry) setRetrying(true);
+
       const response = await fetch('/api/messages/conversations', {
         method: 'GET',
         headers: {
@@ -73,15 +95,41 @@ export default function MessagesInboxPage() {
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data.conversations || []);
+      if (!response.ok) {
+        if (response.status === 500) {
+          setError('Server error. The messaging system may be temporarily unavailable.');
+        } else if (response.status === 401) {
+          setError('Please log in to view messages');
+          router.push('/login');
+          return;
+        } else if (response.status === 404) {
+          setError('Your profile was not found. Please try refreshing the page.');
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.error || `Failed to load conversations (${response.status})`);
+        }
+        return;
       }
-    } catch (error) {
-      console.error('Error loading conversations:', error);
+
+      const data = await response.json();
+      setConversations(data.conversations || []);
+
+      setError(null);
+    } catch (err) {
+      console.error('Error loading conversations:', err);
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('Connection error. Please check your internet connection.');
+      } else {
+        setError('An unexpected error occurred while loading conversations.');
+      }
     } finally {
       setLoading(false);
+      setRetrying(false);
     }
+  };
+
+  const retryLoadConversations = () => {
+    loadConversations(true);
   };
 
   const searchForUsers = async () => {
@@ -89,8 +137,7 @@ export default function MessagesInboxPage() {
 
     try {
       setSearchingUsers(true);
-      
-      // Use the dedicated wolfpack-members API endpoint
+
       const response = await fetch('/api/messages/wolfpack-members', {
         method: 'GET',
         headers: {
@@ -100,16 +147,14 @@ export default function MessagesInboxPage() {
 
       const data = await response.json();
       console.log('🐺 Wolfpack members API response:', data);
-      
+
       if (response.ok) {
-        let filteredMembers = data.members || [];
-        
-        // Show a message if database isn't set up yet
+        let filteredMembers: UserSearchResult[] = data.members || [];
+
         if (data.error === 'Database access failed') {
           console.warn('⚠️ Database not fully configured:', data.message);
         }
-        
-        // If there's a search query, filter the results (but not when showing all members)
+
         if (searchQuery.trim() && !showAllMembers) {
           const query = searchQuery.toLowerCase();
           filteredMembers = filteredMembers.filter(member =>
@@ -119,7 +164,7 @@ export default function MessagesInboxPage() {
             (member.last_name || '').toLowerCase().includes(query)
           );
         }
-        
+
         setSearchUsers(filteredMembers);
       } else {
         console.error('❌ Failed to fetch wolfpack members:', response.status, data);
@@ -133,26 +178,21 @@ export default function MessagesInboxPage() {
     }
   };
 
-  const getDisplayName = (conversation: Conversation) => {
-    // Handle new format
-    if (conversation.other_user_name || conversation.other_user_username) {
-      return conversation.other_user_name || 
-             conversation.other_user_username || 
-             'Wolf Pack Member';
-    }
-    // Handle legacy format
-    return conversation.display_name || 
-           conversation.username || 
-           conversation.name ||
-           'Anonymous';
+  const getDisplayName = (conversation: Conversation): string => {
+    if (conversation.other_user_name) return conversation.other_user_name;
+    if (conversation.other_user_username) return conversation.other_user_username;
+    if (conversation.display_name) return conversation.display_name;
+    if (conversation.username) return conversation.username;
+    if (conversation.name) return conversation.name;
+    return 'Wolf Pack Member';
   };
 
-  const formatTime = (timestamp: string) => {
+  const formatTime = (timestamp: string | undefined): string => {
     if (!timestamp) return '';
     const now = new Date();
     const messageTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'now';
     if (diffInMinutes < 60) return `${diffInMinutes}m`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
@@ -161,9 +201,7 @@ export default function MessagesInboxPage() {
 
   const filteredConversations = conversations.filter(conv =>
     getDisplayName(conv).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.other_user_username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.conversation_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -176,26 +214,63 @@ export default function MessagesInboxPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <ConnectionStatus />
+
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-gray-800 bg-black sticky top-0 z-10">
-        <button 
+        <button
           onClick={() => router.back()}
           className="p-2 hover:bg-gray-800 rounded-full transition-colors"
         >
           <ArrowLeft className="h-5 w-5 text-white" />
         </button>
-        
+
         <div className="flex-1">
           <h1 className="text-xl font-bold text-white">Messages</h1>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => setShowAllMembers(true)}
           className="p-2 hover:bg-gray-800 rounded-full transition-colors"
         >
           <Search className="h-5 w-5 text-white" />
         </button>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mx-4 mt-4 p-4 bg-red-900/20 border border-red-600/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <span className="text-red-400 text-lg">⚠️</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-red-200 text-sm font-medium">Connection Error</p>
+              <p className="text-red-300 text-sm mt-1">{error}</p>
+              <button
+                onClick={retryLoadConversations}
+                disabled={retrying}
+                className="mt-3 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white text-xs rounded-md transition-colors flex items-center gap-1"
+              >
+                {retrying ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                    Retrying...
+                  </>
+                ) : (
+                  'Try Again'
+                )}
+              </button>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-200 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="p-4 border-b border-gray-800">
@@ -232,7 +307,6 @@ export default function MessagesInboxPage() {
       {/* User Search Results or Conversations List */}
       <div className="flex-1">
         {searchQuery.trim().length > 0 || showAllMembers ? (
-          // Show search results
           <div>
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-sm font-medium text-gray-400">
@@ -250,7 +324,7 @@ export default function MessagesInboxPage() {
                 </button>
               )}
             </div>
-            
+
             {searchingUsers ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
@@ -261,22 +335,22 @@ export default function MessagesInboxPage() {
               </div>
             ) : (
               <div className="divide-y divide-gray-800">
-                {searchUsers.map((user) => (
+                {searchUsers.map((user: UserSearchResult) => (
                   <button
                     key={user.id}
-                    onClick={() => router.push(`/messages/${user.auth_id || user.id}`)}
+                    onClick={() => router.push(`/messages/user/${user.auth_id || user.id}`)}
                     className="w-full flex items-center gap-4 p-4 hover:bg-gray-900/50 transition-colors text-left"
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">
                       <Image
                         src={user.avatarUrl || user.avatar_url || '/icons/wolf-icon.png'}
-                        alt={user.displayName || 'Wolf Pack Member'}
+                        alt={user.displayName || user.display_name || user.username || 'Wolf Pack Member'}
                         width={48}
                         height={48}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-white truncate">
@@ -295,7 +369,7 @@ export default function MessagesInboxPage() {
                         <p className="text-xs text-gray-500">{user.location}</p>
                       )}
                     </div>
-                    
+
                     <div className="text-xs bg-red-600 text-white px-3 py-1 rounded-full">
                       Message
                     </div>
@@ -305,7 +379,6 @@ export default function MessagesInboxPage() {
             )}
           </div>
         ) : (
-          // Show existing conversations or empty state
           filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-4">
               <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-4">
@@ -325,16 +398,15 @@ export default function MessagesInboxPage() {
           ) : (
             <div className="divide-y divide-gray-800">
               {filteredConversations.map((conversation) => {
-                const userId = conversation.other_user_id || conversation.user_id;
                 const avatarUrl = conversation.other_user_avatar || conversation.avatar_url || '/icons/wolf-icon.png';
                 const lastMessage = conversation.last_message_preview || conversation.last_message || 'Start a conversation...';
                 const lastMessageTime = conversation.last_message_at || conversation.last_message_time;
-                const isOnline = conversation.other_user_is_online || conversation.is_online;
-                
+                const isOnline = conversation.other_user_is_online || conversation.is_online || false;
+
                 return (
                   <button
-                    key={conversation.id || conversation.user_id}
-                    onClick={() => router.push(`/messages/${userId}`)}
+                    key={conversation.conversation_id || conversation.id}
+                    onClick={() => router.push(`/messages/conversation/${conversation.conversation_id || conversation.id}`)}
                     className="w-full flex items-center gap-4 p-4 hover:bg-gray-900/50 transition-colors text-left"
                   >
                     <div className="relative">
@@ -351,28 +423,28 @@ export default function MessagesInboxPage() {
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black"></div>
                       )}
                     </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-white truncate">
-                        {getDisplayName(conversation)}
-                      </h3>
-                      <span className="text-xs text-gray-400">
-                        {formatTime(lastMessageTime)}
-                      </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-white truncate">
+                          {getDisplayName(conversation)}
+                        </h3>
+                        <span className="text-xs text-gray-400">
+                          {formatTime(lastMessageTime)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-400 truncate">
+                          {lastMessage}
+                        </p>
+                        {conversation.unread_count > 0 && (
+                          <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">
+                            {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-400 truncate">
-                        {lastMessage}
-                      </p>
-                      {conversation.unread_count > 0 && (
-                        <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">
-                          {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
-                        </div>
-                      )}
-                    </div>
-                  </div>
                   </button>
                 );
               })}
