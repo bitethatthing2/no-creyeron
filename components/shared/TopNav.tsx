@@ -3,21 +3,25 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { LocationSwitcher } from '@/components/shared/LocationSwitcher';
 import { usePathname } from 'next/navigation';
 import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
+import { useAuth } from '@/contexts/AuthContext';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 
 export function TopNav() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { user, currentUser } = useAuth();
 
   const menuItems = [
     { href: '/', label: 'Home' },
@@ -86,6 +90,38 @@ export function TopNav() {
                     Careers
                   </Link>
                 </DropdownMenuItem>
+                {user && (
+                  <>
+                    <DropdownMenuSeparator className="bg-white/20" />
+                    {currentUser && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="text-white hover:text-red-500">
+                          <User className="h-4 w-4 mr-2" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem className="text-white hover:text-red-500 focus:bg-red-500/20">
+                      <LogoutButton 
+                        variant="ghost" 
+                        className="w-full justify-start p-0 h-auto text-white hover:text-red-500 hover:bg-transparent"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </LogoutButton>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {!user && (
+                  <>
+                    <DropdownMenuSeparator className="bg-white/20" />
+                    <DropdownMenuItem asChild>
+                      <Link href="/login" className="text-white hover:text-red-500">
+                        Sign In
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -137,6 +173,46 @@ export function TopNav() {
             >
               Careers
             </Link>
+            
+            {/* User Section */}
+            {user && (
+              <>
+                <div className="border-t border-white/20 mt-4 pt-4">
+                  {currentUser && (
+                    <Link
+                      href="/profile"
+                      className="block py-2 text-white hover:text-red-500 flex items-center"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Link>
+                  )}
+                  <div className="py-2">
+                    <LogoutButton 
+                      variant="ghost" 
+                      className="w-full justify-start text-white hover:text-red-500 hover:bg-transparent p-0 h-auto"
+                      showIcon={true}
+                    >
+                      Sign Out
+                    </LogoutButton>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {!user && (
+              <div className="border-t border-white/20 mt-4 pt-4">
+                <Link
+                  href="/login"
+                  className="block py-2 text-white hover:text-red-500"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Sign In
+                </Link>
+              </div>
+            )}
+            
             <div className="pt-4">
               <LocationSwitcher />
             </div>

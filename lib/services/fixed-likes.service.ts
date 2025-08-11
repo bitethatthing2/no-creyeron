@@ -66,84 +66,39 @@ export class FixedLikesService {
       }
 
       if (existingLike) {
-        // Remove like
-        const { error: deleteError } = await this.supabase
-          .from("wolfpack_post_likes")
-          .delete()
-          .eq("video_id", videoId)
-          .eq("user_id", userId);
+        // Unlike using the backend function
+        console.log("🔄 Calling unlike_video function...");
+        const { data, error } = await this.supabase.rpc("unlike_video", {
+          p_video_id: videoId,
+        });
 
-        if (deleteError) {
-          console.error("Error removing like:", deleteError);
-          throw new Error(`Failed to remove like: ${deleteError.message}`);
+        if (error) {
+          console.error("Error unliking video:", error);
+          throw new Error(`Failed to unlike video: ${error.message}`);
         }
 
-        // Update video like count (decrement)
-        try {
-          await this.supabase.rpc("decrement_video_likes", {
-            video_id: videoId,
-          });
-        } catch (rpcError) {
-          console.warn(
-            "RPC function not available, updating manually:",
-            rpcError,
-          );
-          // Fallback: update like_count directly
-          const { error: updateError } = await this.supabase
-            .from("wolfpack_videos")
-            .update({
-              like_count: this.supabase.sql`GREATEST(0, like_count - 1)`,
-            })
-            .eq("id", videoId);
-
-          if (updateError) {
-            console.error("Error updating like count:", updateError);
-          }
-        }
-
-        console.log("Successfully removed like for video:", videoId);
+        console.log("✅ Successfully unliked video:", videoId);
         return { liked: false, action: "removed" };
       } else {
-        // Add like
-        const { error: insertError } = await this.supabase
-          .from("wolfpack_post_likes")
-          .insert({ video_id: videoId, user_id: userId });
+        // Like using the backend function
+        console.log("🔄 Calling like_video function...");
+        const { data, error } = await this.supabase.rpc("like_video", {
+          p_video_id: videoId,
+        });
 
-        if (insertError) {
-          console.error("Error adding like:", insertError);
-
+        if (error) {
+          console.error("Error liking video:", error);
+          
           // Handle specific errors
-          if (insertError.code === "23505") {
-            // Duplicate key - already liked
+          if (error.message?.includes("duplicate") || error.code === "23505") {
             console.log("Video already liked by user");
             return { liked: true, action: "already_liked" };
           }
 
-          throw new Error(`Failed to add like: ${insertError.message}`);
+          throw new Error(`Failed to like video: ${error.message}`);
         }
 
-        // Update video like count (increment)
-        try {
-          await this.supabase.rpc("increment_video_likes", {
-            video_id: videoId,
-          });
-        } catch (rpcError) {
-          console.warn(
-            "RPC function not available, updating manually:",
-            rpcError,
-          );
-          // Fallback: update like_count directly
-          const { error: updateError } = await this.supabase
-            .from("wolfpack_videos")
-            .update({ like_count: this.supabase.sql`like_count + 1` })
-            .eq("id", videoId);
-
-          if (updateError) {
-            console.error("Error updating like count:", updateError);
-          }
-        }
-
-        console.log("Successfully added like for video:", videoId);
+        console.log("✅ Successfully liked video:", videoId);
         return { liked: true, action: "added" };
       }
     } catch (error) {

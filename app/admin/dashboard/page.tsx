@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  LogOut, 
   ClipboardList,
   Users,
   Bell,
@@ -14,43 +12,18 @@ import {
   Archive
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 import BroadcastCleanupManager from '@/components/admin/BroadcastArchiveManager';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { toast } = useToast();
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const handleSignOut = async () => {
-    try {
-      setIsSigningOut(true);      await supabase.auth.signOut();
-      router.push('/login');
-    } catch {
-      toast({
-        title: "Error signing out",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Simple Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Manager Dashboard</h1>
-        <Button 
-          variant="outline" 
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
+        <LogoutButton />
       </div>
 
       {/* Today's Summary - Simple Stats */}

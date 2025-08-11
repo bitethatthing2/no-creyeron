@@ -281,7 +281,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.rpc('handle_user_logout');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('fcm_token');
+      sessionStorage.clear();
+      return { success: true };
+    } catch (error) {
+      console.error('Logout failed:', error);
+      throw error;
+    }
   };
 
   const refresh = useCallback(async () => {
