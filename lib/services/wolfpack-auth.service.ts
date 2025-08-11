@@ -1,10 +1,10 @@
-import type { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 // VIP users configuration - centralized from previous scattered definitions
 const VIP_USERS = [
-  'mkahler599@gmail.com',
-  'admin@sidehustlebar.com'
+  "mkahler599@gmail.com",
+  "admin@sidehustlebar.com",
 ];
 
 export interface UserVerificationResult {
@@ -32,15 +32,15 @@ export class WolfpackAuthService {
         isVerified: false,
         isVipUser: false,
         isPermanentPackMember: false,
-        userId: '',
+        userId: "",
         userExists: false,
-        error: 'No user provided'
+        error: "No user provided",
       };
     }
 
     try {
       // Check if user is VIP
-      const isVipUser = this.isVipUser(user.email || '');
+      const isVipUser = this.isVipUser(user.email || "");
 
       // Ensure user exists in database
       const userExists = await this.ensureUserExists(user);
@@ -54,17 +54,17 @@ export class WolfpackAuthService {
         isPermanentPackMember,
         userId: user.id,
         userExists,
-        error: undefined
+        error: undefined,
       };
     } catch (error) {
-      console.error('User verification failed:', error);
+      console.error("User verification failed:", error);
       return {
         isVerified: false,
         isVipUser: false,
         isPermanentPackMember: false,
         userId: user.id,
         userExists: false,
-        error: error instanceof Error ? error.message : 'Verification failed'
+        error: error instanceof Error ? error.message : "Verification failed",
       };
     }
   }
@@ -82,19 +82,19 @@ export class WolfpackAuthService {
   static async isPermanentPackMember(userId: string): Promise<boolean> {
     try {
       const { data: user, error } = await supabase
-        .from('users')
-        .select('wolfpack_status, role')
-        .eq('id', userId)
+        .from("users")
+        .select("wolfpack_status, role")
+        .eq("id", userId)
         .maybeSingle();
 
       if (error) {
-        console.error('Error checking permanent pack member status:', error);
+        console.error("Error checking permanent pack member status:", error);
         return false;
       }
 
-      return user?.wolfpack_status === 'active' && user?.role === 'admin';
+      return user?.wolfpack_status === "active" && user?.role === "admin";
     } catch (error) {
-      console.error('Error checking permanent pack member status:', error);
+      console.error("Error checking permanent pack member status:", error);
       return false;
     }
   }
@@ -106,12 +106,12 @@ export class WolfpackAuthService {
     try {
       // Check if user already exists
       const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', user.id)
+        .from("users")
+        .select("id")
+        .eq("id", user.id)
         .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError && fetchError.code !== "PGRST116") {
         throw fetchError;
       }
 
@@ -122,21 +122,21 @@ export class WolfpackAuthService {
 
       // Create user if doesn't exist
       const { error: insertError } = await supabase
-        .from('users')
+        .from("users")
         .insert([{
           id: user.id,
-          email: user.email || '',
+          email: user.email || "",
           first_name: (user.user_metadata?.first_name as string) || null,
           last_name: (user.user_metadata?.last_name as string) || null,
           avatar_url: (user.user_metadata?.avatar_url as string) || null,
-          role: this.isVipUser(user.email || '') ? 'admin' : 'user',
+          role: this.isVipUser(user.email || "") ? "admin" : "user",
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         }]);
 
       if (insertError) {
         // If it's a unique constraint violation, user was created by another process
-        if (insertError.code === '23505') {
+        if (insertError.code === "23505") {
           return true;
         }
         throw insertError;
@@ -144,7 +144,7 @@ export class WolfpackAuthService {
 
       return true;
     } catch (error) {
-      console.error('Error ensuring user exists:', error);
+      console.error("Error ensuring user exists:", error);
       throw error;
     }
   }
@@ -153,13 +153,13 @@ export class WolfpackAuthService {
    * Get user display name - standardized across all components
    */
   static getUserDisplayName(user: User | null): string {
-    if (!user) return 'Anonymous';
-    
+    if (!user) return "Anonymous";
+
     return (
       user.user_metadata?.display_name ||
       user.user_metadata?.first_name ||
-      user.email?.split('@')[0] ||
-      'Wolf'
+      user.email?.split("@")[0] ||
+      "Wolf"
     );
   }
 
@@ -175,13 +175,13 @@ export class WolfpackAuthService {
    */
   static async hasWolfpackAccess(user: User | null): Promise<boolean> {
     if (!user) return false;
-    
+
     // VIP users always have access
-    if (this.isVipUser(user.email || '')) return true;
-    
+    if (this.isVipUser(user.email || "")) return true;
+
     // Permanent pack members always have access
     if (await this.isPermanentPackMember(user.id)) return true;
-    
+
     // Regular users need to be authenticated
     return !!user.id;
   }
@@ -189,33 +189,37 @@ export class WolfpackAuthService {
   /**
    * Check if user can bypass location verification
    */
-  static async canBypassLocationVerification(user: User | null): Promise<boolean> {
+  static async canBypassLocationVerification(
+    user: User | null,
+  ): Promise<boolean> {
     if (!user) return false;
-    
+
     // VIP users can bypass location verification
-    if (this.isVipUser(user.email || '')) return true;
-    
+    if (this.isVipUser(user.email || "")) return true;
+
     // Permanent pack members can bypass location verification
     if (await this.isPermanentPackMember(user.id)) return true;
-    
+
     return false;
   }
 
   /**
    * Validate user session and refresh if needed
    */
-  static async validateSession(): Promise<{ user: User | null; session: unknown }> {
+  static async validateSession(): Promise<
+    { user: User | null; session: unknown }
+  > {
     try {
       const response = await supabase.auth.getSession();
-      
+
       if (response.error) throw response.error;
-      
-      return { 
-        user: response.data?.session?.user || null, 
-        session: response.data?.session || null 
+
+      return {
+        user: response.data?.session?.user || null,
+        session: response.data?.session || null,
       };
     } catch (error) {
-      console.error('Session validation failed:', error);
+      console.error("Session validation failed:", error);
       return { user: null, session: null };
     }
   }
@@ -224,22 +228,23 @@ export class WolfpackAuthService {
    * Handle authentication errors consistently
    */
   static getAuthErrorMessage(error: unknown): string {
-    if (!error) return 'Unknown authentication error';
-    
+    if (!error) return "Unknown authentication error";
+
     const errorMap: Record<string, string> = {
-      'invalid_credentials': 'Invalid email or password',
-      'email_not_confirmed': 'Please check your email and confirm your account',
-      'too_many_requests': 'Too many attempts. Please try again later',
-      'weak_password': 'Password is too weak',
-      'email_address_invalid': 'Invalid email address',
-      'signup_disabled': 'Sign up is currently disabled'
+      "invalid_credentials": "Invalid email or password",
+      "email_not_confirmed": "Please check your email and confirm your account",
+      "too_many_requests": "Too many attempts. Please try again later",
+      "weak_password": "Password is too weak",
+      "email_address_invalid": "Invalid email address",
+      "signup_disabled": "Sign up is currently disabled",
     };
-    
+
     // Safely check if error has a message property
-    const errorMessage = (error && typeof error === 'object' && 'message' in error) 
-      ? String((error as { message: unknown }).message)
-      : String(error);
-      
-    return errorMap[errorMessage] || errorMessage || 'Authentication failed';
+    const errorMessage =
+      (error && typeof error === "object" && "message" in error)
+        ? String((error as { message: unknown }).message)
+        : String(error);
+
+    return errorMap[errorMessage] || errorMessage || "Authentication failed";
   }
 }

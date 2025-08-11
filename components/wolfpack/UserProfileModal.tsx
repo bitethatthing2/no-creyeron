@@ -44,7 +44,7 @@ interface UserProfile {
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userId: string;
+ conversationid: string;
   userDisplayName?: string;
   userAvatarUrl?: string;
 }
@@ -52,7 +52,7 @@ interface UserProfileModalProps {
 export function UserProfileModal({ 
   isOpen, 
   onClose, 
-  userId, 
+ conversationid, 
   userDisplayName,
   userAvatarUrl 
 }: UserProfileModalProps) {
@@ -63,10 +63,10 @@ export function UserProfileModal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && userId) {
+    if (isOpen &&conversationid) {
       loadUserProfile();
     }
-  }, [isOpen, userId]);
+  }, [isOpen,conversationid]);
 
   // Add/remove class to body when modal opens/closes
   useEffect(() => {
@@ -107,7 +107,7 @@ export function UserProfileModal({
           allow_messages,
           is_profile_visible
         `)
-        .eq('auth_id', userId)
+        .eq('auth_id',conversationid)
         .single();
 
       if (fetchError) {
@@ -137,7 +137,7 @@ export function UserProfileModal({
     profile_pic_url: profile?.profile_pic_url,
     avatar_url: userAvatarUrl
   });
-  const isCurrentUser = currentUser?.id === userId;
+  const isCurrentUser = currentUser?.id ===conversationid;
   const canMessage = profile?.allow_messages !== false && !isCurrentUser;
 
   return (

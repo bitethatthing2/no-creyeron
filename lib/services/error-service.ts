@@ -4,25 +4,25 @@
  */
 
 export enum ErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical",
 }
 
 export enum ErrorCategory {
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  DATABASE = 'database',
-  NETWORK = 'network',
-  VALIDATION = 'validation',
-  BUSINESS_LOGIC = 'business_logic',
-  EXTERNAL_SERVICE = 'external_service',
-  UNKNOWN = 'unknown'
+  AUTHENTICATION = "authentication",
+  AUTHORIZATION = "authorization",
+  DATABASE = "database",
+  NETWORK = "network",
+  VALIDATION = "validation",
+  BUSINESS_LOGIC = "business_logic",
+  EXTERNAL_SERVICE = "external_service",
+  UNKNOWN = "unknown",
 }
 
 export interface ErrorContext {
-  userId?: string;
+  conversationid?: string;
   component?: string;
   action?: string;
   metadata?: Record<string, any>;
@@ -75,7 +75,7 @@ class ErrorService {
     category: ErrorCategory,
     context: ErrorContext = {},
     originalError?: Error,
-    retryable: boolean = false
+    retryable: boolean = false,
   ): AppError {
     const error: AppError = {
       id: this.generateErrorId(),
@@ -86,18 +86,20 @@ class ErrorService {
       context: {
         ...context,
         timestamp: new Date(),
-        url: typeof window !== 'undefined' ? window.location.href : undefined,
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
+        url: typeof window !== "undefined" ? window.location.href : undefined,
+        userAgent: typeof navigator !== "undefined"
+          ? navigator.userAgent
+          : undefined,
       },
       originalError,
       stack: originalError?.stack || new Error().stack,
       retryable,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     this.logError(error);
     this.notifyListeners(error);
-    
+
     return error;
   }
 
@@ -106,16 +108,16 @@ class ErrorService {
    */
   handleAuthError(
     error: Error,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
     return this.createError(
       `Authentication failed: ${error.message}`,
-      'Please sign in again to continue',
+      "Please sign in again to continue",
       ErrorSeverity.HIGH,
       ErrorCategory.AUTHENTICATION,
-      { ...context, component: 'AuthService' },
+      { ...context, component: "AuthService" },
       error,
-      true
+      true,
     );
   }
 
@@ -125,21 +127,21 @@ class ErrorService {
   handleDatabaseError(
     error: Error,
     operation: string,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
-    const isConnectionError = error.message.includes('connection') || 
-                             error.message.includes('timeout');
-    
+    const isConnectionError = error.message.includes("connection") ||
+      error.message.includes("timeout");
+
     return this.createError(
       `Database operation failed: ${operation} - ${error.message}`,
-      isConnectionError 
-        ? 'Connection issue. Please try again in a moment.'
-        : 'Unable to save your changes. Please try again.',
+      isConnectionError
+        ? "Connection issue. Please try again in a moment."
+        : "Unable to save your changes. Please try again.",
       isConnectionError ? ErrorSeverity.HIGH : ErrorSeverity.MEDIUM,
       ErrorCategory.DATABASE,
       { ...context, operation },
       error,
-      true
+      true,
     );
   }
 
@@ -149,23 +151,23 @@ class ErrorService {
   handleNetworkError(
     error: Error,
     endpoint: string,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
     const isOffline = !navigator.onLine;
-    const isTimeout = error.message.includes('timeout');
-    
+    const isTimeout = error.message.includes("timeout");
+
     return this.createError(
       `Network request failed: ${endpoint} - ${error.message}`,
-      isOffline 
-        ? 'You appear to be offline. Please check your connection.'
+      isOffline
+        ? "You appear to be offline. Please check your connection."
         : isTimeout
-        ? 'Request timed out. Please try again.'
-        : 'Unable to connect to server. Please try again.',
+        ? "Request timed out. Please try again."
+        : "Unable to connect to server. Please try again.",
       isOffline ? ErrorSeverity.HIGH : ErrorSeverity.MEDIUM,
       ErrorCategory.NETWORK,
       { ...context, endpoint },
       error,
-      true
+      true,
     );
   }
 
@@ -176,7 +178,7 @@ class ErrorService {
     field: string,
     value: any,
     rule: string,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
     return this.createError(
       `Validation failed for ${field}: ${rule}`,
@@ -185,7 +187,7 @@ class ErrorService {
       ErrorCategory.VALIDATION,
       { ...context, field, value, rule },
       undefined,
-      false
+      false,
     );
   }
 
@@ -196,7 +198,7 @@ class ErrorService {
     operation: string,
     reason: string,
     userMessage: string,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
     return this.createError(
       `Business rule violation: ${operation} - ${reason}`,
@@ -205,7 +207,7 @@ class ErrorService {
       ErrorCategory.BUSINESS_LOGIC,
       { ...context, operation, reason },
       undefined,
-      false
+      false,
     );
   }
 
@@ -215,16 +217,16 @@ class ErrorService {
   handleExternalServiceError(
     service: string,
     error: Error,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
     return this.createError(
       `External service error: ${service} - ${error.message}`,
-      'Service temporarily unavailable. Please try again later.',
+      "Service temporarily unavailable. Please try again later.",
       ErrorSeverity.HIGH,
       ErrorCategory.EXTERNAL_SERVICE,
       { ...context, service },
       error,
-      true
+      true,
     );
   }
 
@@ -233,23 +235,29 @@ class ErrorService {
    */
   handleUnknownError(
     error: Error,
-    context: ErrorContext = {}
+    context: ErrorContext = {},
   ): AppError {
     // Try to categorize based on error message
     let category = ErrorCategory.UNKNOWN;
-    let userMessage = 'An unexpected error occurred. Please try again.';
+    let userMessage = "An unexpected error occurred. Please try again.";
     let retryable = true;
 
-    if (error.message.includes('auth') || error.message.includes('login')) {
+    if (error.message.includes("auth") || error.message.includes("login")) {
       category = ErrorCategory.AUTHENTICATION;
-      userMessage = 'Authentication error. Please sign in again.';
-    } else if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+      userMessage = "Authentication error. Please sign in again.";
+    } else if (
+      error.message.includes("permission") ||
+      error.message.includes("unauthorized")
+    ) {
       category = ErrorCategory.AUTHORIZATION;
-      userMessage = 'You don\'t have permission to perform this action.';
+      userMessage = "You don't have permission to perform this action.";
       retryable = false;
-    } else if (error.message.includes('network') || error.message.includes('fetch')) {
+    } else if (
+      error.message.includes("network") || error.message.includes("fetch")
+    ) {
       category = ErrorCategory.NETWORK;
-      userMessage = 'Network error. Please check your connection and try again.';
+      userMessage =
+        "Network error. Please check your connection and try again.";
     }
 
     return this.createError(
@@ -259,7 +267,7 @@ class ErrorService {
       category,
       context,
       error,
-      retryable
+      retryable,
     );
   }
 
@@ -280,26 +288,26 @@ class ErrorService {
       severity: error.severity,
       category: error.category,
       context: error.context,
-      stack: error.stack
+      stack: error.stack,
     };
 
     switch (error.severity) {
       case ErrorSeverity.CRITICAL:
-        console.error('🚨 CRITICAL ERROR:', logData);
+        console.error("🚨 CRITICAL ERROR:", logData);
         break;
       case ErrorSeverity.HIGH:
-        console.error('❌ HIGH SEVERITY ERROR:', logData);
+        console.error("❌ HIGH SEVERITY ERROR:", logData);
         break;
       case ErrorSeverity.MEDIUM:
-        console.warn('⚠️ MEDIUM SEVERITY ERROR:', logData);
+        console.warn("⚠️ MEDIUM SEVERITY ERROR:", logData);
         break;
       case ErrorSeverity.LOW:
-        console.info('ℹ️ LOW SEVERITY ERROR:', logData);
+        console.info("ℹ️ LOW SEVERITY ERROR:", logData);
         break;
     }
 
     // Send to external monitoring service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
       this.sendToMonitoring(error);
     }
   }
@@ -311,9 +319,9 @@ class ErrorService {
     try {
       // This would integrate with services like Sentry, LogRocket, etc.
       // For now, we'll just send to a custom endpoint
-      await fetch('/api/errors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/errors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           error: {
             id: error.id,
@@ -322,12 +330,12 @@ class ErrorService {
             category: error.category,
             context: error.context,
             stack: error.stack,
-            timestamp: error.timestamp
-          }
-        })
+            timestamp: error.timestamp,
+          },
+        }),
       });
     } catch (monitoringError) {
-      console.error('Failed to send error to monitoring:', monitoringError);
+      console.error("Failed to send error to monitoring:", monitoringError);
     }
   }
 
@@ -348,11 +356,11 @@ class ErrorService {
    * Notify all error listeners
    */
   private notifyListeners(error: AppError): void {
-    this.errorListeners.forEach(listener => {
+    this.errorListeners.forEach((listener) => {
       try {
         listener(error);
       } catch (listenerError) {
-        console.error('Error listener failed:', listenerError);
+        console.error("Error listener failed:", listenerError);
       }
     });
   }
@@ -368,14 +376,14 @@ class ErrorService {
    * Get errors by category
    */
   getErrorsByCategory(category: ErrorCategory): AppError[] {
-    return this.errors.filter(error => error.category === category);
+    return this.errors.filter((error) => error.category === category);
   }
 
   /**
    * Get errors by severity
    */
   getErrorsBySeverity(severity: ErrorSeverity): AppError[] {
-    return this.errors.filter(error => error.severity === severity);
+    return this.errors.filter((error) => error.severity === severity);
   }
 
   /**
@@ -398,26 +406,28 @@ class ErrorService {
   createRetryFunction(
     originalFunction: () => Promise<any>,
     maxRetries: number = 3,
-    delayMs: number = 1000
+    delayMs: number = 1000,
   ): () => Promise<any> {
     return async () => {
       let lastError: Error;
-      
+
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           return await originalFunction();
         } catch (error) {
           lastError = error as Error;
-          
+
           if (attempt === maxRetries) {
             throw this.handleUnknownError(lastError, {
-              action: 'retry_exhausted',
-              metadata: { maxRetries, attempt }
+              action: "retry_exhausted",
+              metadata: { maxRetries, attempt },
             });
           }
-          
+
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
+          await new Promise((resolve) =>
+            setTimeout(resolve, delayMs * attempt)
+          );
         }
       }
     };
@@ -428,30 +438,30 @@ class ErrorService {
 export const errorService = new ErrorService();
 
 // Global error handler for unhandled errors
-if (typeof window !== 'undefined') {
-  window.addEventListener('error', (event) => {
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (event) => {
     errorService.handleUnknownError(
       new Error(event.error?.message || event.message),
       {
-        component: 'GlobalHandler',
-        action: 'unhandled_error',
+        component: "GlobalHandler",
+        action: "unhandled_error",
         metadata: {
           filename: event.filename,
           lineno: event.lineno,
-          colno: event.colno
-        }
-      }
+          colno: event.colno,
+        },
+      },
     );
   });
 
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener("unhandledrejection", (event) => {
     errorService.handleUnknownError(
-      new Error(event.reason?.message || 'Unhandled promise rejection'),
+      new Error(event.reason?.message || "Unhandled promise rejection"),
       {
-        component: 'GlobalHandler',
-        action: 'unhandled_rejection',
-        metadata: { reason: event.reason }
-      }
+        component: "GlobalHandler",
+        action: "unhandled_rejection",
+        metadata: { reason: event.reason },
+      },
     );
   });
 }

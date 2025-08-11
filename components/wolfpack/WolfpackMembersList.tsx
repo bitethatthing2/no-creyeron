@@ -133,7 +133,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
           'checkMembership',
           'Insufficient permissions',
           'You need to be a member to view Wolf Pack information',
-          { component: 'WolfpackMembersList', metadata: { userId: user.id } }
+          { component: 'WolfpackMembersList', metadata: {conversationid: user.id } }
         )
       }
 
@@ -172,7 +172,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
         {
           component: 'WolfpackMembersList',
           action: 'checkMembership',
-          userId: user?.id
+         conversationid: user?.id
         }
       )
       
@@ -202,7 +202,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
         'joinPack',
         'Insufficient permissions',
         'You need to be a verified member to join the Wolf Pack',
-        { component: 'WolfpackMembersList', userId: user.id }
+        { component: 'WolfpackMembersList',conversationid: user.id }
       )
       return { error: permissionError.userMessage }
     }
@@ -252,7 +252,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
         {
           component: 'WolfpackMembersList',
           action: 'joinPack',
-          userId: user.id,
+         conversationid: user.id,
           metadata: { locationKey }
         }
       )
@@ -272,7 +272,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
         'leavePack',
         'Insufficient permissions',
         'You cannot leave the Wolf Pack at this time',
-        { component: 'WolfpackMembersList', userId: user.id }
+        { component: 'WolfpackMembersList',conversationid: user.id }
       )
       toast.error(permissionError.userMessage)
       return
@@ -302,7 +302,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
         {
           component: 'WolfpackMembersList',
           action: 'leavePack',
-          userId: user.id
+         conversationid: user.id
         }
       )
       

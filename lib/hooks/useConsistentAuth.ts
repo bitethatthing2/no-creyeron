@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 import type {
   AuthChangeEvent,
   Session,
@@ -109,21 +109,27 @@ export function useConsistentAuth(): AuthState {
           "🔐 Auth state changed: INITIAL_SESSION",
           session ? `Found (${session.user.email})` : "None",
         );
-        
+
         if (session) {
           console.log("🔐 Session details:", {
-            userId: session.user.id,
+            conversationid: session.user.id,
             email: session.user.email,
-            expiresAt: new Date(session.expires_at! * 1000).toISOString()
+            expiresAt: new Date(session.expires_at! * 1000).toISOString(),
           });
         }
 
         if (session?.user) {
-          console.log("🔐 Fetching database user for auth_id:", session.user.id);
+          console.log(
+            "🔐 Fetching database user for auth_id:",
+            session.user.id,
+          );
           const dbUser = await fetchDatabaseUser(session.user);
           if (mounted) {
             if (dbUser) {
-              console.log("🔐 Database user found:", { id: dbUser.id, email: dbUser.email });
+              console.log("🔐 Database user found:", {
+                id: dbUser.id,
+                email: dbUser.email,
+              });
             } else {
               console.warn("🔐 No database user found for authenticated user");
             }

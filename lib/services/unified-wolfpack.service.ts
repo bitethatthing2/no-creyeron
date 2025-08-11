@@ -138,7 +138,7 @@ class UnifiedWolfpackService {
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", userId)
+        .eq("id", conversationid)
         .maybeSingle();
 
       if (error) {
@@ -322,10 +322,10 @@ class UnifiedWolfpackService {
 
   async toggleLike(
     videoId: string,
-    userId?: string,
+    conversationid?: string,
   ): Promise<ServiceResponse<{ liked: boolean }>> {
-    // If no userId provided, get from current user
-    let actualUserId = userId;
+    // If noconversationid provided, get from current user
+    let actualUserId = conversationid;
     if (!actualUserId) {
       const auth = await this.requireAuth();
       if (!auth) {
@@ -473,7 +473,7 @@ class UnifiedWolfpackService {
 
   async trackShare(
     videoId: string,
-    userId: string,
+    conversationid: string,
     platform: string,
   ): Promise<ServiceResponse> {
     try {
@@ -482,7 +482,7 @@ class UnifiedWolfpackService {
         .from("wolfpack_shares")
         .insert({
           video_id: videoId,
-          user_id: userId,
+          user_id: conversationid,
           platform,
           created_at: new Date().toISOString(),
         });
@@ -902,13 +902,15 @@ class UnifiedWolfpackService {
   }
 
   async toggleCommentLike(
-    commentId: string
-  ): Promise<ServiceResponse<{
-    success: boolean;
-    action: 'added' | 'removed';
-    user_has_liked: boolean;
-    new_like_count: number;
-  }>> {
+    commentId: string,
+  ): Promise<
+    ServiceResponse<{
+      success: boolean;
+      action: "added" | "removed";
+      user_has_liked: boolean;
+      new_like_count: number;
+    }>
+  > {
     try {
       const currentUser = await this.getCurrentUser();
       if (!currentUser) {
@@ -919,15 +921,15 @@ class UnifiedWolfpackService {
       }
 
       // Call the RPC function to toggle the like
-      const { data, error } = await supabase.rpc('toggle_comment_like', {
-        p_comment_id: commentId
+      const { data, error } = await supabase.rpc("toggle_comment_like", {
+        p_comment_id: commentId,
       });
 
       if (error) throw error;
 
       return {
         success: true,
-        data: data
+        data: data,
       };
     } catch (error) {
       console.error("Error toggling comment like:", error);
@@ -947,7 +949,7 @@ class UnifiedWolfpackService {
   ): Promise<ServiceResponse<WolfpackComment[]>> {
     try {
       const currentUser = await this.getCurrentUser();
-      const userId = currentUser?.id;
+      constconversationid = currentUser?.id;
 
       // Get comments with like status
       const { data: comments, error: commentsError } = await supabase
@@ -982,25 +984,25 @@ class UnifiedWolfpackService {
       // If user is logged in, get their reactions
       let userReactions: Set<string> = new Set();
       if (userId && comments && comments.length > 0) {
-        const commentIds = comments.map(c => c.id);
-        
+        const commentIds = comments.map((c) => c.id);
+
         const { data: reactions, error: reactionsError } = await supabase
           .from("wolfpack_comment_reactions")
           .select("comment_id")
-          .eq("user_id", userId)
+          .eq("user_id", conversationid)
           .eq("reaction_type", "❤️")
           .in("comment_id", commentIds);
 
         if (!reactionsError && reactions) {
-          userReactions = new Set(reactions.map(r => r.comment_id));
+          userReactions = new Set(reactions.map((r) => r.comment_id));
         }
       }
 
       // Enhance comments with like status
-      const enhancedComments = (comments || []).map(comment => ({
+      const enhancedComments = (comments || []).map((comment) => ({
         ...comment,
         user_liked: userReactions.has(comment.id),
-        like_count: comment.like_count || comment.likes_count || 0
+        like_count: comment.like_count || comment.likes_count || 0,
       }));
 
       // Organize into tree structure
@@ -1038,7 +1040,7 @@ class UnifiedWolfpackService {
         replies: [],
         user: comment.users,
         user_liked: comment.user_liked || false,
-        like_count: comment.like_count || 0
+        like_count: comment.like_count || 0,
       });
     });
 
@@ -1064,10 +1066,10 @@ class UnifiedWolfpackService {
 
   async deleteVideo(
     videoId: string,
-    userId?: string,
+    conversationid?: string,
   ): Promise<ServiceResponse> {
-    // If no userId provided, get from current user
-    let actualUserId = userId;
+    // If noconversationid provided, get from current user
+    let actualUserId = conversationid;
     if (!actualUserId) {
       const auth = await this.requireAuth();
       if (!auth) {
@@ -1111,7 +1113,7 @@ class UnifiedWolfpackService {
   // =========================================================================
 
   async sendNotification(params: {
-    userId: string;
+    conversationid: string;
     title: string;
     body: string;
     data?: Record<string, unknown>;
@@ -1238,7 +1240,7 @@ class UnifiedWolfpackService {
       let notified = 0;
       for (const user of users) {
         const result = await this.sendNotification({
-          userId: user.id,
+          conversationid: user.id,
           title: "🎵 DJ Live Now!",
           body: `${eventTitle} - Tune in to the Wolf Pack!`,
           type: "dj_broadcast",
@@ -1280,7 +1282,7 @@ class UnifiedWolfpackService {
       const senderName = this.getDisplayName(fromUser || {} as WolfpackUser);
 
       return await this.sendNotification({
-        userId: toUserId,
+        conversationid: toUserId,
         title: `💬 New message from ${senderName}`,
         body: message.length > 50 ? message.substring(0, 50) + "..." : message,
         type: "message",
@@ -1326,7 +1328,7 @@ class UnifiedWolfpackService {
       const likerName = this.getDisplayName(liker || {} as WolfpackUser);
 
       return await this.sendNotification({
-        userId: video.user_id,
+        conversationid: video.user_id,
         title: "❤️ Someone liked your video!",
         body: `${likerName} liked your post`,
         type: "like",
@@ -1375,7 +1377,7 @@ class UnifiedWolfpackService {
       );
 
       return await this.sendNotification({
-        userId: video.user_id,
+        conversationid: video.user_id,
         title: "💬 New comment on your video!",
         body: `${commenterName}: ${
           comment.length > 50 ? comment.substring(0, 50) + "..." : comment
@@ -1412,7 +1414,7 @@ class UnifiedWolfpackService {
       const followerName = this.getDisplayName(follower || {} as WolfpackUser);
 
       return await this.sendNotification({
-        userId: followingId,
+        conversationid: followingId,
         title: "🐺 New follower!",
         body: `${followerName} started following you`,
         type: "follow",
@@ -1451,7 +1453,7 @@ class UnifiedWolfpackService {
       let notified = 0;
       for (const user of users) {
         const result = await this.sendNotification({
-          userId: user.id,
+          conversationid: user.id,
           title,
           body,
           type: "admin",

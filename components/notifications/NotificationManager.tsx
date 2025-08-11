@@ -13,14 +13,14 @@ import NotificationPreferences from './NotificationPreferences'; // Import your 
 type UserRole = 'admin' | 'bartender' | 'dj' | 'user';
 
 interface NotificationManagerProps {
-  userId?: string;
+ conversationid?: string;
   userRole?: UserRole;
   showPreferences?: boolean;
   compact?: boolean;
 }
 
 export default function NotificationManager({
-  userId,
+ conversationid,
   userRole,
   showPreferences = false,
   compact = false

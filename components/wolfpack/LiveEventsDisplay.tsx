@@ -166,7 +166,7 @@ const EVENT_EMOJIS: Record<string, string> = {
 };
 
 
-export function LiveEventsDisplay({ locationId, userId }: { locationId: string; userId: string }) {
+export function LiveEventsDisplay({ locationId,conversationid }: { locationId: string;conversationid: string }) {
   const { user } = useAuth();
   const [events, setEvents] = useState<LiveEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -422,7 +422,7 @@ export function LiveEventsDisplay({ locationId, userId }: { locationId: string; 
         eventsSubscription.unsubscribe();
       };
     }
-  }, [locationId, userId]);
+  }, [locationId,conversationid]);
 
   // Vote for contestant
   const voteForContestant = async (eventId: string, optionId: string) => {

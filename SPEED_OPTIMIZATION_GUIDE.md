@@ -141,7 +141,7 @@ function MyFeedComponent() {
     updatewolfpack_videostats,
     refreshFeed,
     loadMore
-  } = useRealtimeFeed({ userId: user?.id });
+  } = useRealtimeFeed({conversationid: user?.id });
 
   // wolfpack_videos automatically update when database changes
   return <FeedDisplay wolfpack_videos={wolfpack_videos} />;
@@ -154,7 +154,7 @@ import { useOptimisticActions } from '@/lib/hooks/useOptimisticActions';
 
 function VideoCard({ video }) {
   const { handleLike, getOptimisticwolfpack_videostate } = useOptimisticActions({
-    userId: user?.id,
+   conversationid: user?.id,
     onUpdatewolfpack_videostats: (videoId, updates) => {
       // Update parent component immediately
       updateVideo(videoId, updates);

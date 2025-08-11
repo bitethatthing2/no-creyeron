@@ -10,7 +10,11 @@ export async function togglePostLike(
 ): Promise<{ liked: boolean; likeCount: number }> {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  console.log("Auth check:", { user: !!user, userId: user?.id, authError });
+  console.log("Auth check:", {
+    user: !!user,
+    conversationid: user?.id,
+    authError,
+  });
 
   if (!user) {
     throw new Error("User not authenticated");

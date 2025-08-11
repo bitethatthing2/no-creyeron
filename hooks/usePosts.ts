@@ -4,8 +4,8 @@ import {
   deletePost,
   getFeedPosts as getFeedwolfpack_posts,
   getPost,
-  getUserPosts as getUserwolfpack_posts,
   getPostStats as getwolfpack_poststats,
+  getUserPosts as getUserwolfpack_posts,
   incrementViewCount,
   updatePost,
 } from "@/lib/database/posts";
@@ -246,7 +246,7 @@ export function useAuthwolfpack_posts(userId: string, limit = 20) {
 
       const currentOffset = reset ? 0 : offset;
       const newwolfpack_posts = await getUserwolfpack_posts(
-        userId,
+        conversationid,
         limit,
         currentOffset,
       );
@@ -270,7 +270,7 @@ export function useAuthwolfpack_posts(userId: string, limit = 20) {
 
   useEffect(() => {
     loadwolfpack_posts(true);
-  }, [userId]); // Reset when userId changes
+  }, [userId]); // Reset whenconversationid changes
 
   const loadMore = useCallback(async () => {
     if (!hasMore || loading) return;

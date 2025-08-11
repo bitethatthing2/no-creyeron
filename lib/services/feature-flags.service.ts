@@ -33,7 +33,7 @@ class FeatureFlagsService {
    */
   async checkFeatureAccess(
     flagName: string,
-    userId: string,
+    conversationid: string,
     useCache: boolean = true,
   ): Promise<FeatureAccessResult> {
     const cacheKey = `${flagName}-${userId}`;
@@ -49,7 +49,7 @@ class FeatureFlagsService {
     try {
       const { data, error } = await this.supabase.rpc("check_feature_access", {
         p_flag_name: flagName,
-        p_user_id: userId,
+        p_user_id: conversationid,
       });
 
       if (error) {
@@ -84,10 +84,12 @@ class FeatureFlagsService {
    */
   async checkMultipleFeatures(
     flagNames: string[],
-    userId: string,
+    conversationid: string,
   ): Promise<Record<string, FeatureAccessResult>> {
     const results = await Promise.allSettled(
-      flagNames.map((flagName) => this.checkFeatureAccess(flagName, userId)),
+      flagNames.map((flagName) =>
+        this.checkFeatureAccess(flagName, conversationid)
+      ),
     );
 
     const featureMap: Record<string, FeatureAccessResult> = {};

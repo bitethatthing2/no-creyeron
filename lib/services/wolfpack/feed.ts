@@ -125,7 +125,7 @@ interface UpdatePostData {
 }
 
 interface FeedOptions extends PaginationOptions {
-  userId?: string;
+  conversationid?: string;
   currentUserId?: string;
 }
 
@@ -690,11 +690,11 @@ export class WolfpackFeedService {
    * Get user's posts
    */
   static getUserPosts = withErrorHandling(async (
-    userId: string,
+    conversationid: string,
     options: PaginationOptions = {},
   ): Promise<FetchFeedResponse> => {
     validateUUID(userId, "User ID");
-    return this.fetchFeedItems({ ...options, userId });
+    return this.fetchFeedItems({ ...options, conversationid });
   }, "WolfpackFeedService.getUserPosts");
 
   /**

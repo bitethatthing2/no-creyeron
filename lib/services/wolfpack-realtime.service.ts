@@ -265,7 +265,7 @@ class WolfpackRealtimeService {
    * Subscribe to direct messages
    */
   subscribeToDirectMessages(
-    userId: string,
+    conversationid: string,
     onMessage: (message: any) => void,
   ): RealtimeSubscription {
     const channelName = `dm-${userId}`;

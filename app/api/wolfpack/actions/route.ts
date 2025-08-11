@@ -6,11 +6,12 @@ import WolfpackNotificationService from "@/lib/services/wolfpack-notification.se
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, videoId, userId, targetUserId, content, parentId } = body;
+    const { action, videoId, conversationid, targetUserId, content, parentId } =
+      body;
 
     if (!action || !userId) {
       return NextResponse.json(
-        { error: "Missing required fields: action, userId" },
+        { error: "Missing required fields: action,conversationid" },
         { status: 400 },
       );
     }
@@ -19,21 +20,25 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "like":
-        return await handleLikeAction(supabase, videoId, userId);
+        return await handleLikeAction(supabase, videoId, conversationid);
       case "unlike":
-        return await handleUnlikeAction(supabase, videoId, userId);
+        return await handleUnlikeAction(supabase, videoId, conversationid);
       case "comment":
         return await handleCommentAction(
           supabase,
           videoId,
-          userId,
+          conversationid,
           content,
           parentId,
         );
       case "follow":
-        return await handleFollowAction(supabase, userId, targetUserId);
+        return await handleFollowAction(supabase, conversationid, targetUserId);
       case "unfollow":
-        return await handleUnfollowAction(supabase, userId, targetUserId);
+        return await handleUnfollowAction(
+          supabase,
+          conversationid,
+          targetUserId,
+        );
       default:
         return NextResponse.json(
           { error: "Invalid action" },
@@ -52,7 +57,7 @@ export async function POST(request: NextRequest) {
 async function handleLikeAction(
   supabase: any,
   videoId: string,
-  userId: string,
+  conversationid: string,
 ) {
   try {
     // Check if like already exists
@@ -60,7 +65,7 @@ async function handleLikeAction(
       .from("wolfpack_post_likes")
       .select("id")
       .eq("video_id", videoId)
-      .eq("user_id", userId)
+      .eq("user_id", conversationid)
       .maybeSingle();
 
     if (existingLike) {
@@ -75,7 +80,7 @@ async function handleLikeAction(
       .from("wolfpack_post_likes")
       .insert({
         video_id: videoId,
-        user_id: userId,
+        user_id: conversationid,
       });
 
     if (likeError) throw likeError;
@@ -97,12 +102,12 @@ async function handleLikeAction(
       .eq("id", videoId)
       .single();
 
-    if (video && video.user_id !== userId) {
+    if (video && video.user_id !== conversationid) {
       // Send notification asynchronously (don't wait for it)
       WolfpackNotificationService.notifyVideoLiked(
         videoId,
         video.user_id,
-        userId,
+        conversationid,
       ).catch(console.error);
     }
 
@@ -122,7 +127,7 @@ async function handleLikeAction(
 async function handleUnlikeAction(
   supabase: any,
   videoId: string,
-  userId: string,
+  conversationid: string,
 ) {
   try {
     // Remove like
@@ -130,7 +135,7 @@ async function handleUnlikeAction(
       .from("wolfpack_post_likes")
       .delete()
       .eq("video_id", videoId)
-      .eq("user_id", userId);
+      .eq("user_id", conversationid);
 
     if (unlikeError) throw unlikeError;
 
@@ -160,7 +165,7 @@ async function handleUnlikeAction(
 async function handleCommentAction(
   supabase: any,
   videoId: string,
-  userId: string,
+  conversationid: string,
   content: string,
   parentId?: string,
 ) {
@@ -177,7 +182,7 @@ async function handleCommentAction(
       .from("wolfpack_comments")
       .insert({
         video_id: videoId,
-        user_id: userId,
+        user_id: conversationid,
         content: content.trim(),
         parent_comment_id: parentId || null,
       })
@@ -217,12 +222,12 @@ async function handleCommentAction(
       .eq("id", videoId)
       .single();
 
-    if (video && video.user_id !== userId) {
+    if (video && video.user_id !== conversationid) {
       // Send comment notification asynchronously
       WolfpackNotificationService.notifyVideoCommented(
         videoId,
         video.user_id,
-        userId,
+        conversationid,
         content.trim(),
       ).catch(console.error);
     }
@@ -236,7 +241,7 @@ async function handleCommentAction(
           if (mentionedUserIds.length > 0) {
             return WolfpackNotificationService.notifyMentionedUsers(
               videoId,
-              userId,
+              conversationid,
               content.trim(),
               mentionedUserIds,
             );

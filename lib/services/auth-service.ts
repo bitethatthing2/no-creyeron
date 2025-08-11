@@ -3,56 +3,56 @@
  * Provides complete control over user security and permissions
  */
 
-import { supabase } from '@/lib/supabase';
-import { errorService, ErrorSeverity, ErrorCategory } from './error-service';
-import { dataService } from './data-service';
+import { supabase } from "@/lib/supabase";
+import { ErrorCategory, errorService, ErrorSeverity } from "./error-service";
+import { dataService } from "./data-service";
 
 export enum UserRole {
-  GUEST = 'guest',
-  MEMBER = 'member',
-  WOLFPACK_MEMBER = 'wolfpack_member',
-  VIP = 'vip',
-  DJ = 'dj',
-  BARTENDER = 'bartender',
-  ADMIN = 'admin',
-  SUPER_ADMIN = 'super_admin'
+  GUEST = "guest",
+  MEMBER = "member",
+  WOLFPACK_MEMBER = "wolfpack_member",
+  VIP = "vip",
+  DJ = "dj",
+  BARTENDER = "bartender",
+  ADMIN = "admin",
+  SUPER_ADMIN = "super_admin",
 }
 
 export enum Permission {
   // Basic permissions
-  VIEW_MENU = 'view_menu',
-  PLACE_ORDER = 'place_order',
-  VIEW_PROFILE = 'view_profile',
-  EDIT_PROFILE = 'edit_profile',
-  
+  VIEW_MENU = "view_menu",
+  PLACE_ORDER = "place_order",
+  VIEW_PROFILE = "view_profile",
+  EDIT_PROFILE = "edit_profile",
+
   // Wolfpack permissions
-  JOIN_WOLFPACK = 'join_wolfpack',
-  VIEW_WOLF_PACK_MEMBERS = 'view_wolf-pack-members',
-  SEND_PRIVATE_MESSAGES = 'send_private_messages',
-  PARTICIPATE_IN_EVENTS = 'participate_in_events',
-  VOTE_IN_EVENTS = 'vote_in_events',
-  
+  JOIN_WOLFPACK = "join_wolfpack",
+  VIEW_WOLF_PACK_MEMBERS = "view_wolf-pack-members",
+  SEND_PRIVATE_MESSAGES = "send_private_messages",
+  PARTICIPATE_IN_EVENTS = "participate_in_events",
+  VOTE_IN_EVENTS = "vote_in_events",
+
   // DJ permissions
-  CREATE_EVENTS = 'create_events',
-  MANAGE_EVENTS = 'manage_events',
-  SEND_MASS_MESSAGES = 'send_mass_messages',
-  VIEW_MEMBER_DETAILS = 'view_member_details',
-  
+  CREATE_EVENTS = "create_events",
+  MANAGE_EVENTS = "manage_events",
+  SEND_MASS_MESSAGES = "send_mass_messages",
+  VIEW_MEMBER_DETAILS = "view_member_details",
+
   // Bartender permissions
-  MANAGE_ORDERS = 'manage_orders',
-  VIEW_ORDER_DETAILS = 'view_order_details',
-  UPDATE_ORDER_STATUS = 'update_order_status',
-  
+  MANAGE_ORDERS = "manage_orders",
+  VIEW_ORDER_DETAILS = "view_order_details",
+  UPDATE_ORDER_STATUS = "update_order_status",
+
   // Admin permissions
-  MANAGE_USERS = 'manage_users',
-  MANAGE_MENU = 'manage_menu',
-  VIEW_ANALYTICS = 'view_analytics',
-  MANAGE_LOCATIONS = 'manage_locations',
-  
+  MANAGE_USERS = "manage_users",
+  MANAGE_MENU = "manage_menu",
+  VIEW_ANALYTICS = "view_analytics",
+  MANAGE_LOCATIONS = "manage_locations",
+
   // Super admin permissions
-  MANAGE_ADMINS = 'manage_admins',
-  SYSTEM_SETTINGS = 'system_settings',
-  EMERGENCY_ACCESS = 'emergency_access'
+  MANAGE_ADMINS = "manage_admins",
+  SYSTEM_SETTINGS = "system_settings",
+  EMERGENCY_ACCESS = "emergency_access",
 }
 
 interface AuthUser {
@@ -110,14 +110,14 @@ class AuthService {
   // Role-Permission mapping
   private rolePermissions: Record<UserRole, Permission[]> = {
     [UserRole.GUEST]: [
-      Permission.VIEW_MENU
+      Permission.VIEW_MENU,
     ],
     [UserRole.MEMBER]: [
       Permission.VIEW_MENU,
       Permission.PLACE_ORDER,
       Permission.VIEW_PROFILE,
       Permission.EDIT_PROFILE,
-      Permission.JOIN_WOLFPACK
+      Permission.JOIN_WOLFPACK,
     ],
     [UserRole.WOLFPACK_MEMBER]: [
       Permission.VIEW_MENU,
@@ -127,7 +127,7 @@ class AuthService {
       Permission.VIEW_WOLF_PACK_MEMBERS,
       Permission.SEND_PRIVATE_MESSAGES,
       Permission.PARTICIPATE_IN_EVENTS,
-      Permission.VOTE_IN_EVENTS
+      Permission.VOTE_IN_EVENTS,
     ],
     [UserRole.VIP]: [
       Permission.VIEW_MENU,
@@ -138,7 +138,7 @@ class AuthService {
       Permission.SEND_PRIVATE_MESSAGES,
       Permission.PARTICIPATE_IN_EVENTS,
       Permission.VOTE_IN_EVENTS,
-      Permission.VIEW_MEMBER_DETAILS
+      Permission.VIEW_MEMBER_DETAILS,
     ],
     [UserRole.DJ]: [
       Permission.VIEW_MENU,
@@ -152,7 +152,7 @@ class AuthService {
       Permission.CREATE_EVENTS,
       Permission.MANAGE_EVENTS,
       Permission.SEND_MASS_MESSAGES,
-      Permission.VIEW_MEMBER_DETAILS
+      Permission.VIEW_MEMBER_DETAILS,
     ],
     [UserRole.BARTENDER]: [
       Permission.VIEW_MENU,
@@ -160,15 +160,15 @@ class AuthService {
       Permission.EDIT_PROFILE,
       Permission.MANAGE_ORDERS,
       Permission.VIEW_ORDER_DETAILS,
-      Permission.UPDATE_ORDER_STATUS
+      Permission.UPDATE_ORDER_STATUS,
     ],
     [UserRole.ADMIN]: [
-      ...Object.values(Permission).filter(p => 
-        p !== Permission.MANAGE_ADMINS && 
+      ...Object.values(Permission).filter((p) =>
+        p !== Permission.MANAGE_ADMINS &&
         p !== Permission.EMERGENCY_ACCESS
-      )
+      ),
     ],
-    [UserRole.SUPER_ADMIN]: Object.values(Permission)
+    [UserRole.SUPER_ADMIN]: Object.values(Permission),
   };
 
   /**
@@ -178,7 +178,7 @@ class AuthService {
     try {
       // Get current session
       const { data: { session }, error } = await this.client.auth.getSession();
-      
+
       if (error) {
         throw errorService.handleAuthError(error);
       }
@@ -190,19 +190,18 @@ class AuthService {
 
       // Listen for auth changes
       this.client.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (event === "SIGNED_IN" && session?.user) {
           await this.loadUserProfile(session.user.id);
           this.setupSessionRefresh();
-        } else if (event === 'SIGNED_OUT') {
+        } else if (event === "SIGNED_OUT") {
           this.clearUserSession();
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        } else if (event === "TOKEN_REFRESHED" && session?.user) {
           await this.loadUserProfile(session.user.id);
         }
       });
-
     } catch (error) {
       errorService.handleAuthError(error as Error, {
-        action: 'initialize'
+        action: "initialize",
       });
     }
   }
@@ -216,18 +215,18 @@ class AuthService {
 
       const { data, error } = await this.client.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
       if (error) {
         throw errorService.handleAuthError(error, {
-          action: 'signIn',
-          email
+          action: "signIn",
+          email,
         });
       }
 
       if (!data.user) {
-        throw new Error('No user returned from sign in');
+        throw new Error("No user returned from sign in");
       }
 
       // Try to load user profile, create one if it doesn't exist
@@ -235,12 +234,14 @@ class AuthService {
       try {
         user = await this.loadUserProfile(data.user.id);
       } catch (error) {
-        console.log('User profile not found, creating one for existing user...');
+        console.log(
+          "User profile not found, creating one for existing user...",
+        );
         // This handles users who signed up before the trigger was implemented
         await this.createMissingUserProfile(data.user);
         user = await this.loadUserProfile(data.user.id);
       }
-      
+
       // Update login metadata
       await this.updateLoginMetadata(user.id);
 
@@ -250,8 +251,8 @@ class AuthService {
       return user;
     } catch (error) {
       throw errorService.handleAuthError(error as Error, {
-        action: 'signIn',
-        email: credentials.email
+        action: "signIn",
+        email: credentials.email,
       });
     }
   }
@@ -261,13 +262,20 @@ class AuthService {
    */
   async signUp(signupData: SignupData): Promise<AuthUser> {
     try {
-      const { email, password, firstName, lastName, displayName, agreeToTerms } = signupData;
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        displayName,
+        agreeToTerms,
+      } = signupData;
 
       if (!agreeToTerms) {
         throw errorService.handleValidationError(
-          'agreeToTerms',
+          "agreeToTerms",
           false,
-          'Must agree to terms and conditions'
+          "Must agree to terms and conditions",
         );
       }
 
@@ -279,36 +287,38 @@ class AuthService {
           data: {
             first_name: firstName,
             last_name: lastName,
-            display_name: displayName || `${firstName} ${lastName}`
-          }
-        }
+            display_name: displayName || `${firstName} ${lastName}`,
+          },
+        },
       });
 
       if (error) {
         throw errorService.handleAuthError(error, {
-          action: 'signUp',
-          email
+          action: "signUp",
+          email,
         });
       }
 
       if (!data.user) {
-        throw new Error('No user returned from sign up');
+        throw new Error("No user returned from sign up");
       }
 
       // User profile will be created automatically by database trigger
-      console.log('Sign up successful - user profile will be created automatically by database trigger');
+      console.log(
+        "Sign up successful - user profile will be created automatically by database trigger",
+      );
 
       // Wait a moment for the trigger to complete, then load the profile
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const user = await this.loadUserProfile(data.user.id);
       this.notifyAuthListeners(user);
 
       return user;
     } catch (error) {
       throw errorService.handleAuthError(error as Error, {
-        action: 'signUp',
-        email: signupData.email
+        action: "signUp",
+        email: signupData.email,
       });
     }
   }
@@ -319,17 +329,17 @@ class AuthService {
   async signOut(): Promise<void> {
     try {
       const { error } = await this.client.auth.signOut();
-      
+
       if (error) {
         throw errorService.handleAuthError(error, {
-          action: 'signOut'
+          action: "signOut",
         });
       }
 
       this.clearUserSession();
     } catch (error) {
       errorService.handleAuthError(error as Error, {
-        action: 'signOut'
+        action: "signOut",
       });
     }
   }
@@ -344,8 +354,8 @@ class AuthService {
   /**
    * Check if user has specific permission
    */
-  hasPermission(permission: Permission, userId?: string): boolean {
-    const user = userId ? null : this.currentUser; // For now, only check current user
+  hasPermission(permission: Permission, conversationid?: string): boolean {
+    const user = conversationid ? null : this.currentUser; // For now, only check current user
     if (!user) return false;
 
     return user.permissions.includes(permission);
@@ -357,7 +367,7 @@ class AuthService {
   hasAnyPermission(permissions: Permission[]): boolean {
     if (!this.currentUser) return false;
 
-    return permissions.some(permission => 
+    return permissions.some((permission) =>
       this.currentUser!.permissions.includes(permission)
     );
   }
@@ -368,7 +378,7 @@ class AuthService {
   hasAllPermissions(permissions: Permission[]): boolean {
     if (!this.currentUser) return false;
 
-    return permissions.every(permission => 
+    return permissions.every((permission) =>
       this.currentUser!.permissions.includes(permission)
     );
   }
@@ -394,20 +404,20 @@ class AuthService {
   async updateUserRole(userId: string, newRole: UserRole): Promise<void> {
     if (!this.hasPermission(Permission.MANAGE_USERS)) {
       throw errorService.createError(
-        'Insufficient permissions to update user role',
-        'You don\'t have permission to perform this action',
+        "Insufficient permissions to update user role",
+        "You don't have permission to perform this action",
         ErrorSeverity.HIGH,
         ErrorCategory.AUTHORIZATION,
-        { action: 'updateUserRole', targetUserId: userId, newRole }
+        { action: "updateUserRole", targetUserId: conversationid, newRole },
       );
     }
 
     try {
       await dataService.updateUser(userId, { role: newRole });
-      
+
       // Update permissions cache
       this.permissionCache.delete(userId);
-      
+
       // If updating current user, reload profile
       if (userId === this.currentUser?.id) {
         await this.loadUserProfile(userId);
@@ -415,8 +425,8 @@ class AuthService {
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        'updateUserRole',
-        { userId, newRole }
+        "updateUserRole",
+        { conversationid, newRole },
       );
     }
   }
@@ -426,16 +436,16 @@ class AuthService {
    */
   async joinWolfpack(): Promise<void> {
     if (!this.currentUser) {
-      throw errorService.handleAuthError(new Error('Not authenticated'));
+      throw errorService.handleAuthError(new Error("Not authenticated"));
     }
 
     if (!this.hasPermission(Permission.JOIN_WOLFPACK)) {
       throw errorService.createError(
-        'Cannot join Wolfpack',
-        'You need to be a member to join the Wolfpack',
+        "Cannot join Wolfpack",
+        "You need to be a member to join the Wolfpack",
         ErrorSeverity.MEDIUM,
         ErrorCategory.AUTHORIZATION,
-        { action: 'joinWolfpack' }
+        { action: "joinWolfpack" },
       );
     }
 
@@ -443,7 +453,7 @@ class AuthService {
       await dataService.updateUser(this.currentUser.id, {
         is_wolfpack_member: true,
         wolfpack_join_date: new Date().toISOString(),
-        role: UserRole.WOLFPACK_MEMBER
+        role: UserRole.WOLFPACK_MEMBER,
       });
 
       // Reload user profile with new permissions
@@ -451,7 +461,7 @@ class AuthService {
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        'joinWolfpack'
+        "joinWolfpack",
       );
     }
   }
@@ -475,16 +485,16 @@ class AuthService {
   private async loadUserProfile(userId: string): Promise<AuthUser> {
     try {
       const userData = await dataService.getUser(userId);
-      
+
       if (!userData) {
-        throw new Error('User profile not found');
+        throw new Error("User profile not found");
       }
 
       const role = userData.role || UserRole.MEMBER;
       const permissions = this.getRolePermissions(role);
 
       const user: AuthUser = {
-        id: userId,
+        id: conversationid,
         email: userData.email,
         role,
         permissions,
@@ -497,20 +507,22 @@ class AuthService {
           profileImageUrl: userData.profile_image_url,
           vibeStatus: userData.vibe_status,
           bio: userData.bio,
-          favoriteDrink: userData.favorite_drink
+          favoriteDrink: userData.favorite_drink,
         },
         session: {
-          accessToken: '', // Will be set by Supabase
-          refreshToken: '',
+          accessToken: "", // Will be set by Supabase
+          refreshToken: "",
           expiresAt: new Date(Date.now() + 3600000), // 1 hour
-          sessionId: `session_${Date.now()}`
+          sessionId: `session_${Date.now()}`,
         },
         metadata: {
           lastLoginAt: new Date(userData.last_login_at || Date.now()),
           loginCount: userData.login_count || 0,
           preferredLocation: userData.preferred_location,
-          deviceInfo: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
-        }
+          deviceInfo: typeof navigator !== "undefined"
+            ? navigator.userAgent
+            : undefined,
+        },
       };
 
       this.currentUser = user;
@@ -520,41 +532,42 @@ class AuthService {
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        'loadUserProfile',
-        { userId }
+        "loadUserProfile",
+        { conversationid },
       );
     }
   }
 
   // Note: createUserProfile removed - user profiles are now created automatically by database trigger
-  
+
   private async createMissingUserProfile(authUser: any): Promise<void> {
     try {
-      const displayName = authUser.user_metadata?.display_name || 
-                          authUser.user_metadata?.full_name || 
-                          authUser.email?.split('@')[0] || 
-                          'User';
-      
+      const displayName = authUser.user_metadata?.display_name ||
+        authUser.user_metadata?.full_name ||
+        authUser.email?.split("@")[0] ||
+        "User";
+
       await dataService.executeQuery(
-        () => this.client
-          .from('users')
-          .insert({
-            auth_id: authUser.id,
-            email: authUser.email || '',
-            first_name: displayName.split(' ')[0] || '',
-            last_name: displayName.split(' ').slice(1).join(' ') || '',
-            display_name: displayName,
-            role: UserRole.MEMBER,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }),
-        'createMissingUserProfile'
+        () =>
+          this.client
+            .from("users")
+            .insert({
+              auth_id: authUser.id,
+              email: authUser.email || "",
+              first_name: displayName.split(" ")[0] || "",
+              last_name: displayName.split(" ").slice(1).join(" ") || "",
+              display_name: displayName,
+              role: UserRole.MEMBER,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }),
+        "createMissingUserProfile",
       );
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        'createMissingUserProfile',
-        { userId: authUser.id }
+        "createMissingUserProfile",
+        { conversationid: authUser.id },
       );
     }
   }
@@ -562,17 +575,18 @@ class AuthService {
   private async updateLoginMetadata(userId: string): Promise<void> {
     try {
       await dataService.executeQuery(
-        () => this.client
-          .from('users')
-          .update({
-            last_login: new Date().toISOString()
-            // login_count field not available in schema
-          })
-          .eq('id', userId),
-        'updateLoginMetadata'
+        () =>
+          this.client
+            .from("users")
+            .update({
+              last_login: new Date().toISOString(),
+              // login_count field not available in schema
+            })
+            .eq("id", conversationid),
+        "updateLoginMetadata",
       );
     } catch (error) {
-      console.warn('Failed to update login metadata:', error);
+      console.warn("Failed to update login metadata:", error);
     }
   }
 
@@ -594,7 +608,7 @@ class AuthService {
   private clearUserSession(): void {
     this.currentUser = null;
     this.permissionCache.clear();
-    
+
     if (this.sessionRefreshTimer) {
       clearInterval(this.sessionRefreshTimer);
       this.sessionRefreshTimer = null;
@@ -604,11 +618,11 @@ class AuthService {
   }
 
   private notifyAuthListeners(user: AuthUser | null): void {
-    this.authListeners.forEach(listener => {
+    this.authListeners.forEach((listener) => {
       try {
         listener(user);
       } catch (error) {
-        console.error('Auth listener error:', error);
+        console.error("Auth listener error:", error);
       }
     });
   }
@@ -618,13 +632,9 @@ class AuthService {
 export const authService = new AuthService();
 
 // Initialize on module load
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   authService.initialize();
 }
 
 // Export types
-export type {
-  AuthUser,
-  LoginCredentials,
-  SignupData
-};
+export type { AuthUser, LoginCredentials, SignupData };

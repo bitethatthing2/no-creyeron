@@ -3,26 +3,26 @@
  * Provides controlled, optimized access to all data operations
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 // Simple error handling without external dependency
 const errorService = {
   logError: (error: Error, context: string) => {
     console.error(`[${context}] ${error.message}`, error);
-  }
+  },
 };
 
 enum ErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical",
 }
 
 enum ErrorCategory {
-  DATABASE = 'database',
-  NETWORK = 'network',
-  VALIDATION = 'validation',
-  AUTH = 'auth'
+  DATABASE = "database",
+  NETWORK = "network",
+  VALIDATION = "validation",
+  AUTH = "auth",
 }
 
 interface QueryOptions {
@@ -51,14 +51,14 @@ class DataService {
   async executeQuery<T>(
     queryBuilder: () => Promise<{ data: T; error: any }>,
     operation: string,
-    options: QueryOptions = {}
+    options: QueryOptions = {},
   ): Promise<T> {
     const {
       useCache = false,
       cacheKey,
       cacheTTL = this.defaultCacheTTL,
       timeout = this.defaultTimeout,
-      retries = 2
+      retries = 2,
     } = options;
 
     // Check cache first
@@ -73,12 +73,12 @@ class DataService {
     const executeWithRetry = async (attempt: number = 1): Promise<T> => {
       try {
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Query timeout')), timeout);
+          setTimeout(() => reject(new Error("Query timeout")), timeout);
         });
 
         const { data, error } = await Promise.race([
           queryBuilder(),
-          timeoutPromise
+          timeoutPromise,
         ]);
 
         if (error) {
@@ -93,11 +93,11 @@ class DataService {
         return data;
       } catch (error) {
         const err = error as Error;
-        
+
         // Retry logic for retryable errors
         if (attempt <= retries && this.isRetryableError(err)) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
           return executeWithRetry(attempt + 1);
         }
 
@@ -106,7 +106,7 @@ class DataService {
           attempt,
           maxRetries: retries,
           cacheKey,
-          timeout
+          timeout,
         });
       }
     };
@@ -121,45 +121,46 @@ class DataService {
     return this.executeQuery(
       async () => {
         let query = this.supabase
-          .from('users')
+          .from("users")
           .select(`
             id, display_name, wolf_emoji, vibe_status,
             profile_image_url, bio, favorite_drink,
             is_wolfpack_member, wolfpack_join_date,
             last_seen_at, is_online
           `)
-          .eq('is_wolfpack_member', true)
-          .order('last_seen_at', { ascending: false })
+          .eq("is_wolfpack_member", true)
+          .order("last_seen_at", { ascending: false })
           .limit(100);
 
         if (location) {
-          query = query.eq('preferred_location', location);
+          query = query.eq("preferred_location", location);
         }
 
         return await query;
       },
-      'getWolfpackMembers',
+      "getWolfpackMembers",
       {
         useCache: true,
-        cacheKey: `wolf-pack-members_${location || 'all'}`,
-        cacheTTL: 60000 // 1 minute for member data
-      }
+        cacheKey: `wolf-pack-members_${location || "all"}`,
+        cacheTTL: 60000, // 1 minute for member data
+      },
     );
   }
 
   async updateWolfpackMember(userId: string, updates: any): Promise<any> {
     const result = await this.executeQuery(
-      async () => await this.supabase
-        .from('users')
-        .update(updates)
-        .eq('id', userId)
-        .select()
-        .single(),
-      'updateWolfpackMember'
+      async () =>
+        await this.supabase
+          .from("users")
+          .update(updates)
+          .eq("id", conversationid)
+          .select()
+          .single(),
+      "updateWolfpackMember",
     );
 
     // Invalidate related cache entries
-    this.invalidateCachePattern('wolf-pack-members_');
+    this.invalidateCachePattern("wolf-pack-members_");
     this.invalidateCachePattern(`user_${userId}`);
 
     return result;
@@ -168,49 +169,63 @@ class DataService {
   /**
    * Private Messages Operations
    */
-  async getPrivateMessages(userId1: string, userId2: string, limit: number = 100): Promise<any[]> {
+  async getPrivateMessages(
+    userId1: string,
+    conversationid2: string,
+    limit: number = 100,
+  ): Promise<any[]> {
     return this.executeQuery(
-      async () => await this.supabase
-        .from('wolf_private_messages')
-        .select(`
+      async () =>
+        await this.supabase
+          .from("wolf_private_messages")
+          .select(`
           *,
           sender_user:users!wolf_private_messages_sender_id_fkey(
             display_name, wolf_emoji, profile_image_url
           )
         `)
-        .or(`and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: true })
-        .limit(limit),
-      'getPrivateMessages',
+          .or(
+            `and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`,
+          )
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: true })
+          .limit(limit),
+      "getPrivateMessages",
       {
         useCache: true,
-        cacheKey: `messages_${[userId1, userId2].sort().join('_')}`,
-        cacheTTL: 30000 // 30 seconds for messages
-      }
+        cacheKey: `messages_${[userId1, conversationid2].sort().join("_")}`,
+        cacheTTL: 30000, // 30 seconds for messages
+      },
     );
   }
 
-  async sendPrivateMessage(senderId: string, receiverId: string, message: string): Promise<any> {
+  async sendPrivateMessage(
+    senderId: string,
+    receiverId: string,
+    message: string,
+  ): Promise<any> {
     const result = await this.executeQuery(
-      async () => await this.supabase
-        .from('wolf_private_messages')
-        .insert({
-          sender_id: senderId,
-          receiver_id: receiverId,
-          message,
-          is_read: false,
-          is_deleted: false,
-          flagged: false,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single(),
-      'sendPrivateMessage'
+      async () =>
+        await this.supabase
+          .from("wolf_private_messages")
+          .insert({
+            sender_id: senderId,
+            receiver_id: receiverId,
+            message,
+            is_read: false,
+            is_deleted: false,
+            flagged: false,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single(),
+      "sendPrivateMessage",
     );
 
     // Invalidate message cache
-    this.invalidateCachePattern(`messages_${[senderId, receiverId].sort().join('_')}`);
+    this.invalidateCachePattern(
+      `messages_${[senderId, receiverId].sort().join("_")}`,
+    );
 
     return result;
   }
@@ -222,17 +237,17 @@ class DataService {
     return this.executeQuery(
       async () => {
         let query = this.supabase
-          .from('food_drink_items')
+          .from("food_drink_items")
           .select(`
             *, 
             category:food_drink_categories(*),
             modifiers:menu_item_modifiers(*)
           `)
-          .eq('is_available', true)
-          .order('display_order');
+          .eq("is_available", true)
+          .order("display_order");
 
         if (categoryId) {
-          query = query.eq('category_id', categoryId);
+          query = query.eq("category_id", categoryId);
         }
 
         // TODO: Add location filtering when implemented in schema
@@ -242,12 +257,12 @@ class DataService {
 
         return query;
       },
-      'getMenuItems',
+      "getMenuItems",
       {
         useCache: true,
-        cacheKey: `menu_items_${categoryId || 'all'}_${location || 'all'}`,
-        cacheTTL: 600000 // 10 minutes for menu data
-      }
+        cacheKey: `menu_items_${categoryId || "all"}_${location || "all"}`,
+        cacheTTL: 600000, // 10 minutes for menu data
+      },
     );
   }
 
@@ -255,10 +270,10 @@ class DataService {
     return this.executeQuery(
       async () => {
         let query = this.supabase
-          .from('food_drink_categories')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
+          .from("food_drink_categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order");
 
         // TODO: Add location filtering when implemented in schema
         // if (location) {
@@ -267,12 +282,12 @@ class DataService {
 
         return query;
       },
-      'getMenuCategories',
+      "getMenuCategories",
       {
         useCache: true,
-        cacheKey: `menu_categories_${location || 'all'}`,
-        cacheTTL: 600000 // 10 minutes
-      }
+        cacheKey: `menu_categories_${location || "all"}`,
+        cacheTTL: 600000, // 10 minutes
+      },
     );
   }
 
@@ -283,46 +298,47 @@ class DataService {
     return this.executeQuery(
       async () => {
         let query = this.supabase
-          .from('dj_events')
+          .from("dj_events")
           .select(`
             *,
             contestants:dj_event_participants(*),
             votes:wolf_pack_votes(*)
           `)
-          .order('created_at', { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(20);
 
         if (location) {
-          query = query.eq('location_id', location);
+          query = query.eq("location_id", location);
         }
 
         if (status) {
-          query = query.eq('status', status);
+          query = query.eq("status", status);
         }
 
         return query;
       },
-      'getDJEvents',
+      "getDJEvents",
       {
         useCache: true,
-        cacheKey: `dj_events_${location || 'all'}_${status || 'all'}`,
-        cacheTTL: 30000 // 30 seconds for live events
-      }
+        cacheKey: `dj_events_${location || "all"}_${status || "all"}`,
+        cacheTTL: 30000, // 30 seconds for live events
+      },
     );
   }
 
   async createDJEvent(eventData: any): Promise<any> {
     const result = await this.executeQuery(
-      async () => await this.supabase
-        .from('dj_events')
-        .insert(eventData)
-        .select()
-        .single(),
-      'createDJEvent'
+      async () =>
+        await this.supabase
+          .from("dj_events")
+          .insert(eventData)
+          .select()
+          .single(),
+      "createDJEvent",
     );
 
     // Invalidate events cache
-    this.invalidateCachePattern('dj_events_');
+    this.invalidateCachePattern("dj_events_");
 
     return result;
   }
@@ -332,34 +348,36 @@ class DataService {
    */
   async getUser(userId: string): Promise<any> {
     return this.executeQuery(
-      async () => await this.supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single(),
-      'getUser',
+      async () =>
+        await this.supabase
+          .from("users")
+          .select("*")
+          .eq("id", conversationid)
+          .single(),
+      "getUser",
       {
         useCache: true,
         cacheKey: `user_${userId}`,
-        cacheTTL: 300000 // 5 minutes
-      }
+        cacheTTL: 300000, // 5 minutes
+      },
     );
   }
 
   async updateUser(userId: string, updates: any): Promise<any> {
     const result = await this.executeQuery(
-      async () => await this.supabase
-        .from('users')
-        .update(updates)
-        .eq('id', userId)
-        .select()
-        .single(),
-      'updateUser'
+      async () =>
+        await this.supabase
+          .from("users")
+          .update(updates)
+          .eq("id", conversationid)
+          .select()
+          .single(),
+      "updateUser",
     );
 
     // Invalidate user cache
     this.invalidateCache(`user_${userId}`);
-    this.invalidateCachePattern('wolf-pack-members_');
+    this.invalidateCachePattern("wolf-pack-members_");
 
     return result;
   }
@@ -369,26 +387,28 @@ class DataService {
    */
   async batchExecute<T>(
     operations: Array<() => Promise<T>>,
-    operationName: string
+    operationName: string,
   ): Promise<T[]> {
     try {
-      const results = await Promise.allSettled(operations.map(op => op()));
-      
+      const results = await Promise.allSettled(operations.map((op) => op()));
+
       const successful: T[] = [];
       const failed: Error[] = [];
 
       results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           successful.push(result.value);
         } else {
-          failed.push(new Error(`Batch operation ${index} failed: ${result.reason}`));
+          failed.push(
+            new Error(`Batch operation ${index} failed: ${result.reason}`),
+          );
         }
       });
 
       if (failed.length > 0) {
         errorService.createError(
           `Batch operation partially failed: ${operationName}`,
-          'Some operations could not be completed',
+          "Some operations could not be completed",
           ErrorSeverity.MEDIUM,
           ErrorCategory.DATABASE,
           {
@@ -396,9 +416,9 @@ class DataService {
             metadata: {
               successfulCount: successful.length,
               failedCount: failed.length,
-              totalCount: operations.length
-            }
-          }
+              totalCount: operations.length,
+            },
+          },
         );
       }
 
@@ -406,7 +426,7 @@ class DataService {
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        `batchExecute: ${operationName}`
+        `batchExecute: ${operationName}`,
       );
     }
   }
@@ -431,7 +451,7 @@ class DataService {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
 
     // Clean up old cache entries periodically
@@ -446,9 +466,9 @@ class DataService {
 
   invalidateCachePattern(pattern: string): void {
     const keysToDelete = Array.from(this.cache.keys())
-      .filter(key => key.includes(pattern));
-    
-    keysToDelete.forEach(key => this.cache.delete(key));
+      .filter((key) => key.includes(pattern));
+
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
   private cleanupCache(): void {
@@ -461,7 +481,7 @@ class DataService {
       }
     });
 
-    keysToDelete.forEach(key => this.cache.delete(key));
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
   clearCache(): void {
@@ -487,15 +507,15 @@ class DataService {
   async testConnection(): Promise<boolean> {
     try {
       const { data, error } = await this.supabase
-        .from('users')
-        .select('id')
+        .from("users")
+        .select("id")
         .limit(1);
-      
+
       return !error;
     } catch (error) {
       errorService.handleDatabaseError(
         error as Error,
-        'testConnection'
+        "testConnection",
       );
       return false;
     }
@@ -506,14 +526,14 @@ class DataService {
    */
   private isRetryableError(error: Error): boolean {
     const retryableMessages = [
-      'timeout',
-      'connection',
-      'network',
-      'temporary',
-      'rate limit'
+      "timeout",
+      "connection",
+      "network",
+      "temporary",
+      "rate limit",
     ];
 
-    return retryableMessages.some(msg => 
+    return retryableMessages.some((msg) =>
       error.message.toLowerCase().includes(msg)
     );
   }
@@ -523,23 +543,28 @@ class DataService {
    */
   async monitorQuery<T>(
     queryName: string,
-    queryFunction: () => Promise<T>
+    queryFunction: () => Promise<T>,
   ): Promise<T> {
     const startTime = performance.now();
-    
+
     try {
       const result = await queryFunction();
       const duration = performance.now() - startTime;
-      
+
       // Log slow queries
       if (duration > 1000) {
-        console.warn(`Slow query detected: ${queryName} took ${duration.toFixed(2)}ms`);
+        console.warn(
+          `Slow query detected: ${queryName} took ${duration.toFixed(2)}ms`,
+        );
       }
-      
+
       return result;
     } catch (error) {
       const duration = performance.now() - startTime;
-      console.error(`Query failed: ${queryName} after ${duration.toFixed(2)}ms`, error);
+      console.error(
+        `Query failed: ${queryName} after ${duration.toFixed(2)}ms`,
+        error,
+      );
       throw error;
     }
   }
@@ -549,7 +574,4 @@ class DataService {
 export const dataService = new DataService();
 
 // Export types for use in components
-export type {
-  QueryOptions,
-  CacheEntry
-};
+export type { CacheEntry, QueryOptions };

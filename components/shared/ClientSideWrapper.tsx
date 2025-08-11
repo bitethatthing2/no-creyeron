@@ -72,7 +72,7 @@ export default function ClientSideWrapper({ children }: ClientSideWrapperProps):
     return <>{children}</>;
   }
 
-  // If auth is checked but no userId, render without notification provider
+  // If auth is checked but noconversationid, render without notification provider
   if (!userId) {
     return (
       <TooltipProvider>

@@ -29,7 +29,7 @@ interface ImageHistoryItem {
 }
 
 interface ImageHistoryViewerProps {
-  userId: string;
+ conversationid: string;
   imageType?: 'profile' | 'chat' | 'banner' | 'other';
   onClose?: () => void;
   onImageReverted?: (newImageUrl: string) => void;
@@ -37,7 +37,7 @@ interface ImageHistoryViewerProps {
 }
 
 export function ImageHistoryViewer({ 
-  userId, 
+ conversationid, 
   imageType = 'profile', 
   onClose, 
   onImageReverted,
@@ -267,7 +267,7 @@ export function ImageHistoryViewer({
 
 // Enhanced Profile Image Uploader with History
 interface ProfileImageUploaderProps {
-  userId: string;
+ conversationid: string;
   currentImageUrl?: string;
   displayName?: string;
   emoji?: string;
@@ -276,7 +276,7 @@ interface ProfileImageUploaderProps {
 }
 
 export function ProfileImageUploaderWithHistory({ 
-  userId, 
+ conversationid, 
   currentImageUrl, 
   displayName,
   emoji,
@@ -371,7 +371,7 @@ export function ProfileImageUploaderWithHistory({
       {showHistory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <ImageHistoryViewer
-            userId={userId}
+           conversationid={userId}
             imageType="profile"
             onClose={() => setShowHistory(false)}
             onImageReverted={handleImageReverted}

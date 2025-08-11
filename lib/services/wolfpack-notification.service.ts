@@ -334,7 +334,7 @@ export class WolfpackNotificationService {
    * Send push notification via the notification API
    */
   private static async sendPushNotification(
-    userId: string,
+    conversationid: string,
     notificationPayload: {
       title: string;
       body: string;
@@ -351,7 +351,7 @@ export class WolfpackNotificationService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId,
+          conversationid,
           title: notificationPayload.title,
           body: notificationPayload.body,
           data: notificationPayload.data,
@@ -386,7 +386,7 @@ export class WolfpackNotificationService {
    * Check if user has notifications enabled for a specific type
    */
   static async hasNotificationsEnabled(
-    userId: string,
+    conversationid: string,
     notificationType:
       | "likes"
       | "wolfpack_comments"
@@ -399,7 +399,7 @@ export class WolfpackNotificationService {
       const { data: preferences } = await supabase
         .from("user_notification_preferences")
         .select(notificationType)
-        .eq("user_id", userId)
+        .eq("user_id", conversationid)
         .single();
 
       // Default to enabled if no preferences set
@@ -416,7 +416,7 @@ export class WolfpackNotificationService {
    */
   static async sendBatchNotifications(
     notifications: Array<{
-      userId: string;
+      conversationid: string;
       title: string;
       body: string;
       data?: Record<string, string>;

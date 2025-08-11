@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 // Define the WolfpackLiveStats type if not already defined
 export interface WolfpackLiveStats {
@@ -36,8 +36,6 @@ interface EngagementData {
   membership_tier: string | null;
 }
 
-
-
 // Define the structure for engagement metrics from the database
 interface EngagementMetric {
   user_id: string;
@@ -68,26 +66,38 @@ interface InteractionData {
  */
 export class EngagementScoringService {
   private static readonly SCORING_WEIGHTS = {
-    broadcast_responses: 0.4,    // 40% - Most valuable engagement
-    chat_activity: 0.25,         // 25% - High engagement indicator
-    social_interactions: 0.2,    // 20% - User-to-user engagement
-    session_activity: 0.15       // 15% - Time spent and recency
+    broadcast_responses: 0.4, // 40% - Most valuable engagement
+    chat_activity: 0.25, // 25% - High engagement indicator
+    social_interactions: 0.2, // 20% - User-to-user engagement
+    session_activity: 0.15, // 15% - Time spent and recency
   } as const;
 
-  private static readonly VIBE_EMOJIS = ['🔥', '✨', '💃', '🎵', '⚡', '🌟', '🎯', '💯'] as const;
+  private static readonly VIBE_EMOJIS = [
+    "🔥",
+    "✨",
+    "💃",
+    "🎵",
+    "⚡",
+    "🌟",
+    "🎯",
+    "💯",
+  ] as const;
 
   /**
    * Get top crowd members with real-time engagement scoring
    */
-  static async getTopCrowdMembers(locationId: string, limit: number = 10): Promise<TopViber[]> {
+  static async getTopCrowdMembers(
+    locationId: string,
+    limit: number = 10,
+  ): Promise<TopViber[]> {
     try {
       // Get engagement data for all active users at this location
       const engagementData = await this.getEngagementData(locationId);
-      
+
       // Calculate engagement scores
-      const scoredUsers = engagementData.map(user => ({
+      const scoredUsers = engagementData.map((user) => ({
         ...user,
-        engagement_score: this.calculateEngagementScore(user)
+        engagement_score: this.calculateEngagementScore(user),
       }));
 
       // Sort by engagement score and get top users
@@ -101,11 +111,10 @@ export class EngagementScoringService {
         name: user.display_name,
         avatar: user.avatar_url,
         vibe: this.getVibeEmoji(user.engagement_score, index),
-        engagement_score: user.engagement_score
+        engagement_score: user.engagement_score,
       }));
-
     } catch (error) {
-      console.error('Error getting top crowd members:', error);
+      console.error("Error getting top crowd members:", error);
       return [];
     }
   }
@@ -113,61 +122,72 @@ export class EngagementScoringService {
   /**
    * Get comprehensive engagement data for all users at a location
    */
-  private static async getEngagementData(locationId: string): Promise<EngagementData[]> {
+  private static async getEngagementData(
+    locationId: string,
+  ): Promise<EngagementData[]> {
     const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
     const endOfDay = new Date(startOfDay);
     endOfDay.setDate(endOfDay.getDate() + 1);
 
     try {
       // Get active wolfpack members at this specific location with user info
       const { data: activeMembers, error: membersError } = await supabase
-        .from('users')
+        .from("users")
         .select(`
           id,
           display_name,
           avatar_url
         `)
-        .eq('location_id', locationId)
-        .eq('wolfpack_status', 'active')
-        .eq('is_wolfpack_member', true)
-        .gte('updated_at', startOfDay.toISOString());
+        .eq("location_id", locationId)
+        .eq("wolfpack_status", "active")
+        .eq("is_wolfpack_member", true)
+        .gte("updated_at", startOfDay.toISOString());
 
       if (membersError) throw membersError;
       if (!activeMembers || activeMembers.length === 0) return [];
 
-      const userIds = activeMembers.map(member => member.id);
+      constconversationids = activeMembers.map((member) => member.id);
 
       // Get broadcast responses for this location (today)
       const { data: broadcastResponses, error: broadcastError } = await supabase
-        .from('dj_broadcast_responses')
-        .select('user_id, broadcast_id')
-        .in('user_id', userIds)
-        .gte('responded_at', startOfDay.toISOString())
-        .lt('responded_at', endOfDay.toISOString())
+        .from("dj_broadcast_responses")
+        .select("user_id, broadcast_id")
+        .in("user_id", conversationids)
+        .gte("responded_at", startOfDay.toISOString())
+        .lt("responded_at", endOfDay.toISOString())
         .returns<BroadcastResponseData[]>();
 
-      if (broadcastError) console.warn('Broadcast responses error:', broadcastError);
+      if (broadcastError) {
+        console.warn("Broadcast responses error:", broadcastError);
+      }
 
       // Filter broadcast responses by location through dj_broadcasts join
       let locationFilteredBroadcasts: BroadcastResponseData[] = [];
       if (broadcastResponses && broadcastResponses.length > 0) {
         // Get valid broadcast IDs (filter out null/undefined)
         const validBroadcastIds = broadcastResponses
-          .map(br => br.broadcast_id)
+          .map((br) => br.broadcast_id)
           .filter((id): id is string => id !== null && id !== undefined);
 
         if (validBroadcastIds.length > 0) {
-          const { data: locationBroadcasts, error: locationBroadcastError } = await supabase
-            .from('dj_broadcasts')
-            .select('id')
-            .eq('location_id', locationId)
-            .in('id', validBroadcastIds)
-            .returns<{ id: string }[]>();
+          const { data: locationBroadcasts, error: locationBroadcastError } =
+            await supabase
+              .from("dj_broadcasts")
+              .select("id")
+              .eq("location_id", locationId)
+              .in("id", validBroadcastIds)
+              .returns<{ id: string }[]>();
 
           if (!locationBroadcastError && locationBroadcasts) {
-            const locationBroadcastIds = new Set(locationBroadcasts.map(lb => lb.id));
-            locationFilteredBroadcasts = broadcastResponses.filter(br => 
+            const locationBroadcastIds = new Set(
+              locationBroadcasts.map((lb) => lb.id),
+            );
+            locationFilteredBroadcasts = broadcastResponses.filter((br) =>
               br.broadcast_id && locationBroadcastIds.has(br.broadcast_id)
             );
           }
@@ -176,74 +196,91 @@ export class EngagementScoringService {
 
       // Get chat messages (today)
       const { data: chatMessages, error: chatError } = await supabase
-        .from('wolfpack_chat_messages')
-        .select('user_id')
-        .in('user_id', userIds)
-        .gte('created_at', startOfDay.toISOString())
-        .lt('created_at', endOfDay.toISOString())
+        .from("wolfpack_chat_messages")
+        .select("user_id")
+        .in("user_id", conversationids)
+        .gte("created_at", startOfDay.toISOString())
+        .lt("created_at", endOfDay.toISOString())
         .returns<ChatMessageData[]>();
 
-      if (chatError) console.warn('Chat messages error:', chatError);
+      if (chatError) console.warn("Chat messages error:", chatError);
 
       // Get interactions at this location (today)
       const { data: interactionsSent, error: sentError } = await supabase
-        .from('wolf_pack_interactions')
-        .select('sender_id')
-        .in('sender_id', userIds)
-        .eq('location_id', locationId)
-        .gte('created_at', startOfDay.toISOString())
-        .lt('created_at', endOfDay.toISOString())
+        .from("wolf_pack_interactions")
+        .select("sender_id")
+        .in("sender_id", conversationids)
+        .eq("location_id", locationId)
+        .gte("created_at", startOfDay.toISOString())
+        .lt("created_at", endOfDay.toISOString())
         .returns<{ sender_id: string | null }[]>();
 
-      if (sentError) console.warn('Interactions sent error:', sentError);
+      if (sentError) console.warn("Interactions sent error:", sentError);
 
       // Get interactions received at this location (today)
-      const { data: interactionsReceived, error: receivedError } = await supabase
-        .from('wolf_pack_interactions')
-        .select('receiver_id')
-        .in('receiver_id', userIds)
-        .eq('location_id', locationId)
-        .gte('created_at', startOfDay.toISOString())
-        .lt('created_at', endOfDay.toISOString())
-        .returns<{ receiver_id: string | null }[]>();
+      const { data: interactionsReceived, error: receivedError } =
+        await supabase
+          .from("wolf_pack_interactions")
+          .select("receiver_id")
+          .in("receiver_id", conversationids)
+          .eq("location_id", locationId)
+          .gte("created_at", startOfDay.toISOString())
+          .lt("created_at", endOfDay.toISOString())
+          .returns<{ receiver_id: string | null }[]>();
 
-      if (receivedError) console.warn('Interactions received error:', receivedError);
+      if (receivedError) {
+        console.warn("Interactions received error:", receivedError);
+      }
 
       // Get engagement metrics (today)
       const { data: engagementMetrics, error: engagementError } = await supabase
-        .from('wolfpack_engagement')
-        .select('user_id, total_session_time_minutes, total_interactions')
-        .in('user_id', userIds)
-        .gte('date', startOfDay.toISOString().split('T')[0])
-        .lt('date', endOfDay.toISOString().split('T')[0])
+        .from("wolfpack_engagement")
+        .select("user_id, total_session_time_minutes, total_interactions")
+        .in("user_id", conversationids)
+        .gte("date", startOfDay.toISOString().split("T")[0])
+        .lt("date", endOfDay.toISOString().split("T")[0])
         .returns<EngagementMetric[]>();
 
-      if (engagementError) console.warn('Engagement metrics error:', engagementError);
+      if (engagementError) {
+        console.warn("Engagement metrics error:", engagementError);
+      }
 
       // Get user tiers from users table
       const { data: userTiers, error: tierError } = await supabase
-        .from('users')
-        .select('id, wolfpack_tier')
-        .in('id', userIds)
+        .from("users")
+        .select("id, wolfpack_tier")
+        .in("id", conversationids)
         .returns<{ id: string; wolfpack_tier: string | null }[]>();
 
-      if (tierError) console.warn('User tiers error:', tierError);
+      if (tierError) console.warn("User tiers error:", tierError);
 
       // Aggregate data for each user
       const userDataPromises = activeMembers.map(async (member) => {
-        const broadcastCount = locationFilteredBroadcasts?.filter(r => r.user_id === member.user_id).length || 0;
-        const chatCount = chatMessages?.filter(m => m.user_id === member.user_id).length || 0;
-        const sentCount = interactionsSent?.filter(i => i.sender_id === member.user_id).length || 0;
-        const receivedCount = interactionsReceived?.filter(i => i.receiver_id === member.user_id).length || 0;
-        const engagement = engagementMetrics?.find(e => e.user_id === member.user_id);
-        const userTier = userTiers?.find(u => u.id === member.user_id);
+        const broadcastCount = locationFilteredBroadcasts?.filter((r) =>
+          r.user_id === member.user_id
+        ).length || 0;
+        const chatCount = chatMessages?.filter((m) =>
+          m.user_id === member.user_id
+        ).length || 0;
+        const sentCount = interactionsSent?.filter((i) =>
+          i.sender_id === member.user_id
+        ).length || 0;
+        const receivedCount = interactionsReceived?.filter((i) =>
+          i.receiver_id === member.user_id
+        ).length || 0;
+        const engagement = engagementMetrics?.find((e) =>
+          e.user_id === member.user_id
+        );
+        const userTier = userTiers?.find((u) => u.id === member.user_id);
 
         // Calculate recent activity using actual database data
-        const recentActivity = await this.calculateRecentActivity(member.user_id);
+        const recentActivity = await this.calculateRecentActivity(
+          member.user_id,
+        );
 
         return {
           user_id: member.user_id,
-          display_name: (member.users as any)?.display_name || 'Anonymous',
+          display_name: (member.users as any)?.display_name || "Anonymous",
           avatar_url: (member.users as any)?.avatar_url,
           broadcast_responses: broadcastCount,
           chat_messages: chatCount,
@@ -251,14 +288,13 @@ export class EngagementScoringService {
           interactions_received: receivedCount,
           recent_activity: recentActivity,
           total_session_time: engagement?.total_session_time_minutes || 0,
-          membership_tier: userTier?.wolfpack_tier || null
+          membership_tier: userTier?.wolfpack_tier || null,
         };
       });
 
       return Promise.all(userDataPromises);
-
     } catch (error) {
-      console.error('Error fetching engagement data:', error);
+      console.error("Error fetching engagement data:", error);
       return [];
     }
   }
@@ -268,24 +304,25 @@ export class EngagementScoringService {
    */
   private static calculateEngagementScore(user: EngagementData): number {
     const weights = this.SCORING_WEIGHTS;
-    
+
     // Normalize values (assuming max values for scaling)
-    const normalizedBroadcasts = Math.min(user.broadcast_responses / 10, 1) * 100;
+    const normalizedBroadcasts = Math.min(user.broadcast_responses / 10, 1) *
+      100;
     const normalizedChat = Math.min(user.chat_messages / 20, 1) * 100;
-    const normalizedInteractions = Math.min((user.interactions_sent + user.interactions_received) / 15, 1) * 100;
+    const normalizedInteractions =
+      Math.min((user.interactions_sent + user.interactions_received) / 15, 1) *
+      100;
     const normalizedSession = Math.min(user.total_session_time / 120, 1) * 100; // 2 hours max
 
     // Calculate weighted score
-    const score = (
-      normalizedBroadcasts * weights.broadcast_responses +
+    const score = normalizedBroadcasts * weights.broadcast_responses +
       normalizedChat * weights.chat_activity +
       normalizedInteractions * weights.social_interactions +
-      normalizedSession * weights.session_activity
-    );
+      normalizedSession * weights.session_activity;
 
     // Add bonus for premium members
-    const tierBonus = user.membership_tier === 'premium' ? 10 : 0;
-    
+    const tierBonus = user.membership_tier === "premium" ? 10 : 0;
+
     // Add recent activity bonus (decaying over time)
     const recentBonus = user.recent_activity * 5;
 
@@ -295,13 +332,15 @@ export class EngagementScoringService {
   /**
    * Calculate recent activity bonus based on user's last activity
    */
-  private static async calculateRecentActivity(userId: string): Promise<number> {
+  private static async calculateRecentActivity(
+    userId: string,
+  ): Promise<number> {
     try {
       // Get user's last activity from database
       const { data: userData, error } = await supabase
-        .from('users')
-        .select('last_activity, is_online')
-        .eq('id', userId)
+        .from("users")
+        .select("last_activity, is_online")
+        .eq("id", conversationid)
         .single()
         .returns<{ last_activity: string | null; is_online: boolean | null }>();
 
@@ -310,8 +349,10 @@ export class EngagementScoringService {
       }
 
       const now = new Date();
-      const lastActivity = userData.last_activity ? new Date(userData.last_activity) : null;
-      
+      const lastActivity = userData.last_activity
+        ? new Date(userData.last_activity)
+        : null;
+
       // If user is currently online, give maximum bonus
       if (userData.is_online) {
         return 2;
@@ -323,7 +364,8 @@ export class EngagementScoringService {
       }
 
       // Calculate time since last activity in minutes
-      const minutesSinceActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
+      const minutesSinceActivity = (now.getTime() - lastActivity.getTime()) /
+        (1000 * 60);
 
       // Apply time decay: full bonus within 5 minutes, linear decay to 0 over 60 minutes
       if (minutesSinceActivity <= 5) {
@@ -334,7 +376,11 @@ export class EngagementScoringService {
         return 0;
       }
     } catch (error) {
-      console.warn('Error calculating recent activity for user:', userId, error);
+      console.warn(
+        "Error calculating recent activity for user:",
+        conversationid,
+        error,
+      );
       return 0;
     }
   }
@@ -343,12 +389,12 @@ export class EngagementScoringService {
    * Get appropriate vibe emoji based on engagement score and ranking
    */
   private static getVibeEmoji(score: number, rank: number): string {
-    if (rank === 0) return '🔥'; // Top performer always gets fire
-    if (score >= 80) return '✨';
-    if (score >= 60) return '💃';
-    if (score >= 40) return '🎵';
-    if (score >= 20) return '⚡';
-    return '🌟';
+    if (rank === 0) return "🔥"; // Top performer always gets fire
+    if (score >= 80) return "✨";
+    if (score >= 60) return "💃";
+    if (score >= 40) return "🎵";
+    if (score >= 20) return "⚡";
+    return "🌟";
   }
 
   /**
@@ -357,11 +403,10 @@ export class EngagementScoringService {
   static async getLiveStats(locationId: string): Promise<WolfpackLiveStats> {
     try {
       // The RPC function has issues, so let's use manual calculation for now
-      console.warn('🔄 Using manual calculation due to RPC function issues');
+      console.warn("🔄 Using manual calculation due to RPC function issues");
       return await this.calculateLiveStatsManually(locationId);
-
     } catch (error) {
-      console.error('❌ Error getting live stats:', error);
+      console.error("❌ Error getting live stats:", error);
       return this.getFallbackStats();
     }
   }
@@ -369,52 +414,69 @@ export class EngagementScoringService {
   /**
    * Manual calculation of live stats
    */
-  private static async calculateLiveStatsManually(locationId: string): Promise<WolfpackLiveStats> {
+  private static async calculateLiveStatsManually(
+    locationId: string,
+  ): Promise<WolfpackLiveStats> {
     const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
 
     try {
       // Get active wolfpack members at this location using the view
       const { data: activeMembers, error: membersError } = await supabase
-        .from('active_wolfpack_members')
-        .select('id, gender')
-        .gte('last_activity', startOfDay.toISOString())
+        .from("active_wolfpack_members")
+        .select("id, gender")
+        .gte("last_activity", startOfDay.toISOString())
         .returns<{ id: string; gender: string | null }[]>();
 
       if (membersError) throw membersError;
-      
+
       const totalActive = activeMembers?.length || 0;
       const veryActive = Math.floor(totalActive * 0.6); // Estimate 60% as very active
 
       // Calculate gender breakdown
-      const genderBreakdown = activeMembers?.reduce<Record<string, number>>((acc, member) => {
-        const gender = member.gender || 'unknown';
-        acc[gender] = (acc[gender] || 0) + 1;
-        return acc;
-      }, {}) || {};
+      const genderBreakdown =
+        activeMembers?.reduce<Record<string, number>>((acc, member) => {
+          const gender = member.gender || "unknown";
+          acc[gender] = (acc[gender] || 0) + 1;
+          return acc;
+        }, {}) || {};
 
       // Get recent interactions - using correct timestamp field
-      const { data: recentInteractions, error: interactionsError } = await supabase
-        .from('wolf_pack_interactions')
-        .select('sender_id, receiver_id')
-        .eq('location_id', locationId)
-        .gte('created_at', startOfDay.toISOString())
-        .returns<InteractionData[]>();
+      const { data: recentInteractions, error: interactionsError } =
+        await supabase
+          .from("wolf_pack_interactions")
+          .select("sender_id, receiver_id")
+          .eq("location_id", locationId)
+          .gte("created_at", startOfDay.toISOString())
+          .returns<InteractionData[]>();
 
-      if (interactionsError) console.warn('Interactions error:', interactionsError);
+      if (interactionsError) {
+        console.warn("Interactions error:", interactionsError);
+      }
 
       const totalInteractions = recentInteractions?.length || 0;
       const uniqueParticipants = new Set<string>();
-      
-      recentInteractions?.forEach(interaction => {
-        if (interaction.sender_id) uniqueParticipants.add(interaction.sender_id);
-        if (interaction.receiver_id) uniqueParticipants.add(interaction.receiver_id);
+
+      recentInteractions?.forEach((interaction) => {
+        if (interaction.sender_id) {
+          uniqueParticipants.add(interaction.sender_id);
+        }
+        if (interaction.receiver_id) {
+          uniqueParticipants.add(interaction.receiver_id);
+        }
       });
-      
+
       const activeParticipants = uniqueParticipants.size;
 
       // Calculate energy level based on activity
-      const energyLevel = Math.min(Math.floor((totalInteractions + (totalActive * 2)) / 10 * 100), 100);
+      const energyLevel = Math.min(
+        Math.floor((totalInteractions + (totalActive * 2)) / 10 * 100),
+        100,
+      );
 
       // Get top vibers
       const topVibers = await this.getTopCrowdMembers(locationId, 10);
@@ -425,14 +487,13 @@ export class EngagementScoringService {
         gender_breakdown: genderBreakdown,
         recent_interactions: {
           total_interactions: totalInteractions,
-          active_participants: activeParticipants
+          active_participants: activeParticipants,
         },
         energy_level: energyLevel,
-        top_vibers: topVibers
+        top_vibers: topVibers,
       };
-
     } catch (error) {
-      console.error('Error calculating live stats manually:', error);
+      console.error("Error calculating live stats manually:", error);
       return this.getFallbackStats();
     }
   }
@@ -447,10 +508,10 @@ export class EngagementScoringService {
       gender_breakdown: {},
       recent_interactions: {
         total_interactions: 0,
-        active_participants: 0
+        active_participants: 0,
       },
       energy_level: 0,
-      top_vibers: []
+      top_vibers: [],
     };
   }
 }

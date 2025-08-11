@@ -3,44 +3,64 @@
  * Provides caching, background refetching, and optimistic updates
  */
 
-import { 
-  useQuery, 
-  useMutation, 
-  useQueryClient, 
+import {
   useInfiniteQuery,
-  UseQueryResult,
+  UseInfiniteQueryResult,
+  useMutation,
   UseMutationResult,
-  UseInfiniteQueryResult
-} from '@tanstack/react-query';
-import { WolfpackFeedService } from '@/lib/services/wolfpack/feed';
-import { WolfpackService } from '@/lib/services/unified-wolfpack.service';
-import { 
-  FeedItem, 
-  ServiceResponse, 
-  FetchFeedResponse, 
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query";
+import { WolfpackFeedService } from "@/lib/services/wolfpack/feed";
+import { WolfpackService } from "@/lib/services/unified-wolfpack.service";
+import {
+  EnrichedVideo,
+  FeedItem,
+  FetchFeedResponse,
   PaginationOptions,
-  EnrichedVideo 
-} from '@/lib/services/wolfpack/types';
+  ServiceResponse,
+} from "@/lib/services/wolfpack/types";
 
 // Query Keys - centralized for better cache management
 export const WOLFPACK_QUERY_KEYS = {
   // Feed queries
-  feedItems: (options?: PaginationOptions) => ['wolfpack', 'feed', 'items', options],
-  feedWithCursor: (cursor?: string, limit?: number) => ['wolfpack', 'feed', 'cursor', cursor, limit],
-  followingFeed: (userId: string, options?: PaginationOptions) => ['wolfpack', 'feed', 'following', userId, options],
-  userPosts: (userId: string, options?: PaginationOptions) => ['wolfpack', 'posts', 'user', userId, options],
-  searchPosts: (query: string, options?: PaginationOptions) => ['wolfpack', 'posts', 'search', query, options],
-  
+  feedItems: (
+    options?: PaginationOptions,
+  ) => ["wolfpack", "feed", "items", options],
+  feedWithCursor: (
+    cursor?: string,
+    limit?: number,
+  ) => ["wolfpack", "feed", "cursor", cursor, limit],
+  followingFeed: (
+    userId: string,
+    options?: PaginationOptions,
+  ) => ["wolfpack", "feed", "following", conversationid, options],
+  userPosts: (
+    userId: string,
+    options?: PaginationOptions,
+  ) => ["wolfpack", "posts", "user", conversationid, options],
+  searchPosts: (
+    query: string,
+    options?: PaginationOptions,
+  ) => ["wolfpack", "posts", "search", query, options],
+
   // Individual post queries
-  post: (postId: string) => ['wolfpack', 'post', postId],
-  postStats: (postId: string) => ['wolfpack', 'post', 'stats', postId],
-  
+  post: (postId: string) => ["wolfpack", "post", postId],
+  postStats: (postId: string) => ["wolfpack", "post", "stats", postId],
+
   // Social queries
-  userLikes: (userId: string, videoId: string) => ['wolfpack', 'likes', userId, videoId],
-  isLiked: (videoId: string, userId: string) => ['wolfpack', 'liked', videoId, userId],
-  
+  userLikes: (
+    userId: string,
+    videoId: string,
+  ) => ["wolfpack", "likes", conversationid, videoId],
+  isLiked: (
+    videoId: string,
+    conversationid: string,
+  ) => ["wolfpack", "liked", videoId, conversationid],
+
   // User queries
-  userProfile: (userId: string) => ['wolfpack', 'user', userId],
+  userProfile: (userId: string) => ["wolfpack", "user", conversationid],
 } as const;
 
 // ============================================================================
@@ -67,11 +87,18 @@ export function useFeedItems(options: PaginationOptions = {}) {
 export function useInfiniteFeedWithCursor(
   currentUserId?: string,
   limit: number = 20,
-  followingOnly: boolean = false
+  followingOnly: boolean = false,
 ) {
   return useInfiniteQuery({
-    queryKey: ['wolfpack', 'feed', 'infinite', currentUserId, limit, followingOnly],
-    queryFn: ({ pageParam }) => 
+    queryKey: [
+      "wolfpack",
+      "feed",
+      "infinite",
+      currentUserId,
+      limit,
+      followingOnly,
+    ],
+    queryFn: ({ pageParam }) =>
       WolfpackFeedService.fetchFeedWithCursor({
         cursor: pageParam,
         limit,
@@ -89,10 +116,14 @@ export function useInfiniteFeedWithCursor(
 /**
  * Following feed with optimistic updates
  */
-export function useFollowingFeed(currentUserId: string, options: PaginationOptions = {}) {
+export function useFollowingFeed(
+  currentUserId: string,
+  options: PaginationOptions = {},
+) {
   return useQuery({
     queryKey: WOLFPACK_QUERY_KEYS.followingFeed(currentUserId, options),
-    queryFn: () => WolfpackFeedService.fetchFollowingFeed(currentUserId, options),
+    queryFn: () =>
+      WolfpackFeedService.fetchFollowingFeed(currentUserId, options),
     enabled: !!currentUserId, // Only run if we have a user ID
     staleTime: 3 * 60 * 1000, // 3 minutes - following feed can be slightly more stable
     gcTime: 10 * 60 * 1000,
@@ -174,17 +205,17 @@ export function useCreatePost() {
     onSuccess: (response) => {
       if (response.success && response.data) {
         // Invalidate and refetch feed queries
-        queryClient.invalidateQueries({ queryKey: ['wolfpack', 'feed'] });
-        
+        queryClient.invalidateQueries({ queryKey: ["wolfpack", "feed"] });
+
         // Add the new post to the cache
         queryClient.setQueryData(
           WOLFPACK_QUERY_KEYS.post(response.data.id),
-          response.data
+          response.data,
         );
       }
     },
     onError: (error) => {
-      console.error('Failed to create post:', error);
+      console.error("Failed to create post:", error);
     },
   });
 }
@@ -200,10 +231,14 @@ export function useUpdatePost() {
       WolfpackFeedService.updatePost(postId, updates),
     onMutate: async ({ postId, updates }) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: WOLFPACK_QUERY_KEYS.post(postId) });
+      await queryClient.cancelQueries({
+        queryKey: WOLFPACK_QUERY_KEYS.post(postId),
+      });
 
       // Snapshot the previous value
-      const previousPost = queryClient.getQueryData(WOLFPACK_QUERY_KEYS.post(postId));
+      const previousPost = queryClient.getQueryData(
+        WOLFPACK_QUERY_KEYS.post(postId),
+      );
 
       // Optimistically update the post
       if (previousPost) {
@@ -220,13 +255,15 @@ export function useUpdatePost() {
       if (context?.previousPost) {
         queryClient.setQueryData(
           WOLFPACK_QUERY_KEYS.post(variables.postId),
-          context.previousPost
+          context.previousPost,
         );
       }
     },
     onSettled: (data, error, variables) => {
       // Refetch the post after mutation
-      queryClient.invalidateQueries({ queryKey: WOLFPACK_QUERY_KEYS.post(variables.postId) });
+      queryClient.invalidateQueries({
+        queryKey: WOLFPACK_QUERY_KEYS.post(variables.postId),
+      });
     },
   });
 }
@@ -242,24 +279,26 @@ export function useDeletePost() {
     onMutate: async (postId) => {
       // Remove from all feed caches
       queryClient.setQueriesData(
-        { queryKey: ['wolfpack', 'feed'] },
+        { queryKey: ["wolfpack", "feed"] },
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           if (oldData.items) {
             return {
               ...oldData,
-              items: oldData.items.filter((item: FeedItem) => item.id !== postId),
+              items: oldData.items.filter((item: FeedItem) =>
+                item.id !== postId
+              ),
             };
           }
-          
+
           return oldData;
-        }
+        },
       );
     },
     onSuccess: () => {
       // Invalidate feed queries to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['wolfpack', 'feed'] });
+      queryClient.invalidateQueries({ queryKey: ["wolfpack", "feed"] });
     },
   });
 }
@@ -275,18 +314,19 @@ export function useToggleLike() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ videoId, userId }: { videoId: string; userId: string }) =>
-      WolfpackService.toggleLike(videoId, userId),
-    onMutate: async ({ videoId, userId }) => {
+    mutationFn: (
+      { videoId, conversationid }: { videoId: string; conversationid: string },
+    ) => WolfpackService.toggleLike(videoId, conversationid),
+    onMutate: async ({ videoId, conversationid }) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['wolfpack'] });
+      await queryClient.cancelQueries({ queryKey: ["wolfpack"] });
 
       // Update all feed queries optimistically
       queryClient.setQueriesData(
-        { queryKey: ['wolfpack', 'feed'] },
+        { queryKey: ["wolfpack", "feed"] },
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           if (oldData.items) {
             return {
               ...oldData,
@@ -295,8 +335,8 @@ export function useToggleLike() {
                   const currentLiked = (item as any).user_liked || false;
                   return {
                     ...item,
-                    likes_count: currentLiked 
-                      ? (item.likes_count || 0) - 1 
+                    likes_count: currentLiked
+                      ? (item.likes_count || 0) - 1
                       : (item.likes_count || 0) + 1,
                     user_liked: !currentLiked,
                   };
@@ -305,9 +345,9 @@ export function useToggleLike() {
               }),
             };
           }
-          
+
           return oldData;
-        }
+        },
       );
 
       // Update individual post cache
@@ -319,8 +359,8 @@ export function useToggleLike() {
           const currentLiked = old.user_liked || false;
           return {
             ...old,
-            likes_count: currentLiked 
-              ? (old.likes_count || 0) - 1 
+            likes_count: currentLiked
+              ? (old.likes_count || 0) - 1
               : (old.likes_count || 0) + 1,
             user_liked: !currentLiked,
           };
@@ -331,13 +371,13 @@ export function useToggleLike() {
     },
     onError: (err, variables, context) => {
       // Rollback optimistic updates on error
-      queryClient.invalidateQueries({ queryKey: ['wolfpack'] });
-      console.error('Failed to toggle like:', err);
+      queryClient.invalidateQueries({ queryKey: ["wolfpack"] });
+      console.error("Failed to toggle like:", err);
     },
     onSettled: (data, error, variables) => {
       // Refetch post stats to ensure accuracy
-      queryClient.invalidateQueries({ 
-        queryKey: WOLFPACK_QUERY_KEYS.postStats(variables.videoId) 
+      queryClient.invalidateQueries({
+        queryKey: WOLFPACK_QUERY_KEYS.postStats(variables.videoId),
       });
     },
   });
@@ -363,14 +403,17 @@ export function useIncrementViewCount() {
 /**
  * Check if video is liked by current user
  */
-export function useIsVideoLiked(videoId: string, userId: string) {
+export function useIsVideoLiked(videoId: string, conversationid: string) {
   return useQuery({
-    queryKey: WOLFPACK_QUERY_KEYS.isLiked(videoId, userId),
+    queryKey: WOLFPACK_QUERY_KEYS.isLiked(videoId, conversationid),
     queryFn: async () => {
-      const response = await WolfpackService.checkIfUserLikedVideo(videoId, userId);
+      const response = await WolfpackService.checkIfUserLikedVideo(
+        videoId,
+        conversationid,
+      );
       return response.success ? response.data : false;
     },
-    enabled: !!(videoId && userId),
+    enabled: !!(videoId && conversationid),
     staleTime: 1 * 60 * 1000, // 1 minute
     cacheTime: 5 * 60 * 1000,
   });
@@ -379,7 +422,10 @@ export function useIsVideoLiked(videoId: string, userId: string) {
 /**
  * Prefetch next page of feed for better UX
  */
-export function usePrefetchNextFeedPage(currentPage: number, options: PaginationOptions = {}) {
+export function usePrefetchNextFeedPage(
+  currentPage: number,
+  options: PaginationOptions = {},
+) {
   const queryClient = useQueryClient();
 
   const prefetchNext = () => {

@@ -62,7 +62,7 @@ class WolfpackSocialService {
   // Like functionality - Updated to use new typed functions
   async toggleLike(
     videoId: string,
-    userId: string,
+    conversationid: string,
   ): Promise<{ success: boolean; liked: boolean }> {
     try {
       const result = await togglePostLike(videoId);
@@ -87,7 +87,7 @@ class WolfpackSocialService {
   // Get video stats with user like status - Updated to use correct RPC and table names
   async getwolfpack_videostats(
     videoId: string,
-    userId?: string,
+    conversationid?: string,
   ): Promise<wolfpack_videostats> {
     try {
       // Get like count from correct table
@@ -99,7 +99,7 @@ class WolfpackSocialService {
         .select("*", { count: "exact", head: true })
         .eq("video_id", videoId);
 
-      // Check if user liked (if userId provided)
+      // Check if user liked (ifconversationid provided)
       let userLiked = false;
       if (userId) {
         userLiked = await checkIfUserLikedPost(videoId);
@@ -119,7 +119,7 @@ class WolfpackSocialService {
   // Comment functionality - Updated to use new typed functions
   async createComment(
     videoId: string,
-    userId: string,
+    conversationid: string,
     content: string,
     parentId?: string,
   ): Promise<{ success: boolean; comment?: WolfpackComment }> {
@@ -159,7 +159,7 @@ class WolfpackSocialService {
 
   async getwolfpack_comments(
     videoId: string,
-    userId?: string,
+    conversationid?: string,
     parentId: string | null = null,
   ): Promise<WolfpackComment[]> {
     try {
@@ -198,7 +198,7 @@ class WolfpackSocialService {
 
   async addCommentReaction(
     commentId: string,
-    userId: string,
+    conversationid: string,
     reactionType: string = "❤️",
   ): Promise<{ success: boolean }> {
     try {
@@ -206,7 +206,7 @@ class WolfpackSocialService {
         .from("wolfpack_comment_reactions")
         .insert({
           comment_id: commentId,
-          user_id: userId,
+          user_id: conversationid,
           reaction_type: reactionType,
         })
         .select()
@@ -222,7 +222,7 @@ class WolfpackSocialService {
 
   async removeCommentReaction(
     commentId: string,
-    userId: string,
+    conversationid: string,
     reactionType?: string,
   ): Promise<{ success: boolean }> {
     try {
@@ -230,7 +230,7 @@ class WolfpackSocialService {
         .from("wolfpack_comment_reactions")
         .delete()
         .eq("comment_id", commentId)
-        .eq("user_id", userId);
+        .eq("user_id", conversationid);
 
       if (reactionType) {
         query = query.eq("reaction_type", reactionType);
@@ -267,7 +267,7 @@ class WolfpackSocialService {
   // Check if user has reacted to a comment
   async hasUserReacted(
     commentId: string,
-    userId: string,
+    conversationid: string,
     reactionType?: string,
   ): Promise<boolean> {
     try {
@@ -275,7 +275,7 @@ class WolfpackSocialService {
         .from("wolfpack_comment_reactions")
         .select("id")
         .eq("comment_id", commentId)
-        .eq("user_id", userId);
+        .eq("user_id", conversationid);
 
       if (reactionType) {
         query = query.eq("reaction_type", reactionType);
@@ -373,13 +373,13 @@ class WolfpackSocialService {
       const { count: followersCount } = await supabase
         .from("wolfpack_follows")
         .select("*", { count: "exact", head: true })
-        .eq("following_id", userId);
+        .eq("following_id", conversationid);
 
       // Get following count
       const { count: followingCount } = await supabase
         .from("wolfpack_follows")
         .select("*", { count: "exact", head: true })
-        .eq("follower_id", userId);
+        .eq("follower_id", conversationid);
 
       return {
         followers_count: followersCount || 0,
@@ -415,7 +415,7 @@ class WolfpackSocialService {
             avatar_url
           )
         `)
-        .eq("following_id", userId)
+        .eq("following_id", conversationid)
         .limit(limit)
         .order("created_at", { ascending: false });
 
@@ -451,7 +451,7 @@ class WolfpackSocialService {
             avatar_url
           )
         `)
-        .eq("follower_id", userId)
+        .eq("follower_id", conversationid)
         .limit(limit)
         .order("created_at", { ascending: false });
 
@@ -469,7 +469,7 @@ class WolfpackSocialService {
       let query = supabase
         .from("users")
         .select("id, first_name, last_name, avatar_url")
-        .neq("id", userId)
+        .neq("id", conversationid)
         .limit(20);
 
       if (searchTerm) {
@@ -487,7 +487,7 @@ class WolfpackSocialService {
           const { data: follow } = await supabase
             .from("wolfpack_follows")
             .select("id")
-            .eq("follower_id", userId)
+            .eq("follower_id", conversationid)
             .eq("following_id", user.id)
             .single();
 
@@ -512,7 +512,7 @@ class WolfpackSocialService {
   subscribeTowolfpack_videostats(
     videoId: string,
     callback: (stats: wolfpack_videostats) => void,
-    userId?: string,
+    conversationid?: string,
   ): () => void {
     const channelName = `video-stats-${videoId}`;
 
@@ -530,7 +530,10 @@ class WolfpackSocialService {
           filter: `video_id=eq.${videoId}`,
         },
         async () => {
-          const stats = await this.getwolfpack_videostats(videoId, userId);
+          const stats = await this.getwolfpack_videostats(
+            videoId,
+            conversationid,
+          );
           callback(stats);
         },
       )
@@ -543,7 +546,10 @@ class WolfpackSocialService {
           filter: `video_id=eq.${videoId}`,
         },
         async () => {
-          const stats = await this.getwolfpack_videostats(videoId, userId);
+          const stats = await this.getwolfpack_videostats(
+            videoId,
+            conversationid,
+          );
           callback(stats);
         },
       )
@@ -557,7 +563,7 @@ class WolfpackSocialService {
   subscribeTowolfpack_comments(
     videoId: string,
     callback: (wolfpack_comments: WolfpackComment[]) => void,
-    userId?: string,
+    conversationid?: string,
   ): () => void {
     const channelName = `wolfpack_comments-${videoId}`;
 
@@ -577,7 +583,7 @@ class WolfpackSocialService {
         async () => {
           const wolfpack_comments = await this.getwolfpack_comments(
             videoId,
-            userId,
+            conversationid,
           );
           callback(wolfpack_comments);
         },
@@ -608,7 +614,7 @@ class WolfpackSocialService {
   // Share tracking methods
   async trackShare(
     videoId: string,
-    userId: string,
+    conversationid: string,
     platform: string = "direct",
   ) {
     try {
@@ -617,7 +623,7 @@ class WolfpackSocialService {
         .from("wolfpack_video_shares")
         .insert({
           video_id: videoId,
-          shared_by_user_id: userId,
+          shared_by_user_id: conversationid,
           share_type: platform,
           created_at: new Date().toISOString(),
         })

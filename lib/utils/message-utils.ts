@@ -8,15 +8,15 @@ interface SanitizeOptions {
 
 // Enhanced message sanitization
 export function sanitizeMessage(
-  message: string, 
+  message: string,
   options: SanitizeOptions = {
     maxLength: 500,
     allowLineBreaks: true,
-    trimWhitespace: true
-  }
+    trimWhitespace: true,
+  },
 ): string {
-  if (!message || typeof message !== 'string') {
-    return '';
+  if (!message || typeof message !== "string") {
+    return "";
   }
 
   let sanitized = message;
@@ -28,24 +28,24 @@ export function sanitizeMessage(
 
   // Handle line breaks
   if (!options.allowLineBreaks) {
-    sanitized = sanitized.replace(/\r?\n|\r/g, ' ');
+    sanitized = sanitized.replace(/\r?\n|\r/g, " ");
   } else {
     // Normalize line breaks and limit consecutive breaks
-    sanitized = sanitized.replace(/\r\n/g, '\n');
-    sanitized = sanitized.replace(/\r/g, '\n');
-    sanitized = sanitized.replace(/\n{3,}/g, '\n\n'); // Max 2 consecutive line breaks
+    sanitized = sanitized.replace(/\r\n/g, "\n");
+    sanitized = sanitized.replace(/\r/g, "\n");
+    sanitized = sanitized.replace(/\n{3,}/g, "\n\n"); // Max 2 consecutive line breaks
   }
 
   // Remove or replace potentially harmful characters
-  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Control characters
-  
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ""); // Control characters
+
   // Basic HTML entity encoding for safety
   sanitized = sanitized
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
 
   // Limit length
   if (sanitized.length > options.maxLength) {
@@ -57,37 +57,37 @@ export function sanitizeMessage(
 
 // Enhanced spam detection
 export function detectSpam(message: string): boolean {
-  if (!message || typeof message !== 'string') {
+  if (!message || typeof message !== "string") {
     return false;
   }
 
   const lowerMessage = message.toLowerCase();
-  
+
   // Common spam patterns
   const spamPatterns = [
     // URLs (basic detection)
     /https?:\/\/[^\s]+/gi,
     /www\.[^\s]+/gi,
     /[a-zA-Z0-9-]+\.(com|net|org|edu|gov|mil|int|biz|info|name|museum|coop|aero|pro|tv|cc|me|io|ly|co|uk|ca|au|de|fr|jp|cn)[^\s]*/gi,
-    
+
     // Email addresses
     /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
-    
+
     // Phone numbers (basic patterns)
     /(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}/gi,
-    
+
     // Excessive repetition
     /(.)\1{10,}/gi, // Same character repeated 10+ times
     /(\b\w+\b\s*){5,}\1/gi, // Same word repeated 5+ times
-    
+
     // Common spam words/phrases
     /\b(free\s+money|get\s+rich|work\s+from\s+home|click\s+here|limited\s+time|act\s+now|urgent|congratulations\s+you\s+won)\b/gi,
-    
+
     // Excessive capitalization
     /[A-Z]{20,}/g, // 20+ consecutive capital letters
-    
+
     // Excessive special characters
-    /[!@#$%^&*()_+={}\[\]:";'<>?,.\/\\|`~]{10,}/g
+    /[!@#$%^&*()_+={}\[\]:";'<>?,.\/\\|`~]{10,}/g,
   ];
 
   // Check each pattern
@@ -133,10 +133,10 @@ setInterval(() => {
 }, 300000);
 
 export function checkRateLimit(
-  userId: string, 
-  maxRequests: number = 20, 
+  conversationid: string,
+  maxRequests: number = 20,
   windowMs: number = 60000, // 1 minute
-  keyPrefix: string = 'message'
+  keyPrefix: string = "message",
 ): boolean {
   const key = `${keyPrefix}_${userId}`;
   const now = Date.now();
@@ -146,7 +146,7 @@ export function checkRateLimit(
     rateLimitStore.set(key, {
       count: 1,
       timestamp: now,
-      windowStart: now
+      windowStart: now,
     });
     return true;
   }
@@ -156,7 +156,7 @@ export function checkRateLimit(
     rateLimitStore.set(key, {
       count: 1,
       timestamp: now,
-      windowStart: now
+      windowStart: now,
     });
     return true;
   }
@@ -175,10 +175,10 @@ export function checkRateLimit(
 
 // Get remaining rate limit quota
 export function getRateLimitStatus(
-  userId: string,
+  conversationid: string,
   maxRequests: number = 20,
   windowMs: number = 60000,
-  keyPrefix: string = 'message'
+  keyPrefix: string = "message",
 ): { remaining: number; resetTime: number } {
   const key = `${keyPrefix}_${userId}`;
   const now = Date.now();
@@ -195,7 +195,7 @@ export function getRateLimitStatus(
 
   return {
     remaining: Math.max(0, maxRequests - limit.count),
-    resetTime: limit.windowStart + windowMs
+    resetTime: limit.windowStart + windowMs,
   };
 }
 
@@ -210,19 +210,19 @@ export function validateMessage(
   message: string,
   options: SanitizeOptions & {
     checkSpam?: boolean;
-    userId?: string;
+    conversationid?: string;
     checkRateLimit?: boolean;
   } = {
     maxLength: 500,
     allowLineBreaks: true,
-    trimWhitespace: true
-  }
+    trimWhitespace: true,
+  },
 ): MessageValidationResult {
   const errors: string[] = [];
 
   // Basic validation
-  if (!message || typeof message !== 'string') {
-    errors.push('Message is required');
+  if (!message || typeof message !== "string") {
+    errors.push("Message is required");
     return { isValid: false, errors };
   }
 
@@ -230,7 +230,7 @@ export function validateMessage(
   const sanitized = sanitizeMessage(message, options);
 
   if (!sanitized.trim()) {
-    errors.push('Message cannot be empty');
+    errors.push("Message cannot be empty");
     return { isValid: false, errors };
   }
 
@@ -240,20 +240,20 @@ export function validateMessage(
 
   // Check for spam
   if (options.checkSpam && detectSpam(sanitized)) {
-    errors.push('Message appears to contain spam or inappropriate content');
+    errors.push("Message appears to contain spam or inappropriate content");
   }
 
   // Check rate limit
   if (options.checkRateLimit && options.userId) {
     if (!checkRateLimit(options.userId)) {
-      errors.push('Rate limit exceeded. Please slow down.');
+      errors.push("Rate limit exceeded. Please slow down.");
     }
   }
 
   return {
     isValid: errors.length === 0,
     errors,
-    sanitized: errors.length === 0 ? sanitized : undefined
+    sanitized: errors.length === 0 ? sanitized : undefined,
   };
 }
 
@@ -262,9 +262,13 @@ export class TypingIndicator {
   private timeouts = new Map<string, NodeJS.Timeout>();
   private callbacks = new Map<string, (isTyping: boolean) => void>();
 
-  setTyping(userId: string, isTyping: boolean, callback: (isTyping: boolean) => void) {
+  setTyping(
+    userId: string,
+    isTyping: boolean,
+    callback: (isTyping: boolean) => void,
+  ) {
     const key = `typing_${userId}`;
-    
+
     // Clear existing timeout
     const existingTimeout = this.timeouts.get(key);
     if (existingTimeout) {
@@ -277,14 +281,14 @@ export class TypingIndicator {
     if (isTyping) {
       // Send typing indicator
       callback(true);
-      
+
       // Auto-clear after 3 seconds
       const timeout = setTimeout(() => {
         callback(false);
         this.timeouts.delete(key);
         this.callbacks.delete(key);
       }, 3000);
-      
+
       this.timeouts.set(key, timeout);
     } else {
       // Clear typing indicator immediately
@@ -306,41 +310,43 @@ export class TypingIndicator {
 
 // Message formatting utilities
 export function formatMessageTime(timestamp: string | null): string {
-  if (!timestamp) return 'Unknown time';
-  
+  if (!timestamp) return "Unknown time";
+
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   // Less than 1 minute ago
   if (diff < 60000) {
-    return 'Just now';
+    return "Just now";
   }
-  
+
   // Less than 1 hour ago
   if (diff < 3600000) {
     const minutes = Math.floor(diff / 60000);
     return `${minutes}m ago`;
   }
-  
+
   // Same day
   if (date.toDateString() === now.toDateString()) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
-  
+
   // Yesterday
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    return `Yesterday ${
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }`;
   }
-  
+
   // Older than yesterday
-  return date.toLocaleDateString([], { 
-    month: 'short', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -367,32 +373,37 @@ export interface MessageGroup {
   timestamp: string;
 }
 
-export function groupMessages(messages: any[], currentUserId: string): MessageGroup[] {
+export function groupMessages(
+  messages: any[],
+  currentUserId: string,
+): MessageGroup[] {
   // Reverse messages to handle them in chronological order (oldest first) for proper grouping
   const sortedMessages = [...messages].reverse();
-  
+
   const groups: MessageGroup[] = [];
   let currentGroup: MessageGroup | null = null;
-  
+
   for (const message of sortedMessages) {
     const isSameSender = currentGroup?.senderId === message.sender_id;
-    const timeDiff = currentGroup ? 
-      new Date(message.created_at).getTime() - new Date(currentGroup.timestamp).getTime() : 
-      0;
-    
+    const timeDiff = currentGroup
+      ? new Date(message.created_at).getTime() -
+        new Date(currentGroup.timestamp).getTime()
+      : 0;
+
     // Start new group if different sender or more than 5 minutes apart
     if (!isSameSender || timeDiff > 300000) {
       currentGroup = {
         senderId: message.sender_id,
-        senderName: message.sender_id === currentUserId ? 'You' : 
-          (message.sender_user?.display_name || 'Unknown'),
+        senderName: message.sender_id === currentUserId
+          ? "You"
+          : (message.sender_user?.display_name || "Unknown"),
         senderAvatar: message.sender_user?.profile_image_url,
         messages: [],
-        timestamp: message.created_at
+        timestamp: message.created_at,
       };
       groups.push(currentGroup);
     }
-    
+
     // Add message to current group
     currentGroup!.messages.push({
       id: message.id,
@@ -403,10 +414,10 @@ export function groupMessages(messages: any[], currentUserId: string): MessageGr
       created_at: message.created_at,
       is_read: message.is_read,
       reply_to_message_id: message.reply_to_message_id,
-      reactions: message.reactions
+      reactions: message.reactions,
     });
   }
-  
+
   // Return groups in newest-first order for display
   return groups.reverse();
 }

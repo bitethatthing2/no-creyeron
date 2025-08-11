@@ -10,7 +10,7 @@ import WolfpackOfflineManager from "@/lib/utils/wolfpack-offline-manager";
 
 interface OptimisticState {
   likes: Record<string, boolean>; // videoId -> isLiked
-  follows: Record<string, boolean>; // userId -> isFollowed
+  follows: Record<string, boolean>; //conversationid -> isFollowed
   localLikeCounts: Record<string, number>; // videoId -> count adjustment
   localCommentCounts: Record<string, number>; // videoId -> count adjustment
   pendingActions: Record<string, boolean>; // actionId -> isPending
@@ -18,7 +18,7 @@ interface OptimisticState {
 }
 
 interface UseOptimisticActionsProps {
-  userId?: string; // This should be the public user ID (database ID), not auth ID
+  conversationid?: string; // This should be the public user ID (database ID), not auth ID
   onUpdatewolfpack_videostats?: (
     videoId: string,
     updates: { likes_count?: number; wolfpack_comments_count?: number },
@@ -26,7 +26,7 @@ interface UseOptimisticActionsProps {
 }
 
 export function useOptimisticActions({
-  userId,
+  conversationid,
   onUpdatewolfpack_videostats,
 }: UseOptimisticActionsProps = {}) {
   const [optimisticState, setOptimisticState] = useState<OptimisticState>({
@@ -123,14 +123,14 @@ export function useOptimisticActions({
       onUpdatewolfpack_videostats?.(videoId, { likes_count: newCount });
 
       try {
-        // userId should already be the database user ID (public user ID)
-        const userDbId = userId;
+        //conversationid should already be the database user ID (public user ID)
+        const userDbId = conversationid;
 
         // Use offline manager to handle the action
         const result = await WolfpackOfflineManager.executeAction({
           type: newIsLiked ? "wolfpack_like" : "wolfpack_unlike",
           videoId,
-          userId: userDbId,
+          conversationid: userDbId,
         });
 
         if (!result.success) {
@@ -215,13 +215,13 @@ export function useOptimisticActions({
       }));
 
       try {
-        // userId should already be the database user ID (public user ID)
-        const userDbId = userId;
+        //conversationid should already be the database user ID (public user ID)
+        const userDbId = conversationid;
 
         // Use offline manager to handle the action
         const result = await WolfpackOfflineManager.executeAction({
           type: newIsFollowed ? "wolfpack_follow" : "wolfpack_unfollow",
-          userId: userDbId,
+          conversationid: userDbId,
           targetUserId,
         });
 
@@ -315,14 +315,14 @@ export function useOptimisticActions({
     });
 
     try {
-      // userId should already be the database user ID (public user ID)
-      const userDbId = userId;
+      //conversationid should already be the database user ID (public user ID)
+      const userDbId = conversationid;
 
       // Use offline manager to handle the action
       const result = await WolfpackOfflineManager.executeAction({
         type: "wolfpack_comment",
         videoId,
-        userId: userDbId,
+        conversationid: userDbId,
         content: content.trim(),
         parentId: parentId || undefined,
       });

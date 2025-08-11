@@ -104,7 +104,7 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
     try {
       await toggleLikeMutation.mutateAsync({ 
         videoId, 
-        userId: currentUser.id 
+       conversationid: currentUser.id 
       });
     } catch (error) {
       console.error('Failed to toggle like:', error);

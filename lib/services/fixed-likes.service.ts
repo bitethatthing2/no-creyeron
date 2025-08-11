@@ -50,14 +50,14 @@ export class FixedLikesService {
 
       if (!this.supabase) await this.initSupabase();
 
-      const userId = await this.getCurrentUserId();
+      constconversationid = await this.getCurrentUserId();
 
       // Check if like exists using maybeSingle to avoid errors
       const { data: existingLike, error: checkError } = await this.supabase
         .from("wolfpack_post_likes")
         .select("id")
         .eq("video_id", videoId)
-        .eq("user_id", userId)
+        .eq("user_id", conversationid)
         .maybeSingle();
 
       if (checkError) {
@@ -88,7 +88,7 @@ export class FixedLikesService {
 
         if (error) {
           console.error("Error liking video:", error);
-          
+
           // Handle specific errors
           if (error.message?.includes("duplicate") || error.code === "23505") {
             console.log("Video already liked by user");
@@ -116,14 +116,14 @@ export class FixedLikesService {
 
       if (!this.supabase) await this.initSupabase();
 
-      const userId = await this.getCurrentUserId();
+      constconversationid = await this.getCurrentUserId();
 
       // Check if like exists
       const { data: existingLike, error: checkError } = await this.supabase
         .from("wolfpack_comment_reactions")
         .select("id")
         .eq("comment_id", commentId)
-        .eq("user_id", userId)
+        .eq("user_id", conversationid)
         .maybeSingle();
 
       if (checkError) {
@@ -139,7 +139,7 @@ export class FixedLikesService {
           .from("wolfpack_comment_reactions")
           .delete()
           .eq("comment_id", commentId)
-          .eq("user_id", userId);
+          .eq("user_id", conversationid);
 
         if (deleteError) {
           console.error("Error removing comment like:", deleteError);
@@ -156,7 +156,7 @@ export class FixedLikesService {
           .from("wolfpack_comment_reactions")
           .insert({
             comment_id: commentId,
-            user_id: userId,
+            user_id: conversationid,
             reaction_type: "❤️",
           });
 
@@ -206,7 +206,10 @@ export class FixedLikesService {
     }
   }
 
-  async isLikedByUser(videoId: string, userId?: string): Promise<boolean> {
+  async isLikedByUser(
+    videoId: string,
+    conversationid?: string,
+  ): Promise<boolean> {
     try {
       if (!videoId || typeof videoId !== "string") {
         console.error("Invalid video ID for like check");
@@ -217,7 +220,7 @@ export class FixedLikesService {
 
       if (!userId) {
         try {
-          userId = await this.getCurrentUserId();
+          conversationid = await this.getCurrentUserId();
         } catch (error) {
           // Not authenticated
           return false;
@@ -228,7 +231,7 @@ export class FixedLikesService {
         .from("wolfpack_post_likes")
         .select("id")
         .eq("video_id", videoId)
-        .eq("user_id", userId)
+        .eq("user_id", conversationid)
         .maybeSingle();
 
       if (error) {

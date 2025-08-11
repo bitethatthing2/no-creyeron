@@ -24,7 +24,7 @@ import { ControllerRenderProps, FieldValues } from "react-hook-form";
  * Form schema for creating in-app notifications
  */
 const formSchema = z.object({
-  userId: z.string().uuid("Valid user ID is required"),
+ conversationid: z.string().uuid("Valid user ID is required"),
   type: z.enum(["info", "warning", "error"]),
   body: z.string().min(1, "Message is required").max(5000, "Message is too long"),
   link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
@@ -58,7 +58,7 @@ export function NotificationCreator() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: values.userId,
+         conversationid: values.userId,
           type: values.type,
           body: values.body,
           link: values.link || undefined,

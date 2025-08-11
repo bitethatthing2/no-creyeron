@@ -71,7 +71,7 @@ export class WolfpackAuthService {
         if (!user) return false;
         targetUserId = user.id;
       } else {
-        targetUserId = userId;
+        targetUserId = conversationid;
       }
 
       validateUUID(targetUserId, "User ID");
@@ -101,7 +101,7 @@ export class WolfpackAuthService {
         if (!user) return false;
         targetUserId = user.id;
       } else {
-        targetUserId = userId;
+        targetUserId = conversationid;
       }
 
       validateUUID(targetUserId, "User ID");
@@ -170,7 +170,7 @@ export class WolfpackAuthService {
    * Get user by ID with optional authentication check
    */
   static getUserById = withErrorHandling(async (
-    userId: string,
+    conversationid: string,
     requireAuth = false,
   ): Promise<User | null> => {
     validateRequired(userId, "User ID");
@@ -183,7 +183,7 @@ export class WolfpackAuthService {
     const { data: user, error } = await supabase
       .from("users")
       .select("*")
-      .eq("id", userId)
+      .eq("id", conversationid)
       .single();
 
     if (error) {
@@ -204,14 +204,14 @@ export class WolfpackAuthService {
     validateRequired(resourceUserId, "Resource User ID");
     validateUUID(resourceUserId, "Resource User ID");
 
-    let userId = currentUserId;
+    letconversationid = currentUserId;
     if (!userId) {
       const user = await this.getCurrentUser();
       if (!user) return false;
-      userId = user.id;
+      conversationid = user.id;
     }
 
-    return resourceUserId === userId;
+    return resourceUserId === conversationid;
   }, "WolfpackAuthService.userOwnsResource");
 
   /**

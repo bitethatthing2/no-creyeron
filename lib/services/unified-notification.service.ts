@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
 // Types matching your existing schema
@@ -23,7 +23,7 @@ interface NotificationPayload {
   type: string;
   link?: string;
   data?: Record<string, any>;
-  userId?: string;
+  conversationid?: string;
   sendPush?: boolean;
   showToast?: boolean;
 }
@@ -64,7 +64,7 @@ class UnifiedNotificationService {
       this.messaging = getMessaging();
 
       // Get FCM token (non-blocking)
-      this.getFCMToken().catch(error => {
+      this.getFCMToken().catch((error) => {
         console.log("FCM token not available:", error.message);
       });
 
@@ -85,15 +85,18 @@ class UnifiedNotificationService {
   /**
    * Register Firebase messaging service worker
    */
-  private async registerFirebaseServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  private async registerFirebaseServiceWorker(): Promise<
+    ServiceWorkerRegistration | null
+  > {
     try {
-      if (!('serviceWorker' in navigator)) {
+      if (!("serviceWorker" in navigator)) {
         console.log("Service Worker not supported");
         return null;
       }
 
       // Check if Firebase messaging service worker is already registered
-      const existingRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      const existingRegistration = await navigator.serviceWorker
+        .getRegistration("/firebase-messaging-sw.js");
       if (existingRegistration && existingRegistration.active) {
         console.log("Firebase messaging service worker already registered");
         return existingRegistration;
@@ -101,10 +104,13 @@ class UnifiedNotificationService {
 
       // Register Firebase messaging service worker
       console.log("Registering Firebase messaging service worker...");
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-        scope: '/',
-        updateViaCache: 'none'
-      });
+      const registration = await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js",
+        {
+          scope: "/",
+          updateViaCache: "none",
+        },
+      );
 
       // Wait for the service worker to be ready
       await navigator.serviceWorker.ready;
@@ -123,7 +129,7 @@ class UnifiedNotificationService {
   private async getFCMToken() {
     try {
       // Skip FCM token if service worker is not available
-      if (!('serviceWorker' in navigator)) {
+      if (!("serviceWorker" in navigator)) {
         console.log("Service Worker not supported, skipping FCM token");
         return null;
       }
@@ -131,12 +137,14 @@ class UnifiedNotificationService {
       // Register Firebase service worker first
       const registration = await this.registerFirebaseServiceWorker();
       if (!registration) {
-        console.log("Failed to register Firebase service worker, skipping FCM token");
+        console.log(
+          "Failed to register Firebase service worker, skipping FCM token",
+        );
         return null;
       }
 
       // Wait a bit for service worker to be fully active
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const { getToken } = await import("firebase/messaging");
 
@@ -145,7 +153,7 @@ class UnifiedNotificationService {
         console.log("Getting FCM token with VAPID key...");
         const token = await getToken(this.messaging, {
           vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-          serviceWorkerRegistration: registration
+          serviceWorkerRegistration: registration,
         });
 
         if (token) {
@@ -160,23 +168,27 @@ class UnifiedNotificationService {
           return null;
         }
       } else {
-        console.log("Notification permission not granted, skipping FCM token request");
+        console.log(
+          "Notification permission not granted, skipping FCM token request",
+        );
         return null;
       }
     } catch (error) {
       console.error("Error getting FCM token:", error);
-      
+
       // More specific error handling
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.error("FCM token request was aborted - service worker may not be active");
-        } else if (error.message.includes('service worker')) {
+        if (error.name === "AbortError") {
+          console.error(
+            "FCM token request was aborted - service worker may not be active",
+          );
+        } else if (error.message.includes("service worker")) {
           console.error("Service worker issue:", error.message);
-        } else if (error.message.includes('permission')) {
+        } else if (error.message.includes("permission")) {
           console.error("Permission issue:", error.message);
         }
       }
-      
+
       return null;
     }
   }
@@ -205,56 +217,59 @@ class UnifiedNotificationService {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.warn('No authenticated user found for FCM token storage');
+        console.warn("No authenticated user found for FCM token storage");
         return;
       }
 
       // Get the user's profile to get their actual user ID
       const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
+        .from("users")
+        .select("id")
+        .eq("auth_id", user.id)
         .single();
 
       if (profileError || !profile) {
-        console.error('Error fetching user profile for FCM token:', profileError);
+        console.error(
+          "Error fetching user profile for FCM token:",
+          profileError,
+        );
         return;
       }
 
       // Build device info object
       const deviceInfo = {
         userAgent: navigator.userAgent,
-        platform: navigator.platform || 'web',
+        platform: navigator.platform || "web",
         language: navigator.language,
         vendor: navigator.vendor,
         screen: {
           width: window.screen.width,
-          height: window.screen.height
-        }
+          height: window.screen.height,
+        },
       };
 
       // Use the upsert function to store the token (handles duplicates automatically)
       const { data, error } = await supabase
-        .rpc('upsert_fcm_token', {
+        .rpc("upsert_fcm_token", {
           p_user_id: profile.id,
           p_token: token,
           p_device_info: deviceInfo,
-          p_platform: 'web'
+          p_platform: "web",
         });
 
       if (error) {
-        console.error('Error storing FCM token:', error);
+        console.error("Error storing FCM token:", error);
         // Log more details for debugging
-        console.error('FCM token storage details:', {
-          userId: profile.id,
+        console.error("FCM token storage details:", {
+          conversationid: profile.id,
           tokenLength: token.length,
-          error: error
+          error: error,
         });
       } else {
-        console.log('FCM token stored successfully');
+        console.log("FCM token stored successfully");
       }
     } catch (error) {
-      console.error('Error in storeFCMToken:', error);
+      console.error("Error in storeFCMToken:", error);
     }
   }
 
@@ -296,17 +311,17 @@ class UnifiedNotificationService {
    */
   private mapNotificationType(type: string): string {
     const typeMap: Record<string, string> = {
-      'wolfpack_message': 'info',
-      'order_update': 'order_ready',
-      'dj_event': 'info',
-      'like': 'info',
-      'comment': 'info',
-      'follow': 'info',
-      'mention': 'info'
+      "wolfpack_message": "info",
+      "order_update": "order_ready",
+      "dj_event": "info",
+      "like": "info",
+      "comment": "info",
+      "follow": "info",
+      "mention": "info",
     };
-    
+
     // Return mapped type or default to 'info' if not found
-    return typeMap[type] || 'info';
+    return typeMap[type] || "info";
   }
 
   /**
@@ -315,8 +330,8 @@ class UnifiedNotificationService {
   async createNotification(recipientId: string, payload: NotificationPayload) {
     try {
       // Ensure message is provided
-      if (!payload.body || payload.body.trim() === '') {
-        console.error('Notification message cannot be empty');
+      if (!payload.body || payload.body.trim() === "") {
+        console.error("Notification message cannot be empty");
         return null;
       }
 

@@ -320,7 +320,7 @@ window.startAuthMonitoring = function() {
         timestamp,
         event,
         hasSession: !!session,
-        userId: session?.user?.id || null,
+       conversationid: session?.user?.id || null,
         email: session?.user?.email || null
       };
       

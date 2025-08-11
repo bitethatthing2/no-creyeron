@@ -2521,7 +2521,7 @@ const checkUploadAccess = async () => {
 const { data: access } = await supabase
   .rpc("check_feature_access", {
     p_flag_name: "wolfpack_video_upload",
-    p_user_id: userId
+    p_user_id:conversationid
   });
 
 if (!access.enabled) {

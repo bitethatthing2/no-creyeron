@@ -115,7 +115,7 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
       // Update local state
       const updateFollowStatus = (users: WolfpackUser[]) =>
         users.map(u => 
-          u.id === userId 
+          u.id ===conversationid 
             ? { ...u, is_following: response.data?.following }
             : u
         );

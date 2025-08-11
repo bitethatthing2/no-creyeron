@@ -14,7 +14,7 @@ type UserRole = 'admin' | 'bartender' | 'dj' | 'user';
 
 interface NotificationPreferencesProps {
   userRole?: UserRole;
-  userId?: string;
+ conversationid?: string;
   onClose?: () => void;
 }
 
@@ -75,7 +75,7 @@ const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
 
 export function NotificationPreferences({ 
   userRole = 'user', 
-  userId,
+ conversationid,
   onClose 
 }: NotificationPreferencesProps) {
   const [preferences, setPreferences] = useState<NotificationPreferences>({
@@ -147,7 +147,7 @@ export function NotificationPreferences({
       // Update preferences using the RPC function
       const { data, error: updateError } = await supabase
         .rpc('update_notification_preferences', {
-          p_user_id: userId || user.id,
+          p_user_id:conversationid || user.id,
           p_preferences: { [key]: enabled }
         });
 

@@ -52,7 +52,7 @@ export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { currentUser } = useAuth();
-  const userId = params.userId as string;
+  constconversationid = params.userId as string;
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<UserPost[]>([]);
@@ -72,7 +72,7 @@ export default function UserProfilePage() {
         const { data: profileData, error: profileError } = await supabase
           .from('users')
           .select('*')
-          .eq('id', userId)
+          .eq('id',conversationid)
           .single();
 
         if (profileError) {
@@ -87,7 +87,7 @@ export default function UserProfilePage() {
         const { data: postsData, error: postsError } = await supabase
           .from('wolfpack_videos')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id',conversationid)
           .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(20);
@@ -106,12 +106,12 @@ export default function UserProfilePage() {
         }
 
         // Check if current user is following this user
-        if (currentUser && currentUser.id !== userId) {
+        if (currentUser && currentUser.id !==conversationid) {
           const { data: followData } = await supabase
             .from('wolfpack_follows')
             .select('id')
             .eq('follower_id', currentUser.id)
-            .eq('following_id', userId)
+            .eq('following_id',conversationid)
             .single();
 
           setIsFollowing(!!followData);
@@ -129,7 +129,7 @@ export default function UserProfilePage() {
   }, [userId, currentUser]);
 
   const handleFollow = async () => {
-    if (!currentUser || currentUser.id === userId) return;
+    if (!currentUser || currentUser.id ===conversationid) return;
 
     try {
       if (isFollowing) {
@@ -138,7 +138,7 @@ export default function UserProfilePage() {
           .from('wolfpack_follows')
           .delete()
           .eq('follower_id', currentUser.id)
-          .eq('following_id', userId);
+          .eq('following_id',conversationid);
 
         if (!error) {
           setIsFollowing(false);
@@ -149,7 +149,7 @@ export default function UserProfilePage() {
           .from('wolfpack_follows')
           .insert({
             follower_id: currentUser.id,
-            following_id: userId
+            following_id:conversationid
           });
 
         if (!error) {
@@ -196,8 +196,8 @@ export default function UserProfilePage() {
   // Debug logging for edit button visibility
   console.log('Profile page debug:', {
     currentUserId: currentUser?.id,
-    profileUserId: userId,
-    shouldShowEdit: currentUser && currentUser.id === userId
+    profileUserId:conversationid,
+    shouldShowEdit: currentUser && currentUser.id ===conversationid
   });
 
   return (
@@ -274,7 +274,7 @@ export default function UserProfilePage() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               {/* Edit Profile Button - Only show for own profile */}
-              {currentUser && currentUser.id === userId && (
+              {currentUser && currentUser.id ===conversationid && (
                 <button
                   onClick={() => router.push('/profile/edit')}
                   className="px-6 py-2 rounded-lg font-medium transition-colors bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-2"
@@ -285,7 +285,7 @@ export default function UserProfilePage() {
               )}
               
               {/* Follow Button - Only show for other users */}
-              {currentUser && currentUser.id !== userId && (
+              {currentUser && currentUser.id !==conversationid && (
                 <button
                   onClick={handleFollow}
                   className={`px-6 py-2 rounded-lg font-medium transition-colors ${

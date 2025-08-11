@@ -84,7 +84,7 @@ export async function getPost(postId: string): Promise<WolfpackVideo | null> {
 }
 
 export async function getUserwolfpack_posts(
-  userId: string,
+  conversationid: string,
   limit = 20,
   offset = 0,
 ): Promise<WolfpackVideo[]> {
@@ -100,7 +100,7 @@ export async function getUserwolfpack_posts(
         display_name
       )
     `)
-    .eq("user_id", userId)
+    .eq("user_id", conversationid)
     .eq("is_active", true)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);

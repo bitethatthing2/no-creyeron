@@ -28,7 +28,7 @@ export interface FcmMessagePayload {
     link?: string;
     type?: string;
     action?: string;
-    userId?: string;
+    conversationid?: string;
     orderId?: string;
     wolfpackId?: string;
   };
@@ -59,7 +59,7 @@ export interface NotificationPayload {
 
 export interface DeviceTokenInfo {
   token: string;
-  platform: 'web' | 'ios' | 'android' | 'windows' | 'mac' | 'linux' | 'unknown';
+  platform: "web" | "ios" | "android" | "windows" | "mac" | "linux" | "unknown";
   isActive: boolean;
   lastUsed: string;
   userAgent?: string;
@@ -71,7 +71,7 @@ export interface DeviceTokenInfo {
 export interface TopicSubscription {
   token: string;
   topic: string;
-  userId?: string;
+  conversationid?: string;
   subscribedAt: string;
 }
 
@@ -104,11 +104,11 @@ export interface BulkNotificationResult {
 }
 
 // Notification permission states
-export type NotificationPermission = 'default' | 'granted' | 'denied';
+export type NotificationPermission = "default" | "granted" | "denied";
 
 // Service worker message types
 export interface ServiceWorkerMessage {
-  type: 'FCM_MESSAGE' | 'NOTIFICATION_CLICK' | 'BACKGROUND_SYNC';
+  type: "FCM_MESSAGE" | "NOTIFICATION_CLICK" | "BACKGROUND_SYNC";
   payload: Record<string, unknown>;
 }
 
@@ -123,9 +123,14 @@ export interface PushSubscription {
 
 // Wolfpack-specific notification types
 export interface WolfpackNotificationData {
-  type: 'wolfpack_join' | 'wolfpack_leave' | 'wolfpack_message' | 'wolfpack_order' | 'wolfpack_event';
+  type:
+    | "wolfpack_join"
+    | "wolfpack_leave"
+    | "wolfpack_message"
+    | "wolfpack_order"
+    | "wolfpack_event";
   wolfpackId: string;
-  userId?: string;
+  conversationid?: string;
   userName?: string;
   message?: string;
   timestamp: string;
@@ -133,7 +138,7 @@ export interface WolfpackNotificationData {
 
 // Order notification types
 export interface OrderNotificationData {
-  type: 'order_placed' | 'order_ready' | 'order_completed' | 'order_cancelled';
+  type: "order_placed" | "order_ready" | "order_completed" | "order_cancelled";
   orderId: string;
   orderNumber: number;
   customerName?: string;
@@ -144,7 +149,11 @@ export interface OrderNotificationData {
 
 // Event notification types
 export interface EventNotificationData {
-  type: 'event_created' | 'event_updated' | 'event_cancelled' | 'event_reminder';
+  type:
+    | "event_created"
+    | "event_updated"
+    | "event_cancelled"
+    | "event_reminder";
   eventId: string;
   eventTitle: string;
   eventDate: string;
@@ -153,36 +162,37 @@ export interface EventNotificationData {
 }
 
 // Combined notification data types
-export type NotificationData = 
-  | WolfpackNotificationData 
-  | OrderNotificationData 
-  | EventNotificationData 
+export type NotificationData =
+  | WolfpackNotificationData
+  | OrderNotificationData
+  | EventNotificationData
   | { [key: string]: string };
 
 // FCM token registration states
-export type TokenRegistrationState = 
-  | 'idle' 
-  | 'requesting_permission' 
-  | 'registering_token' 
-  | 'subscribing_to_topics' 
-  | 'completed' 
-  | 'error';
+export type TokenRegistrationState =
+  | "idle"
+  | "requesting_permission"
+  | "registering_token"
+  | "subscribing_to_topics"
+  | "completed"
+  | "error";
 
 // Notification categories for topic management
 export const NOTIFICATION_TOPICS = {
-  ALL_DEVICES: 'all_devices',
-  "wolf-pack-members": 'wolf-pack-members',
-  WOLFPACK_SALEM: 'wolfpack_salem',
-  WOLFPACK_PORTLAND: 'wolfpack_portland',
-  BARTENDERS: 'bartenders',
-  DJS: 'djs',
-  ORDERS: 'orders',
-  EVENTS: 'events',
-  PROMOTIONS: 'promotions',
-  EMERGENCY: 'emergency'
+  ALL_DEVICES: "all_devices",
+  "wolf-pack-members": "wolf-pack-members",
+  WOLFPACK_SALEM: "wolfpack_salem",
+  WOLFPACK_PORTLAND: "wolfpack_portland",
+  BARTENDERS: "bartenders",
+  DJS: "djs",
+  ORDERS: "orders",
+  EVENTS: "events",
+  PROMOTIONS: "promotions",
+  EMERGENCY: "emergency",
 } as const;
 
-export type NotificationTopicKey = typeof NOTIFICATION_TOPICS[keyof typeof NOTIFICATION_TOPICS];
+export type NotificationTopicKey =
+  typeof NOTIFICATION_TOPICS[keyof typeof NOTIFICATION_TOPICS];
 
 // Browser capability checks
 export interface BrowserCapabilities {

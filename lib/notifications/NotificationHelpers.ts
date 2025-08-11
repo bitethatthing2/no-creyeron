@@ -1,7 +1,12 @@
-import { supabase, createClient } from '@/lib/supabase/client';
+import { createClient, supabase } from "@/lib/supabase/client";
 // utils/notifications/NotificationHelpers.ts
 // Use actual database types based on your schema
-type NotificationType = 'info' | 'warning' | 'error' | 'order_new' | 'order_ready';
+type NotificationType =
+  | "info"
+  | "warning"
+  | "error"
+  | "order_new"
+  | "order_ready";
 
 interface NotificationRow {
   id: string;
@@ -44,30 +49,30 @@ export class NotificationHelpers {
   static async createNotification({
     recipientId,
     message,
-    type = 'info',
+    type = "info",
     link,
-    metadata = {}
+    metadata = {},
   }: CreateNotificationParams): Promise<string | null> {
     try {
       const supabase = this.getSupabaseClient();
-      
-      const { data, error } = await supabase.rpc('create_notification', {
+
+      const { data, error } = await supabase.rpc("create_notification", {
         p_recipient_id: recipientId,
         p_message: message,
         p_type: type,
         p_link: link || undefined,
-        p_metadata: metadata as any
+        p_metadata: metadata as any,
       });
 
       if (error) {
-        console.error('Error creating notification:', error);
+        console.error("Error creating notification:", error);
         throw error;
       }
 
-      console.log('Created notification:', data);
+      console.log("Created notification:", data);
       return data;
     } catch (error) {
-      console.error('Failed to create notification:', error);
+      console.error("Failed to create notification:", error);
       return null;
     }
   }
@@ -78,9 +83,9 @@ export class NotificationHelpers {
   static async createBulkNotifications({
     recipientIds,
     message,
-    type = 'info',
+    type = "info",
     link,
-    metadata = {}
+    metadata = {},
   }: BulkNotificationParams): Promise<string[]> {
     try {
       const supabase = this.getSupabaseClient();
@@ -88,16 +93,20 @@ export class NotificationHelpers {
 
       // Create notifications one by one since we don't have a bulk function
       for (const recipientId of recipientIds) {
-        const { data, error } = await supabase.rpc('create_notification', {
+        const { data, error } = await supabase.rpc("create_notification", {
           p_recipient_id: recipientId,
           p_message: message,
           p_type: type,
           p_link: link || undefined,
-          p_metadata: metadata as any
+          p_metadata: metadata as any,
         });
 
         if (error) {
-          console.error('Error creating notification for user:', recipientId, error);
+          console.error(
+            "Error creating notification for user:",
+            recipientId,
+            error,
+          );
           continue;
         }
 
@@ -106,10 +115,10 @@ export class NotificationHelpers {
         }
       }
 
-      console.log('Created bulk notifications:', notificationIds.length);
+      console.log("Created bulk notifications:", notificationIds.length);
       return notificationIds;
     } catch (error) {
-      console.error('Failed to create bulk notifications:', error);
+      console.error("Failed to create bulk notifications:", error);
       return [];
     }
   }
@@ -123,19 +132,19 @@ export class NotificationHelpers {
     items?: string[];
   }): Promise<string | null> {
     const message = `Your order #${orderDetails.orderId} is ready for pickup${
-      orderDetails.location ? ` at ${orderDetails.location}` : ''
+      orderDetails.location ? ` at ${orderDetails.location}` : ""
     }!`;
 
     return this.createNotification({
       recipientId,
       message,
-      type: 'order_ready',
+      type: "order_ready",
       metadata: {
         order_id: orderDetails.orderId,
         location: orderDetails.location,
         items: orderDetails.items,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 
@@ -149,20 +158,20 @@ export class NotificationHelpers {
     total?: number;
   }): Promise<string[]> {
     const message = `New order #${orderDetails.orderId}${
-      orderDetails.customerName ? ` from ${orderDetails.customerName}` : ''
+      orderDetails.customerName ? ` from ${orderDetails.customerName}` : ""
     } - ${orderDetails.items.length} item(s)`;
 
     return this.createBulkNotifications({
       recipientIds: staffIds,
       message,
-      type: 'order_new',
+      type: "order_new",
       metadata: {
         order_id: orderDetails.orderId,
         customer_name: orderDetails.customerName,
         items: orderDetails.items,
         total: orderDetails.total,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 
@@ -170,7 +179,7 @@ export class NotificationHelpers {
    * Create wolfpack/social notifications
    */
   static async notifyWolfpackActivity(recipientId: string, activity: {
-    type: 'message' | 'wink' | 'member_joined' | 'event';
+    type: "message" | "wink" | "member_joined" | "event";
     fromUser?: string;
     message: string;
     link?: string;
@@ -178,13 +187,13 @@ export class NotificationHelpers {
     return this.createNotification({
       recipientId,
       message: activity.message,
-      type: 'info',
+      type: "info",
       link: activity.link,
       metadata: {
         activity_type: activity.type,
         from_user: activity.fromUser,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 
@@ -192,28 +201,28 @@ export class NotificationHelpers {
    * Create system announcements
    */
   static async createSystemAnnouncement(
-    recipientIds: string[], 
+    recipientIds: string[],
     announcement: {
       title: string;
       message: string;
-      priority?: 'info' | 'warning' | 'error';
+      priority?: "info" | "warning" | "error";
       link?: string;
-    }
+    },
   ): Promise<string[]> {
-    const message = announcement.title ? 
-      `${announcement.title}: ${announcement.message}` : 
-      announcement.message;
+    const message = announcement.title
+      ? `${announcement.title}: ${announcement.message}`
+      : announcement.message;
 
     return this.createBulkNotifications({
       recipientIds,
       message,
-      type: announcement.priority || 'info',
+      type: announcement.priority || "info",
       link: announcement.link,
       metadata: {
-        announcement_type: 'system',
+        announcement_type: "system",
         title: announcement.title,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 
@@ -223,18 +232,18 @@ export class NotificationHelpers {
   static async getBartenderIds(): Promise<string[]> {
     try {
       const supabase = this.getSupabaseClient();
-      
+
       const { data, error } = await supabase
-        .from('users')
-        .select('id')
-        .eq('role', 'bartender')
-        .eq('status', 'active');
+        .from("users")
+        .select("id")
+        .eq("role", "bartender")
+        .eq("status", "active");
 
       if (error) throw error;
-      
-      return data.map(user => user.id);
+
+      return data.map((user) => user.id);
     } catch (error) {
-      console.error('Error fetching bartender IDs:', error);
+      console.error("Error fetching bartender IDs:", error);
       return [];
     }
   }
@@ -245,18 +254,18 @@ export class NotificationHelpers {
   static async getWolfpackMemberIds(): Promise<string[]> {
     try {
       const supabase = this.getSupabaseClient();
-      
+
       const { data, error } = await supabase
-        .from('users')
-        .select('id')
-        .eq('wolfpack_status', 'active')
-        .eq('status', 'active');
+        .from("users")
+        .select("id")
+        .eq("wolfpack_status", "active")
+        .eq("status", "active");
 
       if (error) throw error;
-      
-      return data.map(user => user.id);
+
+      return data.map((user) => user.id);
     } catch (error) {
-      console.error('Error fetching wolfpack member IDs:', error);
+      console.error("Error fetching wolfpack member IDs:", error);
       return [];
     }
   }
@@ -267,19 +276,19 @@ export class NotificationHelpers {
   static async markAsRead(notificationId: string): Promise<boolean> {
     try {
       const supabase = this.getSupabaseClient();
-      
-      const { data, error } = await supabase.rpc('mark_notification_read', {
-        p_notification_id: notificationId
+
+      const { data, error } = await supabase.rpc("mark_notification_read", {
+        p_notification_id: notificationId,
       });
 
       if (error) {
-        console.error('Error marking notification as read:', error);
+        console.error("Error marking notification as read:", error);
         return false;
       }
 
       return data;
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      console.error("Failed to mark notification as read:", error);
       return false;
     }
   }
@@ -287,24 +296,27 @@ export class NotificationHelpers {
   /**
    * Get user notifications
    */
-  static async getUserNotifications(userId?: string, limit: number = 50): Promise<NotificationRow[]> {
+  static async getUserNotifications(
+    userId?: string,
+    limit: number = 50,
+  ): Promise<NotificationRow[]> {
     try {
       const supabase = this.getSupabaseClient();
-      
-      const { data, error } = await supabase.rpc('fetch_notifications', {
-        p_user_id: userId || undefined,
+
+      const { data, error } = await supabase.rpc("fetch_notifications", {
+        p_user_id: conversationid || undefined,
         p_limit: limit,
-        p_offset: 0
+        p_offset: 0,
       });
 
       if (error) {
-        console.error('Error fetching notifications:', error);
+        console.error("Error fetching notifications:", error);
         return [];
       }
 
       return (data as any) || [];
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      console.error("Failed to fetch notifications:", error);
       return [];
     }
   }
@@ -316,8 +328,8 @@ export const notificationExamples = {
   orderReady: async (userId: string, orderId: string) => {
     await NotificationHelpers.notifyOrderReady(userId, {
       orderId,
-      location: 'Main Bar',
-      items: ['Beer', 'Wings']
+      location: "Main Bar",
+      items: ["Beer", "Wings"],
     });
   },
 
@@ -327,17 +339,17 @@ export const notificationExamples = {
     await NotificationHelpers.notifyNewOrder(bartenderIds, {
       orderId,
       customerName,
-      items
+      items,
     });
   },
 
   // When someone sends a wink
   winkReceived: async (recipientId: string, senderName: string) => {
     await NotificationHelpers.notifyWolfpackActivity(recipientId, {
-      type: 'wink',
+      type: "wink",
       fromUser: senderName,
       message: `${senderName} sent you a wink! 😉`,
-      link: '/wolfpack/messages'
+      link: "/wolfpack/messages",
     });
   },
 
@@ -345,9 +357,9 @@ export const notificationExamples = {
   maintenanceAlert: async () => {
     const allUserIds = await NotificationHelpers.getWolfpackMemberIds();
     await NotificationHelpers.createSystemAnnouncement(allUserIds, {
-      title: 'Scheduled Maintenance',
-      message: 'The app will be down for maintenance from 2-4 AM EST.',
-      priority: 'warning'
+      title: "Scheduled Maintenance",
+      message: "The app will be down for maintenance from 2-4 AM EST.",
+      priority: "warning",
     });
-  }
+  },
 };

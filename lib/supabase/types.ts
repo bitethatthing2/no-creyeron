@@ -1513,7 +1513,7 @@ export interface WolfpackMemberFilter extends LocationFilter {
 }
 
 export interface VideoFilter extends LocationFilter {
-  userId?: string;
+  conversationid?: string;
   status?: wolfpack_videostatus;
   privacy?: VideoPrivacy;
   featured?: boolean;
@@ -1522,7 +1522,7 @@ export interface VideoFilter extends LocationFilter {
 }
 
 export interface PostFilter extends LocationFilter {
-  userId?: string;
+  conversationid?: string;
   visibility?: PostVisibility;
   postType?: PostType;
   featured?: boolean;

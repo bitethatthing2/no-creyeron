@@ -12205,7 +12205,7 @@ BEGIN
     -- Generate timestamp string
     timestamp_str := to_char(now(), 'YYYYMMDD_HH24MISS');
     
-    -- Create unique filename: userid/timestamp_randomstring.extension
+    -- Create unique filename:conversationid/timestamp_randomstring.extension
     RETURN user_id::text || '/' || timestamp_str || '_' || substr(md5(random()::text), 1, 8) || '.' || file_extension;
 END;
 $_$;

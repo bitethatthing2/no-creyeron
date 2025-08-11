@@ -39,7 +39,7 @@ if (insertError) {
 
 ```typescript
 // lib/services/wolfpack-social.service.ts
-async toggleLike(videoId: string, userId: string) {
+async toggleLike(videoId: string,conversationid: string) {
   try {
     const result = await togglePostLike(videoId);
     return { success: true, liked: result.liked };

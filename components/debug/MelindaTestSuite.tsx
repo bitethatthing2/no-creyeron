@@ -159,7 +159,7 @@ export function MelindaTestSuite() {
     
     updateTestResult(testIndex, 'success', 
       '✅ Video posting uses correct user_id mapping',
-      { userId: currentUser.id, testData: testPostData }
+      {conversationid: currentUser.id, testData: testPostData }
     );
   };
 

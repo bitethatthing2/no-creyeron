@@ -162,7 +162,7 @@ export class WolfpackFeedServiceEnhanced {
    */
   static async likePost(
     postId: string,
-    userId: string,
+    conversationid: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Check if already liked
@@ -170,7 +170,7 @@ export class WolfpackFeedServiceEnhanced {
         .from("wolfpack_post_likes")
         .select("id")
         .eq("video_id", postId)
-        .eq("user_id", userId)
+        .eq("user_id", conversationid)
         .single();
 
       if (existingLike) {
@@ -179,7 +179,7 @@ export class WolfpackFeedServiceEnhanced {
           .from("wolfpack_post_likes")
           .delete()
           .eq("video_id", postId)
-          .eq("user_id", userId);
+          .eq("user_id", conversationid);
 
         if (error) throw error;
         return { success: true };
@@ -189,7 +189,7 @@ export class WolfpackFeedServiceEnhanced {
           .from("wolfpack_post_likes")
           .insert({
             video_id: postId,
-            user_id: userId,
+            user_id: conversationid,
             created_at: new Date().toISOString(),
           });
 
@@ -210,7 +210,7 @@ export class WolfpackFeedServiceEnhanced {
    */
   static async sharePost(
     postId: string,
-    userId?: string,
+    conversationid?: string,
   ): Promise<{ success: boolean; shareUrl: string }> {
     try {
       // Increment share count (you might want to add a shares table)

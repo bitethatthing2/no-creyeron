@@ -157,7 +157,7 @@ import { featureFlagsService } from '@/lib/services/feature-flags.service';
 // Check feature programmatically
 const result = await featureFlagsService.checkFeatureAccess(
   'wolfpack_video_upload', 
-  userId
+ conversationid
 );
 
 // Toggle feature (admin only)

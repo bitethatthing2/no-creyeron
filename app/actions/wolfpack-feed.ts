@@ -39,7 +39,7 @@ export interface FetchFeedResponse {
 export async function fetchFeedItems(
   page: number = 1,
   limit: number = 10,
-  userId?: string,
+  conversationid?: string,
   currentUserId?: string,
 ): Promise<FetchFeedResponse> {
   try {
@@ -47,7 +47,7 @@ export async function fetchFeedItems(
     return await WolfpackService.feed.fetchFeedItems({
       page,
       limit,
-      userId,
+      conversationid,
       currentUserId,
     });
   } catch (error) {

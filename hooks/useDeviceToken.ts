@@ -1,45 +1,54 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { supabase } from '@/lib/supabase';
-import type { DeviceToken, FCMTokenData, DeviceInfo } from '@/types/global/notifications';
+import { useCallback, useEffect, useState } from "react";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { supabase } from "@/lib/supabase";
+import type {
+  DeviceInfo,
+  DeviceToken,
+  FCMTokenData,
+} from "@/types/global/notifications";
 
 /**
  * Detect device information for token registration
  */
 function getDeviceInfo(): DeviceInfo {
-  if (typeof window === 'undefined') {
-    return { type: 'web', name: 'Server' };
+  if (typeof window === "undefined") {
+    return { type: "web", name: "Server" };
   }
 
   const ua = navigator.userAgent;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      (window.navigator as { standalone?: boolean }).standalone === true;
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as { standalone?: boolean }).standalone === true;
 
   if (/iPad|iPhone|iPod/.test(ua)) {
     return {
-      type: 'ios',
-      name: `iOS ${/OS (\d+_\d+)/.exec(ua)?.[1]?.replace('_', '.') || 'Unknown'}`,
+      type: "ios",
+      name: `iOS ${
+        /OS (\d+_\d+)/.exec(ua)?.[1]?.replace("_", ".") || "Unknown"
+      }`,
       version: process.env.NEXT_PUBLIC_APP_VERSION,
-      isStandalone
+      isStandalone,
     };
   }
 
   if (/Android/.test(ua)) {
     return {
-      type: 'android',
-      name: `Android ${/Android (\d+\.\d+)/.exec(ua)?.[1] || 'Unknown'}`,
+      type: "android",
+      name: `Android ${/Android (\d+\.\d+)/.exec(ua)?.[1] || "Unknown"}`,
       version: process.env.NEXT_PUBLIC_APP_VERSION,
-      isStandalone
+      isStandalone,
     };
   }
 
   return {
-    type: 'web',
-    name: `${navigator.platform} - ${/Chrome|Firefox|Safari|Edge|Opera/.exec(ua)?.[0] || 'Browser'}`,
+    type: "web",
+    name: `${navigator.platform} - ${
+      /Chrome|Firefox|Safari|Edge|Opera/.exec(ua)?.[0] || "Browser"
+    }`,
     version: process.env.NEXT_PUBLIC_APP_VERSION,
-    isStandalone
+    isStandalone,
   };
 }
 
@@ -48,124 +57,147 @@ export function useDeviceToken(userId?: string) {
   const [deviceToken, setDeviceToken] = useState<DeviceToken | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [permission, setPermission] = useState<NotificationPermission>(
+    "default",
+  );
 
   /**
    * Request notification permission and get FCM token
    */
-  const requestPermissionAndToken = useCallback(async (): Promise<string | null> => {
-    if (typeof window === 'undefined') return null;
+  const requestPermissionAndToken = useCallback(
+    async (): Promise<string | null> => {
+      if (typeof window === "undefined") return null;
 
-    try {
-      // Check if notifications are supported
-      if (!('Notification' in window)) {
-        throw new Error('This browser does not support notifications');
+      try {
+        // Check if notifications are supported
+        if (!("Notification" in window)) {
+          throw new Error("This browser does not support notifications");
+        }
+
+        // Request permission
+        const permission = await Notification.requestPermission();
+        setPermission(permission);
+
+        if (permission !== "granted") {
+          throw new Error("Notification permission denied");
+        }
+
+        // Initialize Firebase messaging
+        const messaging = getMessaging();
+        const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+
+        if (!vapidKey) {
+          throw new Error("VAPID key not configured");
+        }
+
+        // Get FCM token
+        const token = await getToken(messaging, { vapidKey });
+
+        if (!token) {
+          throw new Error("No registration token available");
+        }
+
+        return token;
+      } catch (err) {
+        const errorMessage = err instanceof Error
+          ? err.message
+          : "Failed to get FCM token";
+        setError(errorMessage);
+        console.error("Error getting FCM token:", err);
+        return null;
       }
-
-      // Request permission
-      const permission = await Notification.requestPermission();
-      setPermission(permission);
-
-      if (permission !== 'granted') {
-        throw new Error('Notification permission denied');
-      }
-
-      // Initialize Firebase messaging
-      const messaging = getMessaging();
-      const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-
-      if (!vapidKey) {
-        throw new Error('VAPID key not configured');
-      }
-
-      // Get FCM token
-      const token = await getToken(messaging, { vapidKey });
-      
-      if (!token) {
-        throw new Error('No registration token available');
-      }
-
-      return token;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to get FCM token';
-      setError(errorMessage);
-      console.error('Error getting FCM token:', err);
-      return null;
-    }
-  }, []);
+    },
+    [],
+  );
 
   /**
    * Save device token to database
    */
-  const saveDeviceToken = useCallback(async (tokenData: FCMTokenData, userId: string): Promise<DeviceToken | null> => {
-    try {      const deviceInfo = getDeviceInfo();
+  const saveDeviceToken = useCallback(
+    async (
+      tokenData: FCMTokenData,
+      conversationid: string,
+    ): Promise<DeviceToken | null> => {
+      try {
+        const deviceInfo = getDeviceInfo();
 
-      // First, deactivate any existing tokens for this user
-      await supabase
-        .from('device_tokens')
-        .update({ is_active: false })
-        .eq('id', userId);
+        // First, deactivate any existing tokens for this user
+        await supabase
+          .from("device_tokens")
+          .update({ is_active: false })
+          .eq("id", conversationid);
 
-      // Insert new active token
-      const { data, error } = await supabase
-        .from('device_tokens')
-        .insert({
-          id: userId,
-          token: tokenData.token,
-          device_type: deviceInfo.type,
-          device_name: deviceInfo.name,
-          app_version: deviceInfo.version || process.env.NEXT_PUBLIC_APP_VERSION,
-          is_active: true,
-          last_used_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+        // Insert new active token
+        const { data, error } = await supabase
+          .from("device_tokens")
+          .insert({
+            id: conversationid,
+            token: tokenData.token,
+            device_type: deviceInfo.type,
+            device_name: deviceInfo.name,
+            app_version: deviceInfo.version ||
+              process.env.NEXT_PUBLIC_APP_VERSION,
+            is_active: true,
+            last_used_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
-      if (error) {
-        throw new Error(error.message);
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Type assertion with proper type checking
+        if (data && "id" in data && "device_type" in data) {
+          return data as unknown as DeviceToken;
+        }
+
+        return null;
+      } catch (err) {
+        const errorMessage = err instanceof Error
+          ? err.message
+          : "Failed to save device token";
+        setError(errorMessage);
+        console.error("Error saving device token:", err);
+        return null;
       }
-
-      // Type assertion with proper type checking
-      if (data && 'id' in data && 'device_type' in data) {
-        return data as unknown as DeviceToken;
-      }
-      
-      return null;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save device token';
-      setError(errorMessage);
-      console.error('Error saving device token:', err);
-      return null;
-    }
-  }, []);
+    },
+    [],
+  );
 
   /**
    * Load existing device token for user
    */
-  const loadDeviceToken = useCallback(async (userId: string): Promise<DeviceToken | null> => {
-    try {      const { data, error } = await supabase
-        .from('device_tokens')
-        .select('*')
-        .eq('id', userId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+  const loadDeviceToken = useCallback(
+    async (userId: string): Promise<DeviceToken | null> => {
+      try {
+        const { data, error } = await supabase
+          .from("device_tokens")
+          .select("*")
+          .eq("id", conversationid)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (error) {
-        throw new Error(error.message);
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        return data as DeviceToken | null;
+      } catch (err) {
+        const errorMessage = err instanceof Error
+          ? err.message
+          : "Failed to load device token";
+        setError(errorMessage);
+        console.error("Error loading device token:", err);
+        return null;
       }
-
-      return data as DeviceToken | null;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load device token';
-      setError(errorMessage);
-      console.error('Error loading device token:', err);
-      return null;
-    }
-  }, []);
+    },
+    [],
+  );
 
   /**
    * Initialize FCM token management
@@ -177,32 +209,33 @@ export function useDeviceToken(userId?: string) {
     try {
       // First, load existing token from database
       const existingToken = await loadDeviceToken(userId);
-      
+
       if (existingToken) {
         setDeviceToken(existingToken);
         setFcmToken(existingToken.token);
-        
+
         // Update last used timestamp
         if (existingToken.id) {
           await supabase
-            .from('device_tokens')
+            .from("device_tokens")
             .update({
               last_used_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
-            .eq('id', existingToken.id);
+            .eq("id", existingToken.id);
         }
       }
 
       // Check current permission status
-      if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (typeof window !== "undefined" && "Notification" in window) {
         setPermission(Notification.permission);
       }
-
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize token';
+      const errorMessage = err instanceof Error
+        ? err.message
+        : "Failed to initialize token";
       setError(errorMessage);
-      console.error('Error initializing token:', err);
+      console.error("Error initializing token:", err);
     } finally {
       setLoading(false);
     }
@@ -211,37 +244,42 @@ export function useDeviceToken(userId?: string) {
   /**
    * Register new FCM token
    */
-  const registerToken = useCallback(async (userId: string): Promise<boolean> => {
-    try {
-      const token = await requestPermissionAndToken();
-      
-      if (!token) {
+  const registerToken = useCallback(
+    async (userId: string): Promise<boolean> => {
+      try {
+        const token = await requestPermissionAndToken();
+
+        if (!token) {
+          return false;
+        }
+
+        const tokenData: FCMTokenData = {
+          token,
+          deviceType: getDeviceInfo().type,
+          deviceName: getDeviceInfo().name,
+          appVersion: process.env.NEXT_PUBLIC_APP_VERSION,
+        };
+
+        const savedToken = await saveDeviceToken(tokenData, conversationid);
+
+        if (savedToken) {
+          setDeviceToken(savedToken);
+          setFcmToken(token);
+          return true;
+        }
+
+        return false;
+      } catch (err) {
+        const errorMessage = err instanceof Error
+          ? err.message
+          : "Failed to register token";
+        setError(errorMessage);
+        console.error("Error registering token:", err);
         return false;
       }
-
-      const tokenData: FCMTokenData = {
-        token,
-        deviceType: getDeviceInfo().type,
-        deviceName: getDeviceInfo().name,
-        appVersion: process.env.NEXT_PUBLIC_APP_VERSION
-      };
-
-      const savedToken = await saveDeviceToken(tokenData, userId);
-      
-      if (savedToken) {
-        setDeviceToken(savedToken);
-        setFcmToken(token);
-        return true;
-      }
-
-      return false;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to register token';
-      setError(errorMessage);
-      console.error('Error registering token:', err);
-      return false;
-    }
-  }, [requestPermissionAndToken, saveDeviceToken]);
+    },
+    [requestPermissionAndToken, saveDeviceToken],
+  );
 
   /**
    * Deactivate current device token
@@ -251,16 +289,16 @@ export function useDeviceToken(userId?: string) {
 
     try {
       if (!deviceToken.id) {
-        throw new Error('Device token ID is missing');
+        throw new Error("Device token ID is missing");
       }
-      
+
       const { error } = await supabase
-        .from('device_tokens')
+        .from("device_tokens")
         .update({
           is_active: false,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', deviceToken.id);
+        .eq("id", deviceToken.id);
 
       if (error) {
         throw new Error(error.message);
@@ -270,14 +308,16 @@ export function useDeviceToken(userId?: string) {
       setFcmToken(null);
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to deactivate token';
+      const errorMessage = err instanceof Error
+        ? err.message
+        : "Failed to deactivate token";
       setError(errorMessage);
-      console.error('Error deactivating token:', err);
+      console.error("Error deactivating token:", err);
       return false;
     }
   }, [deviceToken]);
 
-  // Initialize token when userId is available
+  // Initialize token whenconversationid is available
   useEffect(() => {
     if (userId) {
       initializeToken(userId);
@@ -288,25 +328,25 @@ export function useDeviceToken(userId?: string) {
 
   // Set up FCM message listener
   useEffect(() => {
-    if (typeof window === 'undefined' || !fcmToken) return;
+    if (typeof window === "undefined" || !fcmToken) return;
 
     try {
       const messaging = getMessaging();
-      
+
       const unsubscribe = onMessage(messaging, (payload) => {
-        console.log('Foreground message received:', payload);
-        
+        console.log("Foreground message received:", payload);
+
         // Handle foreground notifications
         if (payload.notification) {
           const { title, body } = payload.notification;
-          
+
           // Show browser notification if permission is granted
-          if (Notification.permission === 'granted') {
-            new Notification(title || 'Side Hustle Bar', {
-              body: body || '',
-              icon: '/icons/icon-192x192.png',
-              badge: '/icons/icon-72x72.png',
-              data: payload.data
+          if (Notification.permission === "granted") {
+            new Notification(title || "Side Hustle Bar", {
+              body: body || "",
+              icon: "/icons/icon-192x192.png",
+              badge: "/icons/icon-72x72.png",
+              data: payload.data,
             });
           }
         }
@@ -314,7 +354,7 @@ export function useDeviceToken(userId?: string) {
 
       return unsubscribe;
     } catch (err) {
-      console.error('Error setting up message listener:', err);
+      console.error("Error setting up message listener:", err);
     }
   }, [fcmToken]);
 
@@ -324,10 +364,10 @@ export function useDeviceToken(userId?: string) {
     loading,
     error,
     permission,
-    registerToken: userId ? () => registerToken(userId) : null,
+    registerToken: conversationid ? () => registerToken(userId) : null,
     deactivateToken,
-    refresh: userId ? () => initializeToken(userId) : null,
-    isSupported: typeof window !== 'undefined' && 'Notification' in window,
-    deviceInfo: getDeviceInfo()
+    refresh: conversationid ? () => initializeToken(userId) : null,
+    isSupported: typeof window !== "undefined" && "Notification" in window,
+    deviceInfo: getDeviceInfo(),
   };
 }

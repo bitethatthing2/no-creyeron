@@ -37,10 +37,10 @@ interface UserStats {
 interface UserProfileProps {
   isOpen: boolean;
   onClose: () => void;
-  userId?: string;
+ conversationid?: string;
 }
 
-export default function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
+export default function UserProfile({ isOpen, onClose,conversationid }: UserProfileProps) {
   const { user } = useConsistentAuth();
   const [stats, setStats] = useState<UserStats>({
     followers: 1234,

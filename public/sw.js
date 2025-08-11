@@ -273,7 +273,7 @@ async function syncWolfpackActions() {
           body: JSON.stringify({
             action: action.type.replace('wolfpack_', ''), // Remove prefix
             videoId: action.videoId,
-            userId: action.userId,
+           conversationid: action.userId,
             targetUserId: action.targetUserId,
             content: action.content,
             parentId: action.parentId

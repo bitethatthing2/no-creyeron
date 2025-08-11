@@ -41,7 +41,7 @@ await supabase.from('wolfpack_post_likes')
 
 // ✅ Correct column names  
 .eq('video_id', postId)     // Not video_id!
-.eq('user_id', userId)
+.eq('user_id',conversationid)
 
 // ✅ Handle unique constraint (error code 23505)
 if (error?.code === '23505') {
@@ -334,14 +334,14 @@ const { error } = await supabase
   .from('wolfpack_post_likes')
   .delete()
   .eq('video_id', postId)
-  // No need to add .eq('user_id', userId) - RLS handles this
+  // No need to add .eq('user_id',conversationid) - RLS handles this
 
 // ✅ For extra safety, still include user check
 const { error } = await supabase
   .from('wolfpack_comments')
   .update({ content: newContent })
   .eq('id', commentId)
-  .eq('user_id', userId)  // Double-check ownership
+  .eq('user_id',conversationid)  // Double-check ownership
 ```
 
 ---

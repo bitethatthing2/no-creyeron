@@ -1,7 +1,11 @@
-import { WolfpackService } from './wolfpack-auth.service';
-import { WolfpackLocationService, type LocationKey, SIDE_HUSTLE_LOCATIONS } from './wolfpack-location.service';
-import type { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { WolfpackService } from "./wolfpack-auth.service";
+import {
+  type LocationKey,
+  SIDE_HUSTLE_LOCATIONS,
+  WolfpackLocationService,
+} from "./wolfpack-location.service";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 export interface MembershipStatus {
   isActive: boolean;
@@ -10,7 +14,7 @@ export interface MembershipStatus {
   locationKey: LocationKey | null;
   joinedAt: string | null;
   tableLocation: string | null;
-  status: 'active' | 'inactive' | 'pending' | null;
+  status: "active" | "inactive" | "pending" | null;
   error?: string;
 }
 
@@ -52,8 +56,8 @@ export class WolfpackMembershipService {
    * Check user's current membership status - consolidates multiple implementations
    */
   static async checkMembership(
-    userId: string, 
-    locationId?: string
+    conversationid: string,
+    locationId?: string,
   ): Promise<MembershipStatus> {
     try {
       let query = supabase
@@ -65,12 +69,12 @@ export class WolfpackMembershipService {
           wolfpack_joined_at,
           created_at
         `)
-        .eq('id', userId)
-        .eq('is_wolfpack_member', true);
+        .eq("id", conversationid)
+        .eq("is_wolfpack_member", true);
 
       // Add location filter if provided
       if (locationId) {
-        query = query.eq('location_id', locationId);
+        query = query.eq("location_id", locationId);
       }
 
       const { data, error } = await query.maybeSingle();
@@ -85,11 +89,13 @@ export class WolfpackMembershipService {
           locationKey: null,
           joinedAt: null,
           tableLocation: null,
-          status: null
+          status: null,
         };
       }
 
-      const locationKey = data.location_id ? WolfpackService.location.getLocationKeyById(data.location_id) : null;
+      const locationKey = data.location_id
+        ? WolfpackService.location.getLocationKeyById(data.location_id)
+        : null;
 
       return {
         isActive: true,
@@ -98,10 +104,10 @@ export class WolfpackMembershipService {
         locationKey,
         joinedAt: data.wolfpack_joined_at || data.created_at,
         tableLocation: null,
-        status: (data.wolfpack_status || 'active') as 'active'
+        status: (data.wolfpack_status || "active") as "active",
       };
     } catch (error) {
-      console.error('Error checking membership:', error);
+      console.error("Error checking membership:", error);
       return {
         isActive: false,
         membershipId: null,
@@ -110,7 +116,9 @@ export class WolfpackMembershipService {
         joinedAt: null,
         tableLocation: null,
         status: null,
-        error: error instanceof Error ? error.message : 'Failed to check membership'
+        error: error instanceof Error
+          ? error.message
+          : "Failed to check membership",
       };
     }
   }
@@ -121,7 +129,7 @@ export class WolfpackMembershipService {
   static async joinPack(
     user: User,
     data: JoinPackData,
-    locationId?: string
+    locationId?: string,
   ): Promise<JoinResult> {
     try {
       // Verify user authentication
@@ -129,7 +137,7 @@ export class WolfpackMembershipService {
       if (!authResult.isVerified) {
         return {
           success: false,
-          error: authResult.error || 'User verification failed'
+          error: authResult.error || "User verification failed",
         };
       }
 
@@ -142,11 +150,12 @@ export class WolfpackMembershipService {
           targetLocationId = SIDE_HUSTLE_LOCATIONS.salem.id;
         } else {
           // Regular users need location verification
-          const locationResult = await WolfpackService.location.verifyUserLocation();
+          const locationResult = await WolfpackService.location
+            .verifyUserLocation();
           if (!locationResult.isAtLocation || !locationResult.locationId) {
             return {
               success: false,
-              error: 'You must be at Side Hustle Bar to join the Wolf Pack'
+              error: "You must be at Side Hustle Bar to join the Wolf Pack",
             };
           }
           targetLocationId = locationResult.locationId;
@@ -154,12 +163,15 @@ export class WolfpackMembershipService {
       }
 
       // Check for existing active membership
-      const existingMembership = await this.checkMembership(user.id, targetLocationId);
+      const existingMembership = await this.checkMembership(
+        user.id,
+        targetLocationId,
+      );
       if (existingMembership.isActive && existingMembership.membershipId) {
         return {
           success: true,
           membershipId: existingMembership.membershipId,
-          data: existingMembership
+          data: existingMembership,
         };
       }
 
@@ -167,24 +179,29 @@ export class WolfpackMembershipService {
       if (!targetLocationId) {
         return {
           success: false,
-          error: 'Unable to determine location'
+          error: "Unable to determine location",
         };
       }
 
       // Use RPC function for joining (maintains existing backend logic)
       const { data: rpcResult, error: rpcError } = await supabase
-        .rpc('join_wolfpack', {
+        .rpc("join_wolfpack", {
           p_location_id: targetLocationId,
           p_latitude: data.latitude ?? undefined,
           p_longitude: data.longitude ?? undefined,
-          p_table_location: data.table_location ?? undefined
+          p_table_location: data.table_location ?? undefined,
         });
 
       if (rpcError) throw rpcError;
 
       // Check if RPC returned an error result
-      if (rpcResult && typeof rpcResult === 'object' && 'success' in rpcResult && !rpcResult.success) {
-        const errorMessage = 'error' in rpcResult ? String(rpcResult.error) : 'Failed to join wolfpack';
+      if (
+        rpcResult && typeof rpcResult === "object" && "success" in rpcResult &&
+        !rpcResult.success
+      ) {
+        const errorMessage = "error" in rpcResult
+          ? String(rpcResult.error)
+          : "Failed to join wolfpack";
         throw new Error(errorMessage);
       }
 
@@ -196,30 +213,33 @@ export class WolfpackMembershipService {
           vibe_status: data.current_vibe,
           favorite_drink: data.favorite_drink,
           looking_for: data.looking_for,
-          instagram_handle: data.instagram_handle
+          instagram_handle: data.instagram_handle,
         });
       }
 
       // Get the new membership
-      const newMembership = await this.checkMembership(user.id, targetLocationId);
+      const newMembership = await this.checkMembership(
+        user.id,
+        targetLocationId,
+      );
 
       if (!newMembership.membershipId) {
         return {
           success: false,
-          error: 'Failed to create membership'
+          error: "Failed to create membership",
         };
       }
 
       return {
         success: true,
         membershipId: newMembership.membershipId,
-        data: newMembership
+        data: newMembership,
       };
     } catch (error) {
-      console.error('Error joining wolfpack:', error);
+      console.error("Error joining wolfpack:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to join pack'
+        error: error instanceof Error ? error.message : "Failed to join pack",
       };
     }
   }
@@ -231,17 +251,17 @@ export class WolfpackMembershipService {
     try {
       const { error } = await supabase
         .from("users")
-        .update({ 
-          wolfpack_status: 'inactive',
+        .update({
+          wolfpack_status: "inactive",
           is_wolfpack_member: false,
-          last_activity: new Date().toISOString()
+          last_activity: new Date().toISOString(),
         })
-        .eq('id', membershipId);
+        .eq("id", membershipId);
 
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('Error leaving wolfpack:', error);
+      console.error("Error leaving wolfpack:", error);
       return false;
     }
   }
@@ -250,29 +270,29 @@ export class WolfpackMembershipService {
    * Update member profile information
    */
   static async updateMemberProfile(
-    userId: string,
+    conversationid: string,
     locationId: string,
-    profileData: Partial<MemberProfile>
+    profileData: Partial<MemberProfile>,
   ): Promise<boolean> {
     try {
       // Update users table directly since wolf_profiles doesn't exist
       const { error: memberError } = await supabase
-        .from('users')
+        .from("users")
         .update({
           display_name: profileData.display_name,
           favorite_drink: profileData.favorite_drink,
           looking_for: profileData.looking_for,
           instagram_handle: profileData.instagram_handle,
-          last_activity: new Date().toISOString()
+          last_activity: new Date().toISOString(),
         })
-        .eq('id', userId)
-        .eq('is_wolfpack_member', true);
+        .eq("id", conversationid)
+        .eq("is_wolfpack_member", true);
 
       if (memberError) throw memberError;
 
       return true;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       return false;
     }
   }
@@ -284,30 +304,32 @@ export class WolfpackMembershipService {
     try {
       // Use users table directly since wolf_profiles doesn't exist
       const { data: memberData, error: memberError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .eq('is_wolfpack_member', true)
+        .from("users")
+        .select("*")
+        .eq("id", conversationid)
+        .eq("is_wolfpack_member", true)
         .single();
 
       if (memberError) throw memberError;
 
       // Convert to MemberProfile format
-      return memberData ? {
-        id: memberData.id || '',
-        display_name: memberData.display_name || null,
-        wolf_emoji: null,
-        favorite_drink: memberData.favorite_drink || null,
-        vibe_status: null,
-        looking_for: memberData.looking_for || null,
-        instagram_handle: memberData.instagram_handle || null,
-        bio: memberData.bio || null,
-        profile_image_url: memberData.profile_image_url || null,
-        is_profile_visible: memberData.is_profile_visible ?? true,
-        allow_messages: memberData.allow_messages ?? true
-      } : null;
+      return memberData
+        ? {
+          id: memberData.id || "",
+          display_name: memberData.display_name || null,
+          wolf_emoji: null,
+          favorite_drink: memberData.favorite_drink || null,
+          vibe_status: null,
+          looking_for: memberData.looking_for || null,
+          instagram_handle: memberData.instagram_handle || null,
+          bio: memberData.bio || null,
+          profile_image_url: memberData.profile_image_url || null,
+          is_profile_visible: memberData.is_profile_visible ?? true,
+          allow_messages: memberData.allow_messages ?? true,
+        }
+        : null;
     } catch (error) {
-      console.error('Error fetching member profile:', error);
+      console.error("Error fetching member profile:", error);
       return null;
     }
   }
@@ -322,15 +344,15 @@ export class WolfpackMembershipService {
         .select(`
           *
         `)
-        .eq('location_id', locationId)
-        .eq('is_wolfpack_member', true)
-        .eq('wolfpack_status', 'active')
-        .order('wolfpack_joined_at', { ascending: false });
+        .eq("location_id", locationId)
+        .eq("is_wolfpack_member", true)
+        .eq("wolfpack_status", "active")
+        .order("wolfpack_joined_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching location members:', error);
+      console.error("Error fetching location members:", error);
       return [];
     }
   }
@@ -338,18 +360,20 @@ export class WolfpackMembershipService {
   /**
    * Check if user can join wolfpack (rate limiting, restrictions, etc.)
    */
-  static async canUserJoin(userId: string): Promise<{ canJoin: boolean; reason?: string }> {
+  static async canUserJoin(
+    userId: string,
+  ): Promise<{ canJoin: boolean; reason?: string }> {
     try {
       // Check for recent membership activity
       const { data: recentMembership, error } = await supabase
         .from("users")
-        .select('last_activity, wolfpack_joined_at')
-        .eq('id', userId)
-        .order('wolfpack_joined_at', { ascending: false })
+        .select("last_activity, wolfpack_joined_at")
+        .eq("id", conversationid)
+        .order("wolfpack_joined_at", { ascending: false })
         .limit(1)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== "PGRST116") {
         throw error;
       }
 
@@ -358,24 +382,25 @@ export class WolfpackMembershipService {
         try {
           const lastActivity = new Date(recentMembership.last_activity);
           const now = new Date();
-          const minutesSinceActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
-          
+          const minutesSinceActivity =
+            (now.getTime() - lastActivity.getTime()) / (1000 * 60);
+
           // Rate limit: prevent rejoining within 5 minutes
           if (minutesSinceActivity < 5) {
             return {
               canJoin: false,
-              reason: 'Please wait a few minutes before rejoining the pack'
+              reason: "Please wait a few minutes before rejoining the pack",
             };
           }
         } catch (dateError) {
-          console.error('Error parsing last_activity date:', dateError);
+          console.error("Error parsing last_activity date:", dateError);
           // Allow join if date parsing fails
         }
       }
 
       return { canJoin: true };
     } catch (error) {
-      console.error('Error checking join eligibility:', error);
+      console.error("Error checking join eligibility:", error);
       return { canJoin: true }; // Default to allowing join on error
     }
   }
@@ -387,29 +412,33 @@ export class WolfpackMembershipService {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select('id, wolfpack_joined_at, wolfpack_status, is_wolfpack_member')
-        .eq('location_id', locationId);
+        .select("id, wolfpack_joined_at, wolfpack_status, is_wolfpack_member")
+        .eq("location_id", locationId);
 
       if (error) throw error;
 
       const stats = {
         totalMembers: data?.length || 0,
-        activeMembers: data?.filter(m => m.is_wolfpack_member === true && m.wolfpack_status === 'active').length || 0,
-        recentJoins: data?.filter(m => {
-          if (!m.wolfpack_joined_at) return false;
+        activeMembers: data?.filter((m) =>
+          m.is_wolfpack_member === true && m.wolfpack_status === "active"
+        ).length || 0,
+        recentJoins: data?.filter((m) => {
+          if (!m.wolfpack_joined_at) {
+            return false;
+          }
           const joinedAt = new Date(m.wolfpack_joined_at);
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
           return joinedAt > oneDayAgo;
-        }).length || 0
+        }).length || 0,
       };
 
       return stats;
     } catch (error) {
-      console.error('Error fetching location stats:', error);
+      console.error("Error fetching location stats:", error);
       return {
         totalMembers: 0,
         activeMembers: 0,
-        recentJoins: 0
+        recentJoins: 0,
       };
     }
   }

@@ -422,7 +422,7 @@ export function WolfpackProfileManager() {
             <div className="flex flex-col items-center space-y-4">
               {profileUserId ? (
                 <ProfileImageUploaderWithHistory
-                  userId={profileUserId}
+                 conversationid={profileUserId}
                   currentImageUrl={avatarUrl}
                   displayName={formData.display_name}
                   emoji={formData.wolf_emoji}
