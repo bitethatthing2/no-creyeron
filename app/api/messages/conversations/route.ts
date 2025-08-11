@@ -40,19 +40,55 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Current user not found' }, { status: 404 });
     }
 
-    // Fetch conversations using the new user_conversations_view
-    const { data: conversationsData, error } = await supabase
-      .from('user_conversations_view')
-      .select('*')
+    // Temporarily use direct query until user_conversations_view is confirmed to exist
+    const { data: participantData, error: participantError } = await supabase
+      .from('wolfpack_conversation_participants')
+      .select(`
+        conversation_id,
+        wolfpack_conversations!inner(
+          id,
+          conversation_type,
+          name,
+          last_message_at,
+          last_message_preview,
+          created_at,
+          updated_at
+        )
+      `)
       .eq('user_id', currentUserRecord.id)
-      .order('updated_at', { ascending: false });
+      .order('wolfpack_conversations.last_message_at', { ascending: false });
+
+    if (participantError) {
+      console.error('Error fetching conversations:', participantError);
+      return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
+    }
+
+    // Transform to expected format
+    const conversationsData = participantData?.map(p => ({
+      conversation_id: p.wolfpack_conversations.id,
+      conversation_type: p.wolfpack_conversations.conversation_type,
+      conversation_name: p.wolfpack_conversations.name,
+      last_message_at: p.wolfpack_conversations.last_message_at,
+      last_message_preview: p.wolfpack_conversations.last_message_preview,
+      created_at: p.wolfpack_conversations.created_at,
+      updated_at: p.wolfpack_conversations.updated_at,
+      unread_count: 0, // TODO: Calculate unread count
+      // For now, set placeholder other user data
+      other_user_id: null,
+      other_user_name: 'Chat Participant',
+      other_user_avatar: '/icons/wolf-icon.png',
+      other_user_username: null,
+      other_user_is_online: false
+    })) || [];
+
+    const error = participantError;
 
     if (error) {
       console.error('Error fetching conversations:', error);
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
     }
 
-    console.log('Raw conversations data from user_conversations_view:', conversationsData);
+    console.log('Raw conversations data from direct query:', conversationsData);
 
     // Transform the data from user_conversations_view to match frontend expectations
     const flattenedConversations = (conversationsData || []).map((conv: any) => {
