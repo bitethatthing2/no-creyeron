@@ -37,44 +37,11 @@ const NotificationIndicatorFallback = () => (
 
 export default function Page() {
   const [mounted, setMounted] = useState(false);
-  const [orderDropdownOpen, setOrderDropdownOpen] = useState(false);
   const { location } = useLocationState();
 
   // Wait for component to mount to ensure client-side rendering
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (orderDropdownOpen && !(event.target as Element).closest('.order-dropdown')) {
-        setOrderDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [orderDropdownOpen]);
-
-  // Optimized click handlers to prevent performance violations
-  const handleToggleDropdown = useCallback(() => {
-    setOrderDropdownOpen(prev => !prev);
-  }, []);
-
-  const handleDoorDashClick = useCallback(() => {
-    window.open('https://www.doordash.com/store/side-hustle-bar-salem-25388462/27964950/', '_blank');
-    setOrderDropdownOpen(false);
-  }, []);
-
-  const handleUberEatsClick = useCallback(() => {
-    window.open('https://www.ubereats.com/store/side-hustle-bar/n5ak1cjlRvuf0Hefn7Iddw', '_blank');
-    setOrderDropdownOpen(false);
-  }, []);
-
-  const handlePostmatesClick = useCallback(() => {
-    window.open('https://postmates.com/store/side-hustle-bar/n5ak1cjlRvuf0Hefn7Iddw', '_blank');
-    setOrderDropdownOpen(false);
   }, []);
 
   return (
@@ -165,52 +132,61 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Order Online Button - Higher Up */}
-          <div className="relative order-dropdown max-w-sm mx-auto mb-8 sm:mb-12 md:mb-16">
-            <div 
-              onClick={handleToggleDropdown}
-              className="bg-transparent hover:bg-white/10 text-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-4 text-base sm:text-lg md:text-xl font-semibold rounded border-2 border-white/80 hover:border-white transition-all shadow-lg cursor-pointer"
-            >
-              <div className="flex items-center justify-center gap-3">
-                <span>Order Online</span>
-                <svg className={`w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform ${orderDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+          {/* Order Online - Inline Icons */}
+          <div className="max-w-md mx-auto mb-8 sm:mb-12 md:mb-16">
+            <h3 className="text-white text-lg sm:text-xl md:text-2xl font-semibold text-center mb-4 sm:mb-6">
+              Order Online
+            </h3>
+            <div className="flex items-center justify-center space-x-4 sm:space-x-6">
+              <a 
+                href="https://www.doordash.com/store/side-hustle-bar-salem-25388462/27964950/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-12 w-12 sm:h-16 sm:w-16 bg-white rounded-xl flex items-center justify-center hover:bg-red-50 transition-all group shadow-lg hover:shadow-xl hover:scale-110"
+                aria-label="Order on DoorDash"
+              >
+                <Image 
+                  src={getSmartCacheBustedUrl('/icons/doordash_icon.png')} 
+                  alt="DoorDash" 
+                  width={28} 
+                  height={28}
+                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform"
+                  style={{width: 'auto', height: 'auto'}}
+                />
+              </a>
+              <a 
+                href="https://www.ubereats.com/store/side-hustle-bar/n5ak1cjlRvuf0Hefn7Iddw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-12 w-12 sm:h-16 sm:w-16 bg-white rounded-xl flex items-center justify-center hover:bg-green-50 transition-all group shadow-lg hover:shadow-xl hover:scale-110"
+                aria-label="Order on Uber Eats"
+              >
+                <Image 
+                  src={getSmartCacheBustedUrl('/icons/uber-eats.png')} 
+                  alt="Uber Eats" 
+                  width={28} 
+                  height={28}
+                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform"
+                  style={{width: 'auto', height: 'auto'}}
+                />
+              </a>
+              <a 
+                href="https://postmates.com/store/side-hustle-bar/n5ak1cjlRvuf0Hefn7Iddw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-12 w-12 sm:h-16 sm:w-16 bg-white rounded-xl flex items-center justify-center hover:bg-orange-50 transition-all group shadow-lg hover:shadow-xl hover:scale-110"
+                aria-label="Order on Postmates"
+              >
+                <Image 
+                  src={getSmartCacheBustedUrl('/icons/postmates.png')} 
+                  alt="Postmates" 
+                  width={28} 
+                  height={28}
+                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform"
+                  style={{width: 'auto', height: 'auto'}}
+                />
+              </a>
             </div>
-            {orderDropdownOpen && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black/90 backdrop-blur-sm rounded-lg border border-white/20 shadow-xl z-[1000] min-w-full">
-                <div className="py-1">
-                  <div 
-                    onClick={handleDoorDashClick}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors whitespace-nowrap"
-                  >
-                    <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
-                      <Image src={getSmartCacheBustedUrl('/icons/doordash_icon.png')} alt="DoorDash" width={16} height={16} className="rounded" style={{width: 'auto', height: 'auto'}} />
-                    </div>
-                    <span className="text-sm text-white">DoorDash</span>
-                  </div>
-                  <div 
-                    onClick={handleUberEatsClick}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors whitespace-nowrap"
-                  >
-                    <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
-                      <Image src={getSmartCacheBustedUrl('/icons/uber-eats.png')} alt="Uber Eats" width={16} height={16} className="rounded" />
-                    </div>
-                    <span className="text-sm text-white">Uber Eats</span>
-                  </div>
-                  <div 
-                    onClick={handlePostmatesClick}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors whitespace-nowrap"
-                  >
-                    <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
-                      <Image src={getSmartCacheBustedUrl('/icons/postmates.png')} alt="Postmates" width={16} height={16} className="rounded" style={{width: 'auto', height: 'auto'}} />
-                    </div>
-                    <span className="text-sm text-white">Postmates</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         
