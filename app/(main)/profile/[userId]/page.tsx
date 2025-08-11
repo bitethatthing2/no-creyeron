@@ -52,7 +52,7 @@ export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { currentUser } = useAuth();
-  constconversationid = params.userId as string;
+  const userId = params.userId as string;
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<UserPost[]>([]);

@@ -949,7 +949,7 @@ class UnifiedWolfpackService {
   ): Promise<ServiceResponse<WolfpackComment[]>> {
     try {
       const currentUser = await this.getCurrentUser();
-      constconversationid = currentUser?.id;
+      const userId = currentUser?.id;
 
       // Get comments with like status
       const { data: comments, error: commentsError } = await supabase

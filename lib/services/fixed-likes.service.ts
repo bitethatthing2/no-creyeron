@@ -50,7 +50,7 @@ export class FixedLikesService {
 
       if (!this.supabase) await this.initSupabase();
 
-      constconversationid = await this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
 
       // Check if like exists using maybeSingle to avoid errors
       const { data: existingLike, error: checkError } = await this.supabase
@@ -116,7 +116,7 @@ export class FixedLikesService {
 
       if (!this.supabase) await this.initSupabase();
 
-      constconversationid = await this.getCurrentUserId();
+      const userId = await this.getCurrentUserId();
 
       // Check if like exists
       const { data: existingLike, error: checkError } = await this.supabase

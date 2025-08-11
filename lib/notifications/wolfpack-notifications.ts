@@ -53,13 +53,13 @@ export async function sendChatMessageNotification(
     }
 
     // Get notification preferences and device tokens for all members
-    constconversationids = members.map((m) => m.id);
+    const userIds = members.map((m) => m.id);
 
     // Get users with preferences
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("id, notification_preferences")
-      .in("id", conversationids);
+      .in("id", userIds);
 
     if (usersError) {
       console.error("Error fetching users:", usersError);
@@ -70,7 +70,7 @@ export async function sendChatMessageNotification(
     const { data: deviceTokens, error: tokensError } = await supabase
       .from("user_fcm_tokens")
       .select("id, user_id, token, platform")
-      .in("user_id", conversationids)
+      .in("user_id", userIds)
       .eq("is_active", true);
 
     if (tokensError || !deviceTokens || deviceTokens.length === 0) {
@@ -259,13 +259,13 @@ export async function sendMemberJoinedNotification(
       return true;
     }
 
-    constconversationids = members.map((m) => m.id);
+    const userIds = members.map((m) => m.id);
 
     // Get users with preferences
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("id, notification_preferences")
-      .in("id", conversationids);
+      .in("id", userIds);
 
     if (usersError) {
       console.error("Error fetching users:", usersError);
@@ -276,7 +276,7 @@ export async function sendMemberJoinedNotification(
     const { data: deviceTokens, error: tokensError } = await supabase
       .from("user_fcm_tokens")
       .select("id, user_id, token, platform")
-      .in("user_id", conversationids)
+      .in("user_id", userIds)
       .eq("is_active", true);
 
     if (tokensError || !deviceTokens || deviceTokens.length === 0) {
@@ -349,13 +349,13 @@ export async function sendEventAnnouncementNotification(
       return true;
     }
 
-    constconversationids = members.map((m) => m.id);
+    const userIds = members.map((m) => m.id);
 
     // Get users with preferences
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("id, notification_preferences")
-      .in("id", conversationids);
+      .in("id", userIds);
 
     if (usersError) {
       console.error("Error fetching users:", usersError);
@@ -366,7 +366,7 @@ export async function sendEventAnnouncementNotification(
     const { data: deviceTokens, error: tokensError } = await supabase
       .from("user_fcm_tokens")
       .select("id, user_id, token, platform")
-      .in("user_id", conversationids)
+      .in("user_id", userIds)
       .eq("is_active", true);
 
     if (tokensError || !deviceTokens || deviceTokens.length === 0) {

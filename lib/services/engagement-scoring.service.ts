@@ -151,7 +151,7 @@ export class EngagementScoringService {
       if (membersError) throw membersError;
       if (!activeMembers || activeMembers.length === 0) return [];
 
-      constconversationids = activeMembers.map((member) => member.id);
+      const userIds = activeMembers.map((member) => member.id);
 
       // Get broadcast responses for this location (today)
       const { data: broadcastResponses, error: broadcastError } = await supabase
