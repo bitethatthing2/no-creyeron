@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Utensils, Wine, Star, DollarSign, Search, Play } from 'lucide-react';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
-// WatchItMadeModal removed with menu cleanup
+import WatchItMadeModal from '@/components/menu/WatchItMadeModal';
 import { getMenuItemVideoUrl } from '@/lib/constants/video-urls';
 
 interface CarouselItem {
@@ -924,7 +924,7 @@ export function FoodDrinkCarousel() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'food' | 'drink' | 'popular'>('all');
   const [activeSubcategory, setActiveSubcategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  // Watch It Made modal removed with menu cleanup
+  const [showWatchItMadeModal, setShowWatchItMadeModal] = useState('');
   const [sectionToggle, setSectionToggle] = useState<'food' | 'drinks'>('food');
   
   // Touch handling states
@@ -1318,7 +1318,7 @@ export function FoodDrinkCarousel() {
                     {/* Watch It Made Button - Only show if video exists */}
                     {getWatchItMadeVideo(item.name, item.description) && (
                       <button
-                        onClick={() => console.log('Watch video for:', item.name)}
+                        onClick={() => setShowWatchItMadeModal(item.id)}
                         className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-colors duration-200"
                       >
                         <Play className="h-3 w-3" />
@@ -1354,7 +1354,19 @@ export function FoodDrinkCarousel() {
         </>
       )}
 
-      {/* Watch It Made functionality removed with menu cleanup */}
+      {/* Watch It Made Modals */}
+      {filteredItems.map((item) => {
+        const watchItMadeVideoUrl = getWatchItMadeVideo(item.name, item.description);
+        return watchItMadeVideoUrl && (
+          <WatchItMadeModal
+            key={`modal-${item.id}`}
+            isOpen={showWatchItMadeModal === item.id}
+            onClose={() => setShowWatchItMadeModal('')}
+            wolfpack_videosrc={watchItMadeVideoUrl}
+            itemName={item.name}
+          />
+        );
+      })}
 
     </div>
   );
