@@ -60,7 +60,7 @@ async function getUserTokens(
 ): Promise<string[]> {
   try {
     const { data, error } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("token")
       .eq("user_id", userId)
       .eq("is_active", true);
@@ -350,7 +350,7 @@ async function logNotification(
     };
 
     const { error } = await supabase
-      .from("push_notifications")
+      .from("wolfpack_activity_notifications")
       .insert([logEntry]);
 
     if (error) {
@@ -372,7 +372,7 @@ async function cleanupInvalidTokens(
 
   try {
     const { error } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .update({
         is_active: false,
         last_error: "Token invalid or unregistered",

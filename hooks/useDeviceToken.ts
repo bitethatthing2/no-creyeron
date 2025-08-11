@@ -123,13 +123,13 @@ export function useDeviceToken(userId?: string) {
 
         // First, deactivate any existing tokens for this user
         await supabase
-          .from("device_tokens")
+          .from("user_fcm_tokens")
           .update({ is_active: false })
           .eq("user_id", userId);
 
         // Insert new active token
         const { data, error } = await supabase
-          .from("device_tokens")
+          .from("user_fcm_tokens")
           .insert({
             user_id: userId,
             token: tokenData.token,
@@ -139,8 +139,6 @@ export function useDeviceToken(userId?: string) {
               process.env.NEXT_PUBLIC_APP_VERSION,
             is_active: true,
             last_used_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
           })
           .select()
           .single();
@@ -174,7 +172,7 @@ export function useDeviceToken(userId?: string) {
     async (userId: string): Promise<DeviceToken | null> => {
       try {
         const { data, error } = await supabase
-          .from("device_tokens")
+          .from("user_fcm_tokens")
           .select("*")
           .eq("user_id", userId)
           .eq("is_active", true)
@@ -217,7 +215,7 @@ export function useDeviceToken(userId?: string) {
         // Update last used timestamp
         if (existingToken.user_id) {
           await supabase
-            .from("device_tokens")
+            .from("user_fcm_tokens")
             .update({
               last_used_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
@@ -293,7 +291,7 @@ export function useDeviceToken(userId?: string) {
       }
 
       const { error } = await supabase
-        .from("device_tokens")
+        .from("user_fcm_tokens")
         .update({
           is_active: false,
           updated_at: new Date().toISOString(),
