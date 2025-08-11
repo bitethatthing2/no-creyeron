@@ -23,7 +23,7 @@ interface NotificationRequestBody {
 
   // Target options (only one should be specified)
   topic?: NotificationTopicKey | string;
-  conversationid?: string;
+  userId?: string;
   tokens?: string[];
 
   // Optional settings
@@ -41,11 +41,11 @@ function validateTargetOptions(body: NotificationRequestBody): string | null {
   const targets = [body.topic, body.userId, body.tokens].filter(Boolean);
 
   if (targets.length === 0) {
-    return "Must specify one target: topic,conversationid, or tokens";
+    return "Must specify one target: topic, userId, or tokens";
   }
 
   if (targets.length > 1) {
-    return "Only one target type allowed: topic,conversationid, or tokens";
+    return "Only one target type allowed: topic, userId, or tokens";
   }
 
   return null;
@@ -62,7 +62,7 @@ async function getUserTokens(
     const { data, error } = await supabase
       .from("device_tokens")
       .select("token")
-      .eq("user_id", conversationid)
+      .eq("user_id", userId)
       .eq("is_active", true);
 
     if (error) {
@@ -327,7 +327,7 @@ async function logNotification(
   data: Record<string, string> | undefined,
   target: {
     topic?: string;
-    conversationid?: string;
+    userId?: string;
     tokenCount?: number;
   },
   result: FcmResponse | BulkNotificationResult,
@@ -421,7 +421,7 @@ export async function POST(request: NextRequest) {
       body: messageBody,
       data,
       topic,
-      conversationid,
+      userId,
       tokens,
       ...options
     } = body;
@@ -473,7 +473,7 @@ export async function POST(request: NextRequest) {
     let result: FcmResponse | BulkNotificationResult;
     let targetInfo: {
       topic?: string;
-      conversationid?: string;
+      userId?: string;
       tokenCount?: number;
     };
 
@@ -491,12 +491,12 @@ export async function POST(request: NextRequest) {
       result = await sendToTopic(topic, title, messageBody, data, options);
       targetInfo = { topic };
     } else if (userId) {
-      // Validateconversationid format (should be UUID)
+      // Validate userId format (should be UUID)
       const uuidRegex =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(userId)) {
         return NextResponse.json(
-          { error: "Invalidconversationid format" },
+          { error: "Invalid userId format" },
           { status: 400 },
         );
       }
@@ -518,7 +518,7 @@ export async function POST(request: NextRequest) {
         data,
         options,
       );
-      targetInfo = { conversationid, tokenCount: userTokens.length };
+      targetInfo = { userId, tokenCount: userTokens.length };
     } else if (tokens && Array.isArray(tokens) && tokens.length > 0) {
       // Validate tokens array
       if (tokens.length > 1000) {

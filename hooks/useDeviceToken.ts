@@ -116,7 +116,7 @@ export function useDeviceToken(userId?: string) {
   const saveDeviceToken = useCallback(
     async (
       tokenData: FCMTokenData,
-      conversationid: string,
+      userId: string,
     ): Promise<DeviceToken | null> => {
       try {
         const deviceInfo = getDeviceInfo();
@@ -125,13 +125,13 @@ export function useDeviceToken(userId?: string) {
         await supabase
           .from("device_tokens")
           .update({ is_active: false })
-          .eq("id", conversationid);
+          .eq("user_id", userId);
 
         // Insert new active token
         const { data, error } = await supabase
           .from("device_tokens")
           .insert({
-            id: conversationid,
+            user_id: userId,
             token: tokenData.token,
             device_type: deviceInfo.type,
             device_name: deviceInfo.name,
@@ -150,7 +150,7 @@ export function useDeviceToken(userId?: string) {
         }
 
         // Type assertion with proper type checking
-        if (data && "id" in data && "device_type" in data) {
+        if (data && "user_id" in data && "device_type" in data) {
           return data as unknown as DeviceToken;
         }
 
@@ -176,7 +176,7 @@ export function useDeviceToken(userId?: string) {
         const { data, error } = await supabase
           .from("device_tokens")
           .select("*")
-          .eq("id", conversationid)
+          .eq("user_id", userId)
           .eq("is_active", true)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -215,14 +215,14 @@ export function useDeviceToken(userId?: string) {
         setFcmToken(existingToken.token);
 
         // Update last used timestamp
-        if (existingToken.id) {
+        if (existingToken.user_id) {
           await supabase
             .from("device_tokens")
             .update({
               last_used_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
-            .eq("id", existingToken.id);
+            .eq("user_id", existingToken.user_id);
         }
       }
 
@@ -260,7 +260,7 @@ export function useDeviceToken(userId?: string) {
           appVersion: process.env.NEXT_PUBLIC_APP_VERSION,
         };
 
-        const savedToken = await saveDeviceToken(tokenData, conversationid);
+        const savedToken = await saveDeviceToken(tokenData, userId);
 
         if (savedToken) {
           setDeviceToken(savedToken);
@@ -288,8 +288,8 @@ export function useDeviceToken(userId?: string) {
     if (!deviceToken) return false;
 
     try {
-      if (!deviceToken.id) {
-        throw new Error("Device token ID is missing");
+      if (!deviceToken.user_id) {
+        throw new Error("Device token user_id is missing");
       }
 
       const { error } = await supabase
@@ -298,7 +298,7 @@ export function useDeviceToken(userId?: string) {
           is_active: false,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", deviceToken.id);
+        .eq("user_id", deviceToken.user_id);
 
       if (error) {
         throw new Error(error.message);
@@ -317,7 +317,7 @@ export function useDeviceToken(userId?: string) {
     }
   }, [deviceToken]);
 
-  // Initialize token whenconversationid is available
+  // Initialize token when userId is available
   useEffect(() => {
     if (userId) {
       initializeToken(userId);
@@ -364,9 +364,9 @@ export function useDeviceToken(userId?: string) {
     loading,
     error,
     permission,
-    registerToken: conversationid ? () => registerToken(userId) : null,
+    registerToken: userId ? () => registerToken(userId) : null,
     deactivateToken,
-    refresh: conversationid ? () => initializeToken(userId) : null,
+    refresh: userId ? () => initializeToken(userId) : null,
     isSupported: typeof window !== "undefined" && "Notification" in window,
     deviceInfo: getDeviceInfo(),
   };

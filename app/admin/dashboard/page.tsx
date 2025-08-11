@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import BroadcastCleanupManager from '@/components/admin/BroadcastArchiveManager';
+import { NotificationTest } from '@/components/notifications/NotificationTest';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -198,6 +199,11 @@ export default function AdminDashboard() {
 
       {/* Broadcast Cleanup Management Section */}
       <BroadcastCleanupManager />
+
+      {/* Push Notification Test Section */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <NotificationTest className="md:col-span-1" />
+      </div>
     </div>
   );
 }
