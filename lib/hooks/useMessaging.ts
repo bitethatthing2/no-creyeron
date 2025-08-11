@@ -57,16 +57,20 @@ export function useMessaging(): UseMessagingReturn {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .rpc('get_user_conversations', { user_uuid: user.id });
+      // Use the new API endpoint instead of RPC function
+      const response = await fetch('/api/messages/conversations', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (fetchError) {
-        console.error('Error loading conversations:', fetchError);
-        setError('Failed to load conversations');
-        return;
+      if (!response.ok) {
+        throw new Error('Failed to load conversations');
       }
 
-      setConversations(data || []);
+      const data = await response.json();
+      setConversations(data.conversations || []);
     } catch (err) {
       console.error('Unexpected error loading conversations:', err);
       setError('Failed to load conversations');
@@ -82,17 +86,10 @@ export function useMessaging(): UseMessagingReturn {
       setLoading(true);
       setError(null);
 
+      // Use the new messages_with_sender_view
       const { data, error: fetchError } = await supabase
-        .from('wolfpack_messages')
-        .select(`
-          *,
-          users!sender_id (
-            username,
-            display_name,
-            avatar_url,
-            profile_image_url
-          )
-        `)
+        .from('messages_with_sender_view')
+        .select('*')
         .eq('conversation_id', conversationId)
         .eq('is_deleted', false)
         .order('created_at', { ascending: true });
@@ -103,18 +100,29 @@ export function useMessaging(): UseMessagingReturn {
         return;
       }
 
+      // Transform data from view to match hook interface
       const transformedMessages = (data || []).map(msg => ({
-        ...msg,
-        sender: msg.users ? {
-          username: msg.users.username,
-          display_name: msg.users.display_name,
-          avatar_url: msg.users.avatar_url || msg.users.profile_image_url
-        } : undefined
+        id: msg.id,
+        conversation_id: msg.conversation_id,
+        sender_id: msg.sender_id,
+        content: msg.content,
+        message_type: msg.message_type,
+        media_url: msg.media_url,
+        reply_to_id: msg.reply_to_id,
+        created_at: msg.created_at,
+        updated_at: msg.updated_at,
+        is_deleted: msg.is_deleted,
+        is_edited: msg.is_edited,
+        sender: {
+          username: msg.sender_username,
+          display_name: msg.sender_first_name || msg.sender_display_name,
+          avatar_url: msg.sender_avatar_url || '/icons/wolf-icon.png'
+        }
       }));
 
       setMessages(transformedMessages);
 
-      // Mark messages as read
+      // Mark messages as read using RPC function (this should still work)
       await markAsRead(conversationId);
     } catch (err) {
       console.error('Unexpected error loading conversation:', err);
@@ -136,42 +144,31 @@ export function useMessaging(): UseMessagingReturn {
     }
 
     try {
-      // Get or create conversation
-      const { data: conversationId, error: convError } = await supabase
-        .rpc('get_or_create_conversation', {
-          user1_id: user.id,
-          user2_id: recipientUserId
-        });
-
-      if (convError || !conversationId) {
-        console.error('Error getting/creating conversation:', convError);
-        setError('Failed to create conversation');
-        return false;
-      }
-
-      // Send message
-      const { error: messageError } = await supabase
-        .from('wolfpack_messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
+      // Use the new send message API endpoint
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientId: recipientUserId,
           content: content.trim(),
-          message_type: 'text'
-        });
+          messageType: 'text'
+        }),
+      });
 
-      if (messageError) {
-        console.error('Error sending message:', messageError);
-        setError('Failed to send message');
-        return false;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
 
-      // Refresh conversations and current conversation if it's loaded
+      // Refresh conversations to show the new message
       await loadConversations();
       
       return true;
     } catch (err) {
       console.error('Unexpected error sending message:', err);
-      setError('Failed to send message');
+      setError(err instanceof Error ? err.message : 'Failed to send message');
       return false;
     }
   };
