@@ -199,6 +199,11 @@ export class BroadcastStatusService {
         .single();
 
       if (error) {
+        // Handle missing table gracefully
+        if (error.code === '42P01') {
+          console.log('Broadcast cleanup status table not available');
+          return null;
+        }
         console.error('Error getting cleanup status:', error);
         return null;
       }
@@ -222,6 +227,11 @@ export class BroadcastStatusService {
         .limit(limit);
 
       if (error) {
+        // Handle missing table gracefully
+        if (error.code === '42P01') {
+          console.log('Broadcast cleanup log table not available');
+          return [];
+        }
         console.error('Error getting cleanup history:', error);
         return [];
       }

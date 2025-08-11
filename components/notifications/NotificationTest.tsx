@@ -133,10 +133,10 @@ export function NotificationTest({ className }: NotificationTestProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Permission Status */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-2">
               <PermissionIcon className={`h-4 w-4 ${permissionStatus.className}`} />
-              <span className="font-medium">Permission</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">Permission</span>
             </div>
             <Badge variant={permission === 'granted' ? 'default' : 'secondary'}>
               {permissionStatus.text}
@@ -144,22 +144,22 @@ export function NotificationTest({ className }: NotificationTestProps) {
           </div>
 
           {/* Device Info */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-2">
               <Smartphone className="h-4 w-4 text-blue-600" />
-              <span className="font-medium">Device</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">Device</span>
             </div>
             <div className="text-right">
-              <div className="text-sm font-medium">{deviceInfo.type}</div>
-              <div className="text-xs text-gray-500">{deviceInfo.name}</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{deviceInfo.type}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{deviceInfo.name}</div>
             </div>
           </div>
 
           {/* Token Status */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-2">
               <BellRing className="h-4 w-4 text-purple-600" />
-              <span className="font-medium">FCM Token</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">FCM Token</span>
             </div>
             <Badge variant={fcmToken ? 'default' : 'secondary'}>
               {fcmToken ? 'Active' : 'None'}
@@ -210,7 +210,7 @@ export function NotificationTest({ className }: NotificationTestProps) {
               <Button
                 onClick={registerToken}
                 disabled={loading || !registerToken}
-                className="w-full"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 variant="default"
               >
                 {loading ? 'Setting up...' : 'Enable Notifications'}
@@ -221,7 +221,7 @@ export function NotificationTest({ className }: NotificationTestProps) {
               <Button
                 onClick={refresh}
                 disabled={loading || !refresh}
-                className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
                 variant="default"
               >
                 {loading ? 'Refreshing...' : 'Refresh Token'}
@@ -232,7 +232,7 @@ export function NotificationTest({ className }: NotificationTestProps) {
               <Button
                 onClick={sendTestNotification}
                 disabled={sending}
-                className="w-full"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                 variant="default"
               >
                 {sending ? 'Sending...' : 'Send Test Notification'}
@@ -243,7 +243,7 @@ export function NotificationTest({ className }: NotificationTestProps) {
               <Button
                 onClick={deactivateToken}
                 variant="outline"
-                className="w-full"
+                className="w-full border-red-300 text-red-600 hover:bg-red-50"
                 size="sm"
               >
                 Disable Notifications

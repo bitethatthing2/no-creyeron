@@ -35,10 +35,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Get recipient's FCM tokens
+    // First check if recipientId is already an auth_id (UUID format)
+    // If it's a database user ID, convert it to auth_id
+    let authUserId = recipientId;
+    
+    // Check if this looks like it might be a database user ID by querying users table
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('auth_id')
+      .eq('id', recipientId)
+      .single();
+      
+    if (userRecord) {
+      // This was a database user ID, use the auth_id instead
+      authUserId = userRecord.auth_id;
+    }
+    // If no user record found, assume recipientId is already an auth_id
+    
     const { data: tokens } = await supabase
       .from('user_fcm_tokens')
       .select('token')
-      .eq('user_id', recipientId);
+      .eq('user_id', authUserId);
+      
+    console.log('Looking for FCM tokens for auth_id:', authUserId, 'found:', tokens?.length || 0);
 
     if (!tokens || tokens.length === 0) {
       return NextResponse.json({ error: 'No FCM tokens found for user' }, { status: 404 });

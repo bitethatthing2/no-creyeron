@@ -63,10 +63,14 @@ class UnifiedNotificationService {
       // Get messaging instance
       this.messaging = getMessaging();
 
-      // Get FCM token (non-blocking)
-      this.getFCMToken().catch((error) => {
-        console.log("FCM token not available:", error.message);
-      });
+      // Only get FCM token if permission is already granted to avoid permission violations
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        this.getFCMToken().catch((error) => {
+          console.log("FCM token not available:", error.message);
+        });
+      } else {
+        console.log("Notification permission not granted, skipping FCM token request");
+      }
 
       // Listen for foreground messages
       onMessage(this.messaging, (payload) => {
@@ -233,6 +237,8 @@ class UnifiedNotificationService {
           "Error fetching user profile for FCM token:",
           profileError,
         );
+        // If user doesn't exist in users table yet, skip FCM token storage
+        console.log("User not found in users table, skipping FCM token storage");
         return;
       }
 

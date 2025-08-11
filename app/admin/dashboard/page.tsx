@@ -135,21 +135,24 @@ export default function AdminDashboard() {
 
         {/* Send Notification */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer" 
-              onClick={() => router.push('/admin/notifications')}>
+              onClick={() => {
+                const element = document.getElementById('notification-test');
+                element?.scrollIntoView({ behavior: 'smooth' });
+              }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
               <div className="p-2 bg-purple-500/10 rounded-lg">
                 <Bell className="h-6 w-6 text-purple-600" />
               </div>
-              Send Notifications
+              Test Push Notifications
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-3">
-              Send updates to customers
+              Test push notification system
             </p>
             <p className="text-sm text-purple-600 font-medium">
-              Last sent: 2 hours ago
+              Scroll to notification tester below
             </p>
           </CardContent>
         </Card>
@@ -201,7 +204,7 @@ export default function AdminDashboard() {
       <BroadcastCleanupManager />
 
       {/* Push Notification Test Section */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div id="notification-test" className="grid gap-4 md:grid-cols-2">
         <NotificationTest className="md:col-span-1" />
       </div>
     </div>

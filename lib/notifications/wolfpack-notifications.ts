@@ -68,7 +68,7 @@ export async function sendChatMessageNotification(
 
     // Get active device tokens
     const { data: deviceTokens, error: tokensError } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("id, user_id, token, platform")
       .in("user_id", conversationids)
       .eq("is_active", true);
@@ -166,7 +166,7 @@ export async function sendOrderUpdateNotification(
 
     // Get active device tokens for user
     const { data: deviceTokens, error: tokensError } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("id, token, platform")
       .eq("user_id", conversationid)
       .eq("is_active", true);
@@ -274,7 +274,7 @@ export async function sendMemberJoinedNotification(
 
     // Get device tokens
     const { data: deviceTokens, error: tokensError } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("id, user_id, token, platform")
       .in("user_id", conversationids)
       .eq("is_active", true);
@@ -364,7 +364,7 @@ export async function sendEventAnnouncementNotification(
 
     // Get device tokens
     const { data: deviceTokens, error: tokensError } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("id, user_id, token, platform")
       .in("user_id", conversationids)
       .eq("is_active", true);
@@ -464,7 +464,7 @@ export async function sendWinkNotification(
 
     // Get device tokens
     const { data: deviceTokens, error: tokensError } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("id, token, platform")
       .eq("user_id", recipientUserId)
       .eq("is_active", true);
@@ -592,7 +592,7 @@ export async function registerDeviceToken(
 
     // Check if token already exists
     const { data: existingToken } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .select("id")
       .eq("token", token)
       .single();
@@ -600,7 +600,7 @@ export async function registerDeviceToken(
     if (existingToken) {
       // Update existing token
       const { error: updateError } = await supabase
-        .from("device_tokens")
+        .from("user_fcm_tokens")
         .update({
           user_id: userData.id,
           platform,
@@ -617,7 +617,7 @@ export async function registerDeviceToken(
     } else {
       // Insert new token
       const { error: insertError } = await supabase
-        .from("device_tokens")
+        .from("user_fcm_tokens")
         .insert({
           user_id: userData.id,
           token,
@@ -644,7 +644,7 @@ export async function registerDeviceToken(
 export async function unregisterDeviceToken(token: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from("device_tokens")
+      .from("user_fcm_tokens")
       .update({
         is_active: false,
         updated_at: new Date().toISOString(),

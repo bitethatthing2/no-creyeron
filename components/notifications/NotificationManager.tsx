@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDeviceToken } from '@/hooks/useDeviceToken';
 import NotificationPreferences from './NotificationPreferences'; // Import your component
 
@@ -27,6 +28,7 @@ export default function NotificationManager({
 }: NotificationManagerProps) {
   const [showSettings, setShowSettings] = useState(showPreferences);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { currentUser } = useAuth();
   
   const {
     fcmToken,
@@ -39,7 +41,7 @@ export default function NotificationManager({
     refresh,
     isSupported,
     deviceInfo
-  } = useDeviceToken(userId);
+  } = useDeviceToken(currentUser?.id);
 
   // Initialize Firebase app
   useEffect(() => {
@@ -55,8 +57,8 @@ export default function NotificationManager({
             authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
             projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
             storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_sender_id,
-            appId: process.env.NEXT_PUBLIC_FIREBASE_APp_user_id
+            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
           };
           
           initializeApp(firebaseConfig);
@@ -71,7 +73,7 @@ export default function NotificationManager({
   }, []);
 
   const handleEnableNotifications = async () => {
-    if (!userId || !registerToken) return;
+    if (!currentUser?.id || !registerToken) return;
     
     try {
       await registerToken();
@@ -166,7 +168,7 @@ export default function NotificationManager({
             variant="outline"
             size="sm"
             onClick={handleEnableNotifications}
-            disabled={loading || !userId || statusInfo.status === 'unsupported'}
+            disabled={loading || !currentUser?.id || statusInfo.status === 'unsupported'}
           >
             Enable
           </Button>
@@ -243,7 +245,7 @@ export default function NotificationManager({
             {!fcmToken && isSupported && permission !== 'denied' && (
               <Button
                 onClick={handleEnableNotifications}
-                disabled={loading || !userId || !isInitialized}
+                disabled={loading || !currentUser?.id || !isInitialized}
                 className="flex items-center gap-2"
               >
                 <Bell className="h-4 w-4" />
