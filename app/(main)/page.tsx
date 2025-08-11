@@ -87,44 +87,40 @@ export default function Page() {
                 and family means everyone.
               </p>
               
-              {/* Dual Location Cards - Always Side by Side */}
+              {/* Dual Location Text - Always Side by Side */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto px-2">
-                {/* Salem Location Card */}
-                <div className="backdrop-blur-md bg-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-2xl border border-white/30">
-                  <div className="text-white text-center">
-                    <h3 className="text-sm sm:text-lg md:text-xl font-bold text-red-500 mb-2 sm:mb-3">Salem</h3>
-                    <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base lg:text-lg">
-                      <p className="font-medium hidden sm:block">145 Liberty St NE #101</p>
-                      <p className="font-medium block sm:hidden">145 Liberty St</p>
-                      <p className="font-medium">Salem, OR 97301</p>
-                      <p className="font-semibold text-yellow-400 text-sm sm:text-base md:text-lg">📞 (503) 391-9977</p>
-                    </div>
-                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/30">
-                      <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base">
-                        <p><span className="font-medium">M-Th:</span> 10AM-12AM</p>
-                        <p><span className="font-medium">F-Sa:</span> 10AM-2AM</p>
-                        <p><span className="font-medium">Sun:</span> 10AM-12AM</p>
-                      </div>
+                {/* Salem Location */}
+                <div className="text-white text-center">
+                  <h3 className="text-sm sm:text-lg md:text-xl font-bold text-red-500 mb-2 sm:mb-3">Salem</h3>
+                  <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base lg:text-lg font-bold">
+                    <p className="hidden sm:block">145 Liberty St NE #101</p>
+                    <p className="block sm:hidden">145 Liberty St</p>
+                    <p>Salem, OR 97301</p>
+                    <p className="text-yellow-400 text-sm sm:text-base md:text-lg">📞 (503) 391-9977</p>
+                  </div>
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3">
+                    <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base font-bold">
+                      <p><span>M-Th:</span> 10AM-12AM</p>
+                      <p><span>F-Sa:</span> 10AM-2AM</p>
+                      <p><span>Sun:</span> 10AM-12AM</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Portland Location Card */}
-                <div className="backdrop-blur-md bg-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-2xl border border-white/30">
-                  <div className="text-white text-center">
-                    <h3 className="text-sm sm:text-lg md:text-xl font-bold text-red-500 mb-2 sm:mb-3">Portland</h3>
-                    <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base lg:text-lg">
-                      <p className="font-medium hidden sm:block">327 SW Morrison St</p>
-                      <p className="font-medium block sm:hidden">327 Morrison</p>
-                      <p className="font-medium">Portland, OR 97204</p>
-                      <p className="font-semibold text-yellow-400 text-sm sm:text-base md:text-lg">📞 (503) 555-0123</p>
-                    </div>
-                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/30">
-                      <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base">
-                        <p><span className="font-medium">M-Th:</span> 11AM-1AM</p>
-                        <p><span className="font-medium">F-Sa:</span> 11AM-3AM</p>
-                        <p><span className="font-medium">Sun:</span> 11AM-1AM</p>
-                      </div>
+                {/* Portland Location */}
+                <div className="text-white text-center">
+                  <h3 className="text-sm sm:text-lg md:text-xl font-bold text-red-500 mb-2 sm:mb-3">Portland</h3>
+                  <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base lg:text-lg font-bold">
+                    <p className="hidden sm:block">327 SW Morrison St</p>
+                    <p className="block sm:hidden">327 Morrison</p>
+                    <p>Portland, OR 97204</p>
+                    <p className="text-yellow-400 text-sm sm:text-base md:text-lg">📞 (503) 555-0123</p>
+                  </div>
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3">
+                    <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm md:text-base font-bold">
+                      <p><span>M-Th:</span> 11AM-1AM</p>
+                      <p><span>F-Sa:</span> 11AM-3AM</p>
+                      <p><span>Sun:</span> 11AM-1AM</p>
                     </div>
                   </div>
                 </div>
