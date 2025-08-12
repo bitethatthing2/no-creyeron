@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
+  console.log('🔥 CONVERSATIONS API HIT AT:', new Date().toISOString());
   try {
     // Create server client using the same pattern as other API routes
     const cookieStore = cookies();
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    console.log('🚀 Fetching conversations for user:', user.id, 'at', new Date().toISOString());
+    console.log('🚀 API UPDATED - Fetching conversations for auth user:', user.id, 'at', new Date().toISOString());
 
     // Get the current user's database record first
     const { data: currentUserRecord, error: userError } = await supabase
@@ -54,7 +55,13 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Use the proper database view that returns real names
+    console.log('📍 Found current user record:', {
+      id: currentUserRecord.id, 
+      auth_id: user.id,
+      display_name: currentUserRecord.display_name || 'N/A'
+    });
+
+    // Use the FIXED database view that now returns proper user names
     const { data: conversations, error } = await supabase
       .from('user_conversations_view')
       .select('*')
@@ -62,18 +69,7 @@ export async function GET(request: NextRequest) {
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
     if (error) {
-      console.error('Error fetching conversations from view:', error);
-      
-      // Handle specific database errors
-      if (error.code === 'PGRST116') {
-        // No conversations found - not an error, return empty array
-        console.log('No conversations found for user:', currentUserRecord.id);
-        return NextResponse.json({ 
-          conversations: [],
-          message: 'No conversations found'
-        });
-      }
-      
+      console.error('Error fetching conversations from FIXED view:', error);
       return NextResponse.json({ 
         error: 'Failed to fetch conversations',
         code: 'CONVERSATION_FETCH_FAILED',
@@ -81,39 +77,54 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('Raw conversations from user_conversations_view:', conversations);
+    console.log('✅ FIXED VIEW - Conversations with real names:', conversations);
 
-    // Transform the view data to match frontend expectations
-    const transformedConversations = (conversations || []).map((conv: any) => ({
-      // Primary fields from view
-      id: conv.conversation_id,
-      conversation_id: conv.conversation_id,
-      conversation_type: conv.conversation_type,
-      name: conv.display_name, // This comes from the view with real names!
-      last_message_at: conv.last_message_at,
-      last_message_preview: conv.last_message_preview,
-      created_at: conv.created_at,
-      updated_at: conv.updated_at,
-      unread_count: conv.unread_count || 0,
+    // Transform the FIXED view data (should now have proper display names)
+    const transformedConversations = (conversations || []).map((conv: any) => {
+      console.log(`🎯 Processing conversation from FIXED view:`, {
+        conversation_id: conv.conversation_id,
+        display_name: conv.display_name,
+        conversation_type: conv.conversation_type,
+        participants: conv.participants,
+        other_user_id: conv.other_user_id,
+        other_user_name: conv.other_user_name,
+        other_user_display_name: conv.other_user_display_name
+      });
       
-      // Other participant info from view
-      other_user_id: conv.other_user_id,
-      other_user_name: conv.display_name, // Real name from view!
-      other_user_avatar: conv.avatar_url || '/icons/wolf-icon.png',
-      other_user_username: conv.other_user_username,
-      other_user_is_online: conv.other_user_is_online || false,
+      // Use the correct fields from the rebuilt view
+      const actualDisplayName = conv.other_user_display_name || conv.other_user_name || conv.display_name || 'Wolf Pack Member';
       
-      // Legacy format for backward compatibility
-      user_id: conv.other_user_id,
-      display_name: conv.display_name, // Real name from view!
-      username: conv.other_user_username,
-      avatar_url: conv.avatar_url || '/icons/wolf-icon.png',
-      last_message: conv.last_message_preview,
-      last_message_time: conv.last_message_at,
-      is_online: conv.other_user_is_online || false
-    }));
+      return {
+        id: conv.conversation_id,
+        conversation_id: conv.conversation_id,
+        conversation_type: conv.conversation_type,
+        name: actualDisplayName,
+        last_message_at: conv.last_message_at,
+        last_message_preview: conv.last_message_preview || '',
+        created_at: conv.created_at,
+        updated_at: conv.updated_at,
+        unread_count: conv.unread_count || 0,
+        
+        // Other participant info - use direct view fields
+        other_user_id: conv.other_user_id || conv.participants?.[0]?.user_id || null,
+        other_user_name: actualDisplayName,
+        other_user_avatar: conv.other_user_avatar_url || conv.avatar_url || '/icons/wolf-icon.png',
+        other_user_username: conv.other_user_username || conv.participants?.[0]?.username || null,
+        other_user_is_online: conv.other_user_is_online || conv.participants?.[0]?.is_online || false,
+        
+        // Legacy format for backward compatibility
+        user_id: conv.other_user_id || conv.participants?.[0]?.user_id || null,
+        display_name: actualDisplayName,
+        username: conv.other_user_username || conv.participants?.[0]?.username || null,
+        avatar_url: conv.other_user_avatar_url || conv.avatar_url || '/icons/wolf-icon.png',
+        last_message: conv.last_message_preview || '',
+        last_message_time: conv.last_message_at,
+        is_online: conv.other_user_is_online || conv.participants?.[0]?.is_online || false
+      };
+    });
 
-    console.log('Transformed conversations with real names:', transformedConversations);
+    console.log('🎯 FINAL transformed conversations COUNT:', transformedConversations.length);
+    console.log('🎯 FINAL transformed conversations:', JSON.stringify(transformedConversations, null, 2));
 
     return NextResponse.json({ 
       conversations: transformedConversations 

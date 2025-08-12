@@ -179,12 +179,30 @@ export default function MessagesInboxPage() {
   };
 
   const getDisplayName = (conversation: Conversation): string => {
-    if (conversation.other_user_name) return conversation.other_user_name;
-    if (conversation.other_user_username) return conversation.other_user_username;
-    if (conversation.display_name) return conversation.display_name;
-    if (conversation.username) return conversation.username;
-    if (conversation.name) return conversation.name;
-    return 'Wolf Pack Member';
+    // Skip generic placeholders
+    const invalidNames = ['Chat Participant', 'chat participant', ''];
+    
+    // Try to get a valid display name
+    const possibleNames = [
+      conversation.other_user_name,
+      conversation.display_name,
+      conversation.name,
+      conversation.other_user_username,
+      conversation.username
+    ];
+    
+    for (const name of possibleNames) {
+      if (name && !invalidNames.includes(name.toLowerCase().trim())) {
+        return name;
+      }
+    }
+    
+    // If we have a user ID, show it as last resort
+    if (conversation.other_user_id) {
+      return `User ${conversation.other_user_id.slice(0, 8)}`;
+    }
+    
+    return 'Unknown User';
   };
 
   const formatTime = (timestamp: string | undefined): string => {
@@ -291,8 +309,8 @@ export default function MessagesInboxPage() {
         </div>
       </div>
 
-      {/* Browse Pack Members Button */}
-      {!searchQuery && !showAllMembers && (
+      {/* Browse Pack Members Button - Only show when no conversations exist */}
+      {!searchQuery && !showAllMembers && conversations.length === 0 && (
         <div className="p-4 border-b border-gray-800">
           <button
             onClick={() => setShowAllMembers(true)}
@@ -306,7 +324,7 @@ export default function MessagesInboxPage() {
 
       {/* User Search Results or Conversations List */}
       <div className="flex-1">
-        {searchQuery.trim().length > 0 || showAllMembers ? (
+        {(searchQuery.trim().length > 0 || showAllMembers) ? (
           <div>
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-sm font-medium text-gray-400">
@@ -384,22 +402,28 @@ export default function MessagesInboxPage() {
               <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-4">
                 <MessageCircle className="h-10 w-10 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">No conversations yet</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                {conversations.length === 0 ? 'No conversations yet' : 'No matching conversations'}
+              </h3>
               <p className="text-gray-400 text-center mb-6">
-                Search for Wolfpack members to start messaging
+                {conversations.length === 0 
+                  ? 'Start a conversation with a Wolfpack member'
+                  : 'Try a different search term'}
               </p>
-              <button
-                onClick={() => router.push('/wolfpack/feed')}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-medium transition-colors"
-              >
-                Explore Feed
-              </button>
+              {conversations.length === 0 && (
+                <button
+                  onClick={() => setShowAllMembers(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                >
+                  Browse Pack Members
+                </button>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-gray-800">
               {filteredConversations.map((conversation) => {
                 const avatarUrl = conversation.other_user_avatar || conversation.avatar_url || '/icons/wolf-icon.png';
-                const lastMessage = conversation.last_message_preview || conversation.last_message || 'Start a conversation...';
+                const lastMessage = conversation.last_message_preview || conversation.last_message || '';
                 const lastMessageTime = conversation.last_message_at || conversation.last_message_time;
                 const isOnline = conversation.other_user_is_online || conversation.is_online || false;
 
@@ -436,7 +460,7 @@ export default function MessagesInboxPage() {
 
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-400 truncate">
-                          {lastMessage}
+                          {lastMessage || <span className="italic">No messages yet</span>}
                         </p>
                         {conversation.unread_count > 0 && (
                           <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">

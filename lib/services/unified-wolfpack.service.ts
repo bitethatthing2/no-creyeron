@@ -138,7 +138,7 @@ class UnifiedWolfpackService {
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", conversationid)
+        .eq("id", userId)
         .maybeSingle();
 
       if (error) {
@@ -989,7 +989,7 @@ class UnifiedWolfpackService {
         const { data: reactions, error: reactionsError } = await supabase
           .from("wolfpack_comment_reactions")
           .select("comment_id")
-          .eq("user_id", conversationid)
+          .eq("user_id", userId)
           .eq("reaction_type", "❤️")
           .in("comment_id", commentIds);
 

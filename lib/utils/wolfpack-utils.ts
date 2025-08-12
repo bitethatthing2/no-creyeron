@@ -98,7 +98,7 @@ export const debugWolfPackMembership = async (
   locationId?: string,
 ): Promise<DebugResult> => {
   console.log("🔍 DEBUGGING WOLFPACK MEMBERSHIP");
-  console.log("User ID:", conversationid);
+  console.log("User ID:", userId);
   console.log("Location ID:", locationId || "Not specified");
 
   try {
@@ -127,7 +127,7 @@ export const debugWolfPackMembership = async (
     const { data: userMembership, error: userError } = await supabase
       .from("users")
       .select("is_wolfpack_member, wolfpack_status, location_id")
-      .eq("id", conversationid);
+      .eq("id", userId);
     console.log("User Found:", userMembership?.length || 0);
     console.log("User Wolfpack Data:", userMembership);
     if (userError) console.error("User Query Error:", userError);
@@ -137,7 +137,7 @@ export const debugWolfPackMembership = async (
       const { data: locationMembership, error: locationError } = await supabase
         .from("users")
         .select("is_wolfpack_member, wolfpack_status, location_id")
-        .eq("id", conversationid)
+        .eq("id", userId)
         .eq("location_id", locationId)
         .eq("wolfpack_status", "active")
         .eq("is_wolfpack_member", true)
@@ -299,7 +299,7 @@ export async function checkWolfPackStatus(userId: string) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("wolfpack_status, wolfpack_joined_at")
-      .eq("id", conversationid)
+      .eq("id", userId)
       .single();
 
     if (userError && userError.code !== "PGRST116") {
@@ -317,7 +317,7 @@ export async function checkWolfPackStatus(userId: string) {
         created_at,
         location_permissions_granted
       `)
-      .eq("id", conversationid)
+      .eq("id", userId)
       .eq("wolfpack_status", "active")
       .eq("is_wolfpack_member", true);
 
@@ -348,7 +348,7 @@ export async function getWolfPackLocations(userId: string) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("id, location_id, wolfpack_status, wolfpack_joined_at")
-      .eq("id", conversationid)
+      .eq("id", userId)
       .eq("is_wolfpack_member", true)
       .single();
 

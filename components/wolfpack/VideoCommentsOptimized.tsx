@@ -172,8 +172,16 @@ function VideoComments({
         // Use the new method that includes like status
         const response = await wolfpackService.getCommentsWithLikes(postId);
         
+        console.log('🔍 Comments response:', {
+          success: response.success,
+          dataLength: response.data?.length || 0,
+          data: response.data,
+          error: response.error
+        });
+        
         if (response.success && mountedRef.current) {
           const commentsData = convertUnifiedComments(response.data || []);
+          console.log('🔍 Converted comments:', commentsData);
           setComments(commentsData);
           const totalCount = calculateTotalComments(commentsData);
           setCommentCount(totalCount);
@@ -514,6 +522,7 @@ function VideoComments({
 
         {/* Comments List */}
         <div className="flex-1 overflow-y-auto px-4 space-y-3 max-h-[40vh]">
+          {console.log('🔍 Rendering comments:', { loading, commentsLength: comments.length, comments: comments.slice(0, 2) })}
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>

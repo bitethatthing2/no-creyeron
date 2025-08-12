@@ -197,6 +197,8 @@ export function useOptimizedFeed({
             id,
             username,
             display_name,
+            first_name,
+            last_name,
             avatar_url,
             wolf_emoji
           )
@@ -217,7 +219,11 @@ export function useOptimizedFeed({
           .map((item) => ({
             id: item.id,
             user_id: item.user_id,
-            username: item.user?.display_name || item.user?.username ||
+            username: item.user?.display_name || 
+              item.user?.username || 
+              (item.user?.first_name && item.user?.last_name ? 
+                `${item.user.first_name} ${item.user.last_name}` : null) ||
+              item.user?.first_name ||
               "Anonymous",
             avatar_url: item.user?.avatar_url,
             caption: item.description || item.title || "",
