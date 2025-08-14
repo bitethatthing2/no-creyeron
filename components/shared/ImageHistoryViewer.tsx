@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,9 +43,9 @@ export function ImageHistoryViewer({
   onImageReverted,
   className 
 }: ImageHistoryViewerProps) {
-  const [history, setHistory] = useState<ImageHistoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [reverting, setReverting] = useState<string | null>(null);
+  const [history, setHistory] = React.useState<ImageHistoryItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [reverting, setReverting] = React.useState<string | null>(null);
   
   const { getImageHistory, revertImage } = useImageReplacement();
 
@@ -63,7 +63,7 @@ export function ImageHistoryViewer({
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadHistory();
   }, [userId, imageType]);
 
@@ -283,7 +283,7 @@ export function ProfileImageUploaderWithHistory({
   onSuccess,
   className 
 }: ProfileImageUploaderProps) {
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = React.useState(false);
   const { 
     uploading, 
     error, 

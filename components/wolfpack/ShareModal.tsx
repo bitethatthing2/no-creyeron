@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { X, Link, Facebook, Twitter, MessageCircle, Mail, Download } from 'lucide-react';
 import { getZIndexClass } from '@/lib/constants/z-index';
 import { toast } from '@/components/ui/use-toast';
@@ -17,7 +17,7 @@ interface ShareModalProps {
 
 export default function ShareModal({ isOpen, onClose, videoId, caption, username }: ShareModalProps) {
   const { user } = useAuth();
-  const [copying, setCopying] = useState(false);
+  const [copying, setCopying] = React.useState(false);
 
   const shareUrl = `${window.location.origin}/wolfpack/video/${videoId}`;
   const shareText = `Check out this video by ${username || 'Wolf Pack member'}: ${caption || ''} #WolfPack #SideHustleBar`;

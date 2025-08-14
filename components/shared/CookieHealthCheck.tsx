@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import * as React from 'react';
 import { initCookieHealthCheck, exposeCookieUtils } from '@/lib/utils/cookie-utils';
 
 export function CookieHealthCheck() {
-  useEffect(() => {
+  React.useEffect(() => {
     // Initialize cookie health checks
     initCookieHealthCheck();
     

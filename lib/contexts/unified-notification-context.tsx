@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase'; // Use shared instance
 
 /**
@@ -35,7 +35,7 @@ interface NotificationContextType {
 /**
  * Notification context
  */
-const NotificationContext = createContext<NotificationContextType | null>(null);
+const NotificationContext = React.createContext<NotificationContextType | null>(null);
 
 /**
  * Notification provider props
@@ -50,11 +50,11 @@ interface NotificationProviderProps {
  * Provides notification state and actions to child components
  */
 export function NotificationProvider({ children, recipientId }: NotificationProviderProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // Fetch notifications from Supabase
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc('fetch_notifications', {
@@ -77,7 +77,7 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   }, []);
 
   // Mark notification as read
-  const markAsRead = useCallback(async (notificationId: string) => {
+  const markAsRead = React.useCallback(async (notificationId: string) => {
     try {
       const { error } = await supabase.rpc('mark_notification_read', {
         p_notification_id: notificationId
@@ -98,12 +98,12 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   }, []);
 
   // Dismiss notification (same as mark as read)
-  const dismissNotification = useCallback(async (notificationId: string) => {
+  const dismissNotification = React.useCallback(async (notificationId: string) => {
     await markAsRead(notificationId);
   }, [markAsRead]);
 
   // Mark all notifications as read
-  const dismissAllNotifications = useCallback(async () => {
+  const dismissAllNotifications = React.useCallback(async () => {
     try {
       // Mark all unread notifications as read one by one
       const unreadNotifications = notifications.filter(n => !n.read);
@@ -126,7 +126,7 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   }, [notifications]);
 
   // Refresh notifications
-  const refreshNotifications = useCallback(async () => {
+  const refreshNotifications = React.useCallback(async () => {
     await fetchNotifications();
   }, [fetchNotifications]);
 
@@ -134,7 +134,7 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Load notifications on mount
-  useEffect(() => {
+  React.useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
@@ -161,7 +161,7 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
  * Throws an error if used outside of NotificationProvider
  */
 export function useNotifications() {
-  const context = useContext(NotificationContext);
+  const context = React.useContext(NotificationContext);
   if (!context) {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
@@ -173,7 +173,7 @@ export function useNotifications() {
  * Returns null if used outside of NotificationProvider (doesn't throw)
  */
 export function useSafeNotifications() {
-  const context = useContext(NotificationContext);
+  const context = React.useContext(NotificationContext);
   return context;
 }
 

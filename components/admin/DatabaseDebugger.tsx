@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -12,19 +12,19 @@ import { Badge } from '@/components/ui/badge';
  * Can be added to admin dashboard for troubleshooting
  */
 export function DatabaseDebugger() {
-  const [isChecking, setIsChecking] = useState(false);
-  const [healthStatus, setHealthStatus] = useState<null | { 
+  const [isChecking, setIsChecking] = React.useState(false);
+  const [healthStatus, setHealthStatus] = React.useState<null | { 
     healthy: boolean; 
     error?: string;
     details?: string;
     latency?: string;
   }>(null);
-  const [directQueryStatus, setDirectQueryStatus] = useState<null | {
+  const [directQueryStatus, setDirectQueryStatus] = React.useState<null | {
     success: boolean;
     error?: string;
     data?: any;
   }>(null);
-  const [apiTestStatus, setApiTestStatus] = useState<null | {
+  const [apiTestStatus, setApiTestStatus] = React.useState<null | {
     success: boolean;
     endpoint: string;
     status?: number;

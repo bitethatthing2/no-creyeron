@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,31 +19,31 @@ interface NotificationResult {
 
 export const NotificationSender = () => {
   // Basic notification fields
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [result, setResult] = useState<NotificationResult | null>(null);
+  const [title, setTitle] = React.useState('');
+  const [body, setBody] = React.useState('');
+  const [isSending, setIsSending] = React.useState(false);
+  const [result, setResult] = React.useState<NotificationResult | null>(null);
   const { toast } = useToast();
   
   // Add error boundary state
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [hasError, setHasError] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState('');
   
   // Target selection
-  const [activeTab, setActiveTab] = useState<'all' | 'token' | 'topic'>('all');
-  const [targetToken, setTargetToken] = useState('');
-  const [targetTopic, setTargetTopic] = useState('');
+  const [activeTab, setActiveTab] = React.useState<'all' | 'token' | 'topic'>('all');
+  const [targetToken, setTargetToken] = React.useState('');
+  const [targetTopic, setTargetTopic] = React.useState('');
   
   // Additional options
-  const [imageLink, setImageLink] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [actionButtonLabel, setActionButtonLabel] = useState('View');
-  const [actionButtonUrl, setActionButtonUrl] = useState('');
-  const [customDataText, setCustomDataText] = useState('{}');
-  const [customData, setCustomData] = useState<Record<string, any>>({});
+  const [imageLink, setImageLink] = React.useState('');
+  const [imageUrl, setImageUrl] = React.useState('');
+  const [actionButtonLabel, setActionButtonLabel] = React.useState('View');
+  const [actionButtonUrl, setActionButtonUrl] = React.useState('');
+  const [customDataText, setCustomDataText] = React.useState('{}');
+  const [customData, setCustomData] = React.useState<Record<string, any>>({});
 
   // Update custom data when text changes
-  useEffect(() => {
+  React.useEffect(() => {
     try {
       if (customDataText.trim()) {
         const parsed = JSON.parse(customDataText);
@@ -137,7 +137,7 @@ export const NotificationSender = () => {
   };
 
   // Add error boundary effect
-  useEffect(() => {
+  React.useEffect(() => {
     // Reset error state on component mount
     setHasError(false);
     setErrorMessage('');

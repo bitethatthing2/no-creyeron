@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import * as React from 'react';
 import { supabase } from "@/lib/supabase";
 import { getAppUserId } from "@/lib/utils/auth-helpers";
 
@@ -35,14 +35,14 @@ interface UseVideoCommentsReturn {
 export function useVideoComments(
   videoId: string,
 ): UseVideoCommentsReturn {
-  const [wolfpack_comments, setwolfpack_comments] = useState<VideoComment[]>(
+  const [wolfpack_comments, setwolfpack_comments] = React.useState<VideoComment[]>(
     [],
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Load wolfpack_comments
-  const loadwolfpack_comments = useCallback(async () => {
+  const loadwolfpack_comments = React.useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -78,7 +78,7 @@ export function useVideoComments(
   }, [videoId]);
 
   // Add comment
-  const addComment = useCallback(async (content: string) => {
+  const addComment = React.useCallback(async (content: string) => {
     try {
       // Get the app user ID (maps from auth.users to public.users)
       const appUserId = await getAppUserId(supabase);
@@ -143,7 +143,7 @@ export function useVideoComments(
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadwolfpack_comments();
   }, [loadwolfpack_comments]);
 

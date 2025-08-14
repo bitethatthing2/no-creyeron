@@ -1,7 +1,7 @@
 // lib/hooks/useConsistentWolfpackAccess.ts
 // Simplified version that matches your existing interface expectations
 
-import { useCallback, useEffect, useState } from "react";
+import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 
 // =============================================================================
@@ -55,7 +55,7 @@ const toRadians = (degrees: number): number => {
 // =============================================================================
 
 export function useConsistentWolfpackAccess(): ConsistentWolfpackAccess {
-  const [state, setState] = useState<ConsistentWolfpackAccess>({
+  const [state, setState] = React.useState<ConsistentWolfpackAccess>({
     isMember: false,
     isLoading: true,
     locationName: null,
@@ -65,7 +65,7 @@ export function useConsistentWolfpackAccess(): ConsistentWolfpackAccess {
     hasLocationPermission: false,
   });
 
-  const checkLocationAccess = useCallback(async () => {
+  const checkLocationAccess = React.useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -179,11 +179,11 @@ export function useConsistentWolfpackAccess(): ConsistentWolfpackAccess {
     }
   }, []);
 
-  const refreshData = useCallback(async () => {
+  const refreshData = React.useCallback(async () => {
     await checkLocationAccess();
   }, [checkLocationAccess]);
 
-  const requestLocationAccess = useCallback(async () => {
+  const requestLocationAccess = React.useCallback(async () => {
     try {
       const position = await new Promise<GeolocationPosition>(
         (resolve, reject) => {
@@ -236,7 +236,7 @@ export function useConsistentWolfpackAccess(): ConsistentWolfpackAccess {
   }, []);
 
   // Initial load
-  useEffect(() => {
+  React.useEffect(() => {
     checkLocationAccess();
   }, [checkLocationAccess]);
 

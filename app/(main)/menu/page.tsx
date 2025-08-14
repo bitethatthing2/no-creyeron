@@ -1,5 +1,5 @@
 // app/(main)/menu/page.tsx
-import { Suspense } from 'react';
+import * as React from 'react';
 import MenuServer from './MenuServer';
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -36,9 +36,9 @@ function MenuLoading() {
 export default function MenuPage() {
   return (
     <main className="main-content">
-      <Suspense fallback={<MenuLoading />}>
+      <React.Suspense fallback={<MenuLoading />}>
         <MenuServer />
-      </Suspense>
+      </React.Suspense>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState, forwardRef } from 'react';
+import * as React from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 interface VideoPlayerProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
@@ -12,13 +12,13 @@ interface VideoPlayerProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
   onEnded?: () => void;
 }
 
-export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
+export const VideoPlayer = React.forwardRef<HTMLVideoElement, VideoPlayerProps>(
   ({ src, poster, showControls = true, onPlay, onPause, onEnded, className = '', ...props }, ref) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [hasInteracted, setHasInteracted] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
-    const [showPlayButton, setShowPlayButton] = useState(true);
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const [hasInteracted, setHasInteracted] = React.useState(false);
+    const [isPlaying, setIsPlaying] = React.useState(false);
+    const [isMuted, setIsMuted] = React.useState(true);
+    const [showPlayButton, setShowPlayButton] = React.useState(true);
 
     // Merge refs
     const mergedRef = (element: HTMLVideoElement | null) => {
@@ -32,7 +32,7 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
       }
     };
 
-    useEffect(() => {
+    React.useEffect(() => {
       const handleInteraction = () => {
         setHasInteracted(true);
         // Try to play video after user interaction
@@ -188,10 +188,10 @@ VideoPlayer.displayName = 'VideoPlayer';
 /**
  * Simple video player without controls for inline use
  */
-export const SimpleVideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
+export const SimpleVideoPlayer = React.forwardRef<HTMLVideoElement, VideoPlayerProps>(
   ({ src, className = '', ...props }, ref) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [hasInteracted, setHasInteracted] = useState(false);
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const [hasInteracted, setHasInteracted] = React.useState(false);
 
     // Merge refs
     const mergedRef = (element: HTMLVideoElement | null) => {
@@ -205,7 +205,7 @@ export const SimpleVideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
       }
     };
 
-    useEffect(() => {
+    React.useEffect(() => {
       const handleInteraction = () => {
         setHasInteracted(true);
         // Try to play video after user interaction

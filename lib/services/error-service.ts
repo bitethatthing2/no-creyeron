@@ -23,6 +23,7 @@ export enum ErrorCategory {
 
 export interface ErrorContext {
   conversationid?: string;
+  userId?: string;
   component?: string;
   action?: string;
   metadata?: Record<string, any>;

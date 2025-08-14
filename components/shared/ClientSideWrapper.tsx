@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import { NotificationProvider } from '@/components/unified';
 import ServiceWorkerRegister from '@/components/shared/ServiceWorkerRegister';
 import FirebaseInitializer from '@/components/shared/FirebaseInitializer';
@@ -20,11 +20,11 @@ interface AuthSubscription {
 }
 
 export default function ClientSideWrapper({ children }: ClientSideWrapperProps): React.ReactElement {
-  const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string | undefined>();
-  const [authChecked, setAuthChecked] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = React.useState<boolean>(false);
+  const [userId, setUserId] = React.useState<string | undefined>();
+  const [authChecked, setAuthChecked] = React.useState<boolean>(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setIsMounted(true);
     console.log('[ClientSideWrapper] Client-side wrapper mounted');
 

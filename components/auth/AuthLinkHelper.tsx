@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 
@@ -9,10 +9,10 @@ interface AuthLinkHelperProps {
 }
 
 export function AuthLinkHelper({ userEmail }: AuthLinkHelperProps) {
-  const [email, setEmail] = useState(userEmail || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = React.useState(userEmail || '');
+  const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

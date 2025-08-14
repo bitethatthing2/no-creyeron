@@ -2,14 +2,14 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import * as React from 'react';
 import { UserMigration } from './UserMigration';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, userProfile } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!loading && !user) {
       // Add current URL as returnUrl for better UX
       const currentPath = window.location.pathname + window.location.search;

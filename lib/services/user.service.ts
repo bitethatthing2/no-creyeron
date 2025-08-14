@@ -1,6 +1,11 @@
 // services/user.service.ts - Centralized user management
 
-import { AuthUser, PublicUser, CurrentUser } from '@/types/user.types';
+import type { User } from '@supabase/supabase-js';
+import { CurrentUser } from '@/contexts/AuthContext';
+import { Database } from '@/types/database.types';
+
+type PublicUser = Database['public']['Tables']['users']['Row'];
+type AuthUser = User;
 
 export class UserService {
   constructor(private supabase: any) {}

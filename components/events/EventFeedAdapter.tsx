@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Event } from '@/types/features/event';
 
@@ -44,9 +44,9 @@ export default function EventFeedAdapter({
   onEventsLoaded, 
   limit = 10 
 }: EventFeedAdapterProps) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const loadEvents = async () => {
       try {
         setIsLoading(true);
@@ -166,7 +166,7 @@ export default function EventFeedAdapter({
   }, [onEventsLoaded, limit]);
 
   // Set up real-time subscriptions for event updates
-  useEffect(() => {
+  React.useEffect(() => {
     const channel = supabase
       .channel('event_feed_updates')
       .on(

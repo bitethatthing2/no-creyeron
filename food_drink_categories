@@ -23,7 +23,7 @@ SET row_security = off;
 --
 
 INSERT INTO "archive"."_final_message_backup" ("backup_date", "original_table", "message_count", "message_data", "id") VALUES
-	('2025-07-21 21:09:06.024022', 'archive.wolf_private_messages', 1, '[{"id": "b415be23-5da2-499d-90c7-6c60884cd4df", "flagged": false, "is_read": false, "message": "hi", "read_at": null, "image_id": null, "image_url": null, "sender_id": "5a76f108-464b-490b-a4c8-2e6b337f895e", "thread_id": null, "created_at": "2025-07-04T01:21:56.27+00:00", "flagged_at": null, "flagged_by": null, "is_deleted": false, "flag_reason": null, "receiver_id": "e42b8797-6352-452a-94b9-08e63df6ee17", "is_flirt_message": false, "reply_to_message_id": null}]', 1);
+	('2025-07-21 21:09:06.024022', 'archive.wolf_private_messages', 1, '[{"id": "b415be23-5da2-499d-90c7-6c60884cd4df", "flagged": false, "is_read": false, "message": "hi", "read_at": null, "image_id": null, "image_url": null, "conversation_id": "5a76f108-464b-490b-a4c8-2e6b337f895e", "thread_id": null, "created_at": "2025-07-04T01:21:56.27+00:00", "flagged_at": null, "flagged_by": null, "is_deleted": false, "flag_reason": null, "receiver_id": "e42b8797-6352-452a-94b9-08e63df6ee17", "is_flirt_message": false, "reply_to_message_id": null}]', 1);
 
 
 --
@@ -60,7 +60,7 @@ INSERT INTO "archive"."_removed_indexes_log" ("index_name", "table_name", "remov
 	('idx_wolfpack_chat_messages_user_id', 'wolfpack_chat_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 27),
 	('idx_wolfpack_chat_messages_session_id', 'wolfpack_chat_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 28),
 	('idx_wolfpack_chat_messages_created', 'wolfpack_chat_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 29),
-	('idx_wolfpack_interactions_sender_id', 'wolfpack_interactions', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 30),
+	('idx_wolfpack_interactions_conversation_id', 'wolfpack_interactions', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 30),
 	('idx_wolfpack_interactions_receiver_id', 'wolfpack_interactions', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 31),
 	('idx_wolfpack_interactions_location_id', 'wolfpack_interactions', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 32),
 	('idx_wolfpack_chat_reactions_user_id', 'wolfpack_chat_reactions', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 33),
@@ -3176,7 +3176,7 @@ INSERT INTO "public"."wolfpack_comment_reactions" ("id", "comment_id", "user_id"
 -- Data for Name: wolfpack_interactions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO "public"."wolfpack_interactions" ("id", "sender_id", "receiver_id", "interaction_type", "location_id", "message_content", "metadata", "status", "read_at", "expires_at", "created_at", "updated_at") VALUES
+INSERT INTO "public"."wolfpack_interactions" ("id", "conversation_id", "receiver_id", "interaction_type", "location_id", "message_content", "metadata", "status", "read_at", "expires_at", "created_at", "updated_at") VALUES
 	('6d6779a4-55aa-40e7-8678-36dd1e7fe4b9', '5a76f108-464b-490b-a4c8-2e6b337f895e', '2d525358-f7af-42ef-9464-6dc91dfb94d3', 'wink', NULL, NULL, '{}', 'active', NULL, NULL, '2025-06-29 17:04:58.9544+00', '2025-06-29 17:04:58.9544+00'),
 	('d911c251-f61f-405a-bc65-c3320fa226ba', '5a76f108-464b-490b-a4c8-2e6b337f895e', 'e42b8797-6352-452a-94b9-08e63df6ee17', 'wink', NULL, NULL, '{}', 'active', NULL, NULL, '2025-06-29 17:08:36.530247+00', '2025-06-29 17:08:36.530247+00'),
 	('18e7bad4-471e-4fb3-af6e-43f6d00ae839', '5a76f108-464b-490b-a4c8-2e6b337f895e', 'e42b8797-6352-452a-94b9-08e63df6ee17', 'wink', NULL, NULL, '{}', 'active', NULL, NULL, '2025-06-29 17:09:45.543958+00', '2025-06-29 17:09:45.543958+00'),

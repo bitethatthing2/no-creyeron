@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode } from 'react';
+import * as React from 'react';
 import dynamic from 'next/dynamic';
 
 /**
@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
  * and consistent error handling for client-side components
  */
 interface ClientComponentWrapperProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 /**
@@ -29,7 +29,7 @@ export function ClientComponentWrapper({
  * Error boundary component for catching client-side rendering errors
  */
 interface ErrorBoundaryProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 interface ErrorBoundaryState {

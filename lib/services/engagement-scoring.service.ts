@@ -56,7 +56,7 @@ interface ChatMessageData {
 
 // Define the structure for interaction data
 interface InteractionData {
-  sender_id: string | null;
+  conversation_id: string | null;
   receiver_id: string | null;
 }
 
@@ -157,7 +157,7 @@ export class EngagementScoringService {
       const { data: broadcastResponses, error: broadcastError } = await supabase
         .from("dj_broadcast_responses")
         .select("user_id, broadcast_id")
-        .in("user_id", conversationids)
+        .in("user_id", userIds)
         .gte("responded_at", startOfDay.toISOString())
         .lt("responded_at", endOfDay.toISOString())
         .returns<BroadcastResponseData[]>();
@@ -198,7 +198,7 @@ export class EngagementScoringService {
       const { data: chatMessages, error: chatError } = await supabase
         .from("wolfpack_chat_messages")
         .select("user_id")
-        .in("user_id", conversationids)
+        .in("user_id", userIds)
         .gte("created_at", startOfDay.toISOString())
         .lt("created_at", endOfDay.toISOString())
         .returns<ChatMessageData[]>();
@@ -208,12 +208,12 @@ export class EngagementScoringService {
       // Get interactions at this location (today)
       const { data: interactionsSent, error: sentError } = await supabase
         .from("wolf_pack_interactions")
-        .select("sender_id")
-        .in("sender_id", conversationids)
+        .select("conversation_id")
+        .in("conversation_id", userIds)
         .eq("location_id", locationId)
         .gte("created_at", startOfDay.toISOString())
         .lt("created_at", endOfDay.toISOString())
-        .returns<{ sender_id: string | null }[]>();
+        .returns<{ conversation_id: string | null }[]>();
 
       if (sentError) console.warn("Interactions sent error:", sentError);
 
@@ -222,7 +222,7 @@ export class EngagementScoringService {
         await supabase
           .from("wolf_pack_interactions")
           .select("receiver_id")
-          .in("receiver_id", conversationids)
+          .in("receiver_id", userIds)
           .eq("location_id", locationId)
           .gte("created_at", startOfDay.toISOString())
           .lt("created_at", endOfDay.toISOString())
@@ -236,7 +236,7 @@ export class EngagementScoringService {
       const { data: engagementMetrics, error: engagementError } = await supabase
         .from("wolfpack_engagement")
         .select("user_id, total_session_time_minutes, total_interactions")
-        .in("user_id", conversationids)
+        .in("user_id", userIds)
         .gte("date", startOfDay.toISOString().split("T")[0])
         .lt("date", endOfDay.toISOString().split("T")[0])
         .returns<EngagementMetric[]>();
@@ -249,7 +249,7 @@ export class EngagementScoringService {
       const { data: userTiers, error: tierError } = await supabase
         .from("users")
         .select("id, wolfpack_tier")
-        .in("id", conversationids)
+        .in("id", userIds)
         .returns<{ id: string; wolfpack_tier: string | null }[]>();
 
       if (tierError) console.warn("User tiers error:", tierError);
@@ -263,7 +263,7 @@ export class EngagementScoringService {
           m.user_id === member.user_id
         ).length || 0;
         const sentCount = interactionsSent?.filter((i) =>
-          i.sender_id === member.user_id
+          i.conversation_id === member.user_id
         ).length || 0;
         const receivedCount = interactionsReceived?.filter((i) =>
           i.receiver_id === member.user_id
@@ -340,7 +340,7 @@ export class EngagementScoringService {
       const { data: userData, error } = await supabase
         .from("users")
         .select("last_activity, is_online")
-        .eq("id", conversationid)
+        .eq("id", userId)
         .single()
         .returns<{ last_activity: string | null; is_online: boolean | null }>();
 
@@ -378,7 +378,7 @@ export class EngagementScoringService {
     } catch (error) {
       console.warn(
         "Error calculating recent activity for user:",
-        conversationid,
+        userId,
         error,
       );
       return 0;
@@ -449,7 +449,7 @@ export class EngagementScoringService {
       const { data: recentInteractions, error: interactionsError } =
         await supabase
           .from("wolf_pack_interactions")
-          .select("sender_id, receiver_id")
+          .select("conversation_id, receiver_id")
           .eq("location_id", locationId)
           .gte("created_at", startOfDay.toISOString())
           .returns<InteractionData[]>();
@@ -462,8 +462,8 @@ export class EngagementScoringService {
       const uniqueParticipants = new Set<string>();
 
       recentInteractions?.forEach((interaction) => {
-        if (interaction.sender_id) {
-          uniqueParticipants.add(interaction.sender_id);
+        if (interaction.conversation_id) {
+          uniqueParticipants.add(interaction.conversation_id);
         }
         if (interaction.receiver_id) {
           uniqueParticipants.add(interaction.receiver_id);

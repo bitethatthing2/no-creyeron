@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -47,7 +47,7 @@ export default function PerformanceMonitor({
   onClose,
   className = ''
 }: PerformanceMonitorProps) {
-  const [metrics, setMetrics] = useState<PerformanceMetrics>({
+  const [metrics, setMetrics] = React.useState<PerformanceMetrics>({
     subscriptionCount: 0,
     cacheHitRate: 0,
     averageResponseTime: 0,
@@ -56,19 +56,19 @@ export default function PerformanceMonitor({
     dataTransferRate: 0
   });
   
-  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
+  const [systemHealth, setSystemHealth] = React.useState<SystemHealth>({
     status: 'healthy',
     uptime: 0,
     lastUpdate: Date.now(),
     issues: []
   });
   
-  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(5000); // 5 seconds
-  const [historicalData, setHistoricalData] = useState<PerformanceMetrics[]>([]);
+  const [isAutoRefresh, setIsAutoRefresh] = React.useState(true);
+  const [refreshInterval, setRefreshInterval] = React.useState(5000); // 5 seconds
+  const [historicalData, setHistoricalData] = React.useState<PerformanceMetrics[]>([]);
   
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = React.useRef<number>(Date.now());
 
   // Update metrics
   const updateMetrics = () => {
@@ -115,7 +115,7 @@ export default function PerformanceMonitor({
   };
 
   // Set up auto-refresh
-  useEffect(() => {
+  React.useEffect(() => {
     if (isVisible && isAutoRefresh) {
       updateMetrics(); // Initial update
       intervalRef.current = setInterval(updateMetrics, refreshInterval);
@@ -132,7 +132,7 @@ export default function PerformanceMonitor({
   }, [isVisible, isAutoRefresh, refreshInterval]);
 
   // Cleanup on unmount
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

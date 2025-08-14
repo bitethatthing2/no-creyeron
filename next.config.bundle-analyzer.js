@@ -152,7 +152,7 @@ const nextConfig = {
           'self.FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || ''),
           'self.FIREBASE_PROJECT_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || ''),
           'self.FIREBASE_STORAGE_BUCKET': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || ''),
-          'self.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || ''),
+          'self.FIREBASE_MESSAGING_conversation_id': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_conversation_id || ''),
           'self.FIREBASE_APp_user_id': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APp_user_id || ''),
           'self.FIREBASE_MEASUREMENT_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ''),
         })

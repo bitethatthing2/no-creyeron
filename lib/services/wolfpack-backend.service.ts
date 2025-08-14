@@ -18,7 +18,7 @@ export interface UserFriendlyError {
 
 export interface ErrorContext {
   operation: string;
-  conversationid?: string;
+  userId?: string;
   locationId?: string;
   membershipId?: string;
   additional?: Record<string, unknown>;
@@ -381,7 +381,7 @@ export class WolfpackErrorHandler {
   static logError(
     error: WolfpackError,
     context: ErrorContext,
-    conversationid?: string,
+    userId?: string,
   ): void {
     const errorLog = {
       timestamp: new Date().toISOString(),
@@ -391,7 +391,7 @@ export class WolfpackErrorHandler {
         stack: error instanceof Error ? error.stack : undefined,
       },
       context,
-      conversationid,
+      userId,
       userAgent: typeof navigator !== "undefined"
         ? navigator.userAgent
         : undefined,
@@ -703,7 +703,7 @@ export class WolfpackBackendService {
    */
   static async createChatMessage(
     sessionId: string,
-    conversationid: string,
+    userId: string,
     displayName: string,
     content: string,
     messageType: string = "text",
@@ -712,7 +712,7 @@ export class WolfpackBackendService {
     try {
       const insertData: ChatMessageInsert = {
         session_id: sessionId,
-        user_id: conversationid, // FIXED: Use user_id instead of id
+        user_id: userId, // FIXED: Use user_id instead of id
         display_name: displayName,
         avatar_url: avatarUrl || null,
         content: content,
@@ -757,7 +757,7 @@ export class WolfpackBackendService {
         source: "WolfpackService.backend.createChatMessage",
         context: {
           sessionId,
-          conversationid,
+          userId,
           displayName,
           content,
           messageType,
@@ -1078,7 +1078,7 @@ export class WolfpackSimpleService {
       now.getTime() + params.duration * 60 * 1000,
     );
 
-    return WolfpackService.backend.createDJEvent(
+    return WolfpackBackendService.createDJEvent(
       params.dj_id,
       params.location_id,
       params.event_type,
@@ -1096,7 +1096,7 @@ export class WolfpackSimpleService {
     message: string;
     broadcast_type: string;
   }) {
-    return WolfpackService.backend.createDJBroadcast(
+    return WolfpackBackendService.createDJBroadcast(
       params.dj_id,
       params.location_id,
       params.message,
@@ -1112,7 +1112,7 @@ export class WolfpackSimpleService {
     content: string;
     message_type: string;
   }) {
-    return WolfpackService.backend.createChatMessage(
+    return WolfpackBackendService.createChatMessage(
       params.session_id,
       params.user_id, // FIXED: Use user_id
       params.display_name,
@@ -1123,7 +1123,7 @@ export class WolfpackSimpleService {
   }
 
   static async getActivePackMembers(location_id: string) {
-    const result = await WolfpackService.backend.getWolfpackMembers(
+    const result = await WolfpackBackendService.getWolfpackMembers(
       location_id,
     );
 

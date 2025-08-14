@@ -3,7 +3,7 @@
  * Handles optimistic updates for likes, wolfpack_comments, follows without waiting for server response
  */
 
-import { useCallback, useEffect, useState } from "react";
+import * as React from 'react';
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import WolfpackOfflineManager from "@/lib/utils/wolfpack-offline-manager";
@@ -29,7 +29,7 @@ export function useOptimisticActions({
   conversationid,
   onUpdatewolfpack_videostats,
 }: UseOptimisticActionsProps = {}) {
-  const [optimisticState, setOptimisticState] = useState<OptimisticState>({
+  const [optimisticState, setOptimisticState] = React.useState<OptimisticState>({
     likes: {},
     follows: {},
     localLikeCounts: {},
@@ -39,7 +39,7 @@ export function useOptimisticActions({
   });
 
   // Listen for offline sync events
-  useEffect(() => {
+  React.useEffect(() => {
     const handleSyncCompleted = (event: CustomEvent) => {
       // Remove completed actions from pending state
       setOptimisticState((prev) => {
@@ -92,7 +92,7 @@ export function useOptimisticActions({
   }, []);
 
   // Optimistic like/unlike
-  const handleLike = useCallback(
+  const handleLike = React.useCallback(
     async (
       videoId: string,
       currentLikeCount: number,
@@ -194,7 +194,7 @@ export function useOptimisticActions({
   );
 
   // Optimistic follow/unfollow
-  const handleFollow = useCallback(
+  const handleFollow = React.useCallback(
     async (targetUserId: string, isCurrentlyFollowed: boolean) => {
       if (!userId) {
         toast({
@@ -283,7 +283,7 @@ export function useOptimisticActions({
   );
 
   // Handle comment creation with optimistic count update
-  const handlewolfpack_commentsubmit = useCallback(async (
+  const handlewolfpack_commentsubmit = React.useCallback(async (
     videoId: string,
     content: string,
     currentCommentCount: number,
@@ -398,7 +398,7 @@ export function useOptimisticActions({
   }, [userId, onUpdatewolfpack_videostats]);
 
   // Get optimistic state for a video
-  const getOptimisticwolfpack_videostate = useCallback(
+  const getOptimisticwolfpack_videostate = React.useCallback(
     (
       videoId: string,
       originalLikeCount: number,
@@ -421,12 +421,12 @@ export function useOptimisticActions({
   );
 
   // Get optimistic follow state
-  const getOptimisticFollowState = useCallback((userId: string) => {
+  const getOptimisticFollowState = React.useCallback((userId: string) => {
     return optimisticState.follows[userId];
   }, [optimisticState]);
 
   // Clear optimistic state (useful after real-time updates)
-  const clearOptimisticState = useCallback(() => {
+  const clearOptimisticState = React.useCallback(() => {
     setOptimisticState({
       likes: {},
       follows: {},
@@ -438,7 +438,7 @@ export function useOptimisticActions({
   }, []);
 
   // Get offline action status
-  const getOfflineStatus = useCallback(() => {
+  const getOfflineStatus = React.useCallback(() => {
     const pendingCount = Object.keys(optimisticState.pendingActions).length;
     const actions = Object.entries(optimisticState.offlineActions).map((
       [id, action],
@@ -456,7 +456,7 @@ export function useOptimisticActions({
   }, [optimisticState.pendingActions, optimisticState.offlineActions]);
 
   // Force sync pending actions
-  const forceSyncActions = useCallback(async () => {
+  const forceSyncActions = React.useCallback(async () => {
     try {
       const result = await WolfpackOfflineManager.forceSyncNow();
 

@@ -1,6 +1,8 @@
+'use client';
+
 import { Camera } from 'lucide-react';
-import { memo } from 'react';
-import { RecordingMode } from '@/hooks/wolfpack/useRecording';
+import * as React from 'react';
+import { RecordingMode } from '@/lib/hooks/wolfpack/useRecording';
 
 interface RecordingControlsProps {
   recordingMode: RecordingMode;
@@ -81,4 +83,4 @@ function RecordingControlsComponent({
   );
 }
 
-export const RecordingControls = memo(RecordingControlsComponent);
+export const RecordingControls = React.memo(RecordingControlsComponent);

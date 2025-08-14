@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import * as React from 'react';
 import { Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,18 +20,18 @@ export interface NotificationIndicatorRef {
  * Unified notification indicator component
  * Displays a bell icon with an unread count badge
  */
-export const NotificationIndicator = forwardRef<NotificationIndicatorRef, NotificationIndicatorProps>(({
+export const NotificationIndicator = React.forwardRef<NotificationIndicatorRef, NotificationIndicatorProps>(({
   variant = 'default',
   size = 'md',
   onClick,
   className = '',
 }, ref) => {
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // Initialize Supabase client
     // Fetch unread count from Supabase
-  const fetchUnreadCount = useCallback(async () => {
+  const fetchUnreadCount = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc('fetch_notifications', {
@@ -64,12 +64,12 @@ export const NotificationIndicator = forwardRef<NotificationIndicatorRef, Notifi
   }, []);
 
   // Expose refresh method to parent components
-  useImperativeHandle(ref, () => ({
+  React.useImperativeHandle(ref, () => ({
     refresh: fetchUnreadCount
   }));
 
   // Load unread count on mount
-  useEffect(() => {
+  React.useEffect(() => {
     fetchUnreadCount();
   }, [fetchUnreadCount]);
   

@@ -288,7 +288,7 @@ class WolfpackRealtimeService {
           const { data: sender } = await supabase
             .from("users")
             .select("display_name, username, avatar_url")
-            .eq("id", payload.new.sender_id)
+            .eq("id", payload.new.conversation_id)
             .single();
 
           onMessage({

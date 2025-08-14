@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Smile, Plus } from 'lucide-react';
@@ -40,8 +40,8 @@ export function ChatInput({
   typingUsers = [],
   className = ''
 }: ChatInputProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

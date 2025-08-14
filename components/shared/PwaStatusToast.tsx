@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { Bell } from "lucide-react";
 import { onAppInstalled } from '@/lib/pwa/pwaEventHandler';
 
 export function PwaStatusToast() {
   const { toast } = useToast();
-  const [hasShownNotificationToast, setHasShownNotificationToast] = useState(false);
+  const [hasShownNotificationToast, setHasShownNotificationToast] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof window === 'undefined') return;
 
     // Register for appinstalled events - but don't show a toast here

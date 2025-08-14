@@ -1,7 +1,7 @@
 // React Component for Comment Reactions
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { CommentReactionService } from '@/lib/services/comment-reaction.service';
 
@@ -11,16 +11,16 @@ interface CommentReactionsProps {
 }
 
 export const CommentReactions = ({ commentId, className = '' }: CommentReactionsProps) => {
-  const [reactions, setReactions] = useState<Record<string, any[]>>({});
-  const [userReactions, setUserReactions] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [reactions, setReactions] = React.useState<Record<string, any[]>>({});
+  const [userReactions, setUserReactions] = React.useState<Record<string, boolean>>({});
+  const [loading, setLoading] = React.useState<Record<string, boolean>>({});
   // Using singleton instance
 // const supabase is already imported;
   const reactionService = new CommentReactionService(supabase);
 
   const reactionTypes = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (commentId) {
       loadReactions();
       checkUserReactions();

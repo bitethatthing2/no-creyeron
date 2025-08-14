@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import * as React from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getZIndexClass } from '@/lib/constants/z-index';
@@ -27,7 +27,7 @@ export function CenteredModal({
   className = ''
 }: CenteredModalProps) {
   // Handle escape key
-  useEffect(() => {
+  React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();

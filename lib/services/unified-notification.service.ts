@@ -54,7 +54,7 @@ class UnifiedNotificationService {
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
           storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
           messagingSenderId:
-            process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+            process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_conversation_id,
           appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
         };
         initializeApp(firebaseConfig);
@@ -64,12 +64,17 @@ class UnifiedNotificationService {
       this.messaging = getMessaging();
 
       // Only get FCM token if permission is already granted to avoid permission violations
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      if (
+        typeof window !== "undefined" && "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
         this.getFCMToken().catch((error) => {
           console.log("FCM token not available:", error.message);
         });
       } else {
-        console.log("Notification permission not granted, skipping FCM token request");
+        console.log(
+          "Notification permission not granted, skipping FCM token request",
+        );
       }
 
       // Listen for foreground messages
@@ -238,7 +243,9 @@ class UnifiedNotificationService {
           profileError,
         );
         // If user doesn't exist in users table yet, skip FCM token storage
-        console.log("User not found in users table, skipping FCM token storage");
+        console.log(
+          "User not found in users table, skipping FCM token storage",
+        );
         return;
       }
 

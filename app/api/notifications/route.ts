@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
       // Create bulk notifications
       const result = await createBulkNotifications(
-        validatedData.userIds,
+        validatedData.conversationids,
         {
           type: validatedData.type,
           body: validatedData.body,
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
       // Create notification
       const result = await createNotification({
-        conversationid: validatedData.userId,
+        conversationid: validatedData.conversationid,
         type: validatedData.type,
         body: validatedData.body,
         link: validatedData.link,

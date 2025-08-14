@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,14 +67,14 @@ export default function AdvancedSocialFeatures({
   onFeatureCreated,
   className = ''
 }: AdvancedSocialFeaturesProps) {
-  const [activeTab, setActiveTab] = useState('discover');
-  const [socialFeatures, setSocialFeatures] = useState<SocialFeature[]>([]);
-  const [userProfile, setUserProfile] = useState<UserSocialProfile | null>(null);
-  const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = React.useState('discover');
+  const [socialFeatures, setSocialFeatures] = React.useState<SocialFeature[]>([]);
+  const [userProfile, setUserProfile] = React.useState<UserSocialProfile | null>(null);
+  const [trendingTopics, setTrendingTopics] = React.useState<string[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // Load social features and user profile
-  useEffect(() => {
+  React.useEffect(() => {
     const loadSocialData = async () => {
       try {
         // Load social features

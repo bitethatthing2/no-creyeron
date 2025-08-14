@@ -57,7 +57,7 @@ export class FixedLikesService {
         .from("wolfpack_post_likes")
         .select("id")
         .eq("video_id", videoId)
-        .eq("user_id", conversationid)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (checkError) {
@@ -123,7 +123,7 @@ export class FixedLikesService {
         .from("wolfpack_comment_reactions")
         .select("id")
         .eq("comment_id", commentId)
-        .eq("user_id", conversationid)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (checkError) {
@@ -139,7 +139,7 @@ export class FixedLikesService {
           .from("wolfpack_comment_reactions")
           .delete()
           .eq("comment_id", commentId)
-          .eq("user_id", conversationid);
+          .eq("user_id", userId);
 
         if (deleteError) {
           console.error("Error removing comment like:", deleteError);
@@ -156,7 +156,7 @@ export class FixedLikesService {
           .from("wolfpack_comment_reactions")
           .insert({
             comment_id: commentId,
-            user_id: conversationid,
+            user_id: userId,
             reaction_type: "❤️",
           });
 
@@ -218,7 +218,7 @@ export class FixedLikesService {
 
       if (!this.supabase) await this.initSupabase();
 
-      if (!userId) {
+      if (!conversationid) {
         try {
           conversationid = await this.getCurrentUserId();
         } catch (error) {

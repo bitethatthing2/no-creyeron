@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import * as React from 'react';
 import { initFirebase } from '@/lib/firebase';
 import { FcmProvider } from '@/lib/hooks/useFcmToken';
 import { Toaster } from 'sonner'; 
@@ -10,11 +10,11 @@ import { Loader2 } from 'lucide-react';
 let hasInitializedFirebase = false;
 
 export default function FirebaseInitializer({ children }: { children?: React.ReactNode }) {
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [initError, setInitError] = useState<string | null>(null);
-  const initAttempted = useRef(false);
+  const [isInitializing, setIsInitializing] = React.useState(false);
+  const [initError, setInitError] = React.useState<string | null>(null);
+  const initAttempted = React.useRef(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Skip if already initialized or attempted to prevent duplicate initialization
     if (hasInitializedFirebase || initAttempted.current) {
       console.log('Firebase already initialized or initialization attempted');

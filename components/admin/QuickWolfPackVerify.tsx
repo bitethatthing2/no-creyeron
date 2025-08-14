@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,9 +18,9 @@ export function QuickWolfPackVerify({
   onError,
   className = '' 
 }: QuickWolfPackVerifyProps) {
-  const [userEmail, setUserEmail] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [lastVerification, setLastVerification] = useState<{
+  const [userEmail, setUserEmail] = React.useState('');
+  const [isVerifying, setIsVerifying] = React.useState(false);
+  const [lastVerification, setLastVerification] = React.useState<{
     email: string;
     memberNumber: number;
     timestamp: Date;

@@ -1,6 +1,8 @@
+'use client';
+
 import { Type, Send } from 'lucide-react';
-import { memo } from 'react';
-import { RecordingMode } from '@/hooks/wolfpack/useRecording';
+import * as React from 'react';
+import { RecordingMode } from '@/lib/hooks/wolfpack/useRecording';
 
 interface CaptionInputProps {
   caption: string;
@@ -80,4 +82,4 @@ function CaptionInputComponent({
   );
 }
 
-export const CaptionInput = memo(CaptionInputComponent);
+export const CaptionInput = React.memo(CaptionInputComponent);

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import * as React from 'react';
 import { Editor } from '@monaco-editor/react'
 import { Button } from '@/components/ui/button'
 import { ResultsTable } from '@/components/results-table'
 import { Label } from '@/components/ui/label'
-import { useRunQuery } from '@/hooks/use-run-query'
+import { useRunQuery } from '@/lib/hooks/use-run-query'
 import {
   ArrowUp,
   Loader2,
@@ -64,25 +64,25 @@ export function SqlEditor({
   initialNaturalLanguageMode = false,
   hideChartOption = false,
 }: SqlEditorProps) {
-  const [sql, setSql] = useState(initialSql || '')
-  const [isSqlVisible, setIsSqlVisible] = useState(!hideSql)
-  const [isNaturalLanguageMode, setIsNaturalLanguageMode] = useState(
+  const [sql, setSql] = React.useState(initialSql || '')
+  const [isSqlVisible, setIsSqlVisible] = React.useState(!hideSql)
+  const [isNaturalLanguageMode, setIsNaturalLanguageMode] = React.useState(
     process.env.NEXT_PUBLIC_ENABLE_AI_QUERIES === 'true' && initialNaturalLanguageMode
   )
-  const [naturalLanguageQuery, setNaturalLanguageQuery] = useState('')
+  const [naturalLanguageQuery, setNaturalLanguageQuery] = React.useState('')
   const { mutate: runQuery, data, isPending, error } = useRunQuery()
-  const [isGeneratingSql, setIsGeneratingSql] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
-  const [isChartVisible, setIsChartVisible] = useState(false)
-  const [xAxisColumn, setXAxisColumn] = useState<string | null>(null)
-  const [yAxisColumn, setYAxisColumn] = useState<string | null>(null)
+  const [isGeneratingSql, setIsGeneratingSql] = React.useState(false)
+  const [aiError, setAiError] = React.useState<string | null>(null)
+  const [isChartVisible, setIsChartVisible] = React.useState(false)
+  const [xAxisColumn, setXAxisColumn] = React.useState<string | null>(null)
+  const [yAxisColumn, setYAxisColumn] = React.useState<string | null>(null)
 
-  const columns = useMemo(() => {
+  const columns = React.useMemo(() => {
     if (!data || data.length === 0) return []
     return Object.keys(data[0])
   }, [data])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (initialSql) {
       setSql(initialSql)
     }
@@ -121,35 +121,35 @@ export function SqlEditor({
     }
   }
 
-  const handleRunQuery = useCallback(() => {
+  const handleRunQuery = React.useCallback(() => {
     if (sql) {
       runQuery({ projectRef, query: sql, readOnly: true })
     }
   }, [sql, projectRef, runQuery])
 
-  useEffect(() => {
+  React.useEffect(() => {
     setIsSqlVisible(!hideSql)
   }, [hideSql])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (runAutomatically && initialSql) {
       runQuery({ projectRef, query: initialSql, readOnly: true })
     }
   }, [runAutomatically, initialSql, projectRef, runQuery])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (refetch && refetch > 0) {
       handleRunQuery()
     }
   }, [refetch, handleRunQuery])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (onResults) {
       onResults(data)
     }
   }, [data, onResults])
 
-  useEffect(() => {
+  React.useEffect(() => {
     const noResults = !data || (Array.isArray(data) && data.length === 0)
     if (noResults && !isSqlVisible && !isNaturalLanguageMode && !readOnly && !isPending) {
       setIsSqlVisible(true)
@@ -162,7 +162,7 @@ export function SqlEditor({
   const customReadOnlyError = "You can't directly alter your database schema, use chat instead"
 
   // Build the toggle-group selection based on current UI state
-  const toggleValues = useMemo(() => {
+  const toggleValues = React.useMemo(() => {
     const values: string[] = []
     if (isNaturalLanguageMode) values.push('chat')
     if (isSqlVisible) values.push('sql')

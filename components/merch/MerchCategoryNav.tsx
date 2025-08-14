@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import * as React from 'react';
 import { 
   ShoppingBag,
   ChevronLeft, ChevronRight
@@ -29,8 +29,8 @@ export const MerchCategoryNav = ({
   onCategoryChangeAction,
   scrollToCategory 
 }: MerchCategoryNavProps) => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const navRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const navRef = React.useRef<HTMLDivElement>(null);
 
   const handleCategoryClick = (categoryId: string) => {
     onCategoryChangeAction(categoryId);
@@ -52,7 +52,7 @@ export const MerchCategoryNav = ({
   };
 
   // Scroll active category into view when it changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (scrollContainerRef.current) {
       const activeButton = scrollContainerRef.current.querySelector(`[data-category-id="${activeCategory}"]`);
       if (activeButton) {

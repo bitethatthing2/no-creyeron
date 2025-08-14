@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Shield, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthStatus {
   authenticated: boolean;
@@ -24,11 +25,11 @@ interface UserInfo {
 }
 
 const AuthDebugDashboard = () => {
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const supabase = createClientComponentClient();
+  const [authStatus, setAuthStatus] = React.useState<AuthStatus | null>(null);
+  const [userInfo, setUserInfo] = React.useState<UserInfo | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const supabase = createClient();
 
   const checkAuthStatus = async () => {
     setLoading(true);
@@ -103,7 +104,7 @@ const AuthDebugDashboard = () => {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     checkAuthStatus();
   }, []);
 

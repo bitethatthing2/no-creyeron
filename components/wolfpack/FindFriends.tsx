@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Search, ArrowLeft, Users, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +28,14 @@ interface FindFriendsProps {
 
 export default function FindFriends({ onClose }: FindFriendsProps) {
   const { currentUser } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestedUsers, setSuggestedUsers] = useState<WolfpackUser[]>([]);
-  const [searchResults, setSearchResults] = useState<WolfpackUser[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [suggestedUsers, setSuggestedUsers] = React.useState<WolfpackUser[]>([]);
+  const [searchResults, setSearchResults] = React.useState<WolfpackUser[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = React.useState(true);
 
   // Load suggested users using unified service
-  useEffect(() => {
+  React.useEffect(() => {
     const loadSuggestions = async () => {
       if (!currentUser) return;
       
@@ -115,7 +115,7 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
       // Update local state
       const updateFollowStatus = (users: WolfpackUser[]) =>
         users.map(u => 
-          u.id ===conversationid 
+          u.id === userId 
             ? { ...u, is_following: response.data?.following }
             : u
         );

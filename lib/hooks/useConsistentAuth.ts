@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import * as React from 'react';
 import { supabase } from "@/lib/supabase";
 import type {
   AuthChangeEvent,
@@ -32,10 +32,10 @@ export interface AuthState {
 }
 
 export function useConsistentAuth(): AuthState {
-  const [user, setUser] = useState<DatabaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [user, setUser] = React.useState<DatabaseUser | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<Error | null>(null);
+  const [mounted, setMounted] = React.useState(false);
 
   // Fetch user data from database based on auth user
   const fetchDatabaseUser = async (
@@ -90,7 +90,7 @@ export function useConsistentAuth(): AuthState {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
 
     // Add a timeout to prevent infinite loading

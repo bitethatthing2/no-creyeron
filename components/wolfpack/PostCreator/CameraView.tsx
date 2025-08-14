@@ -1,6 +1,8 @@
-import { forwardRef, memo } from 'react';
+'use client';
+
+import * as React from 'react';
 import { Camera } from 'lucide-react';
-import { CameraStatus, FacingMode } from '@/hooks/wolfpack/useCamera';
+import { CameraStatus, FacingMode } from '@/lib/hooks/wolfpack/useCamera';
 
 interface CameraViewProps {
   hasStream: boolean;
@@ -10,7 +12,7 @@ interface CameraViewProps {
   onStartCamera: () => void;
 }
 
-const CameraViewComponent = forwardRef<HTMLVideoElement, CameraViewProps>(
+const CameraViewComponent = React.forwardRef<HTMLVideoElement, CameraViewProps>(
   ({ hasStream, cameraStatus, errorMessage, facingMode, onStartCamera }, ref) => {
     if (hasStream) {
       return (
@@ -63,4 +65,4 @@ const CameraViewComponent = forwardRef<HTMLVideoElement, CameraViewProps>(
 
 CameraViewComponent.displayName = 'CameraView';
 
-export const CameraView = memo(CameraViewComponent);
+export const CameraView = React.memo(CameraViewComponent);

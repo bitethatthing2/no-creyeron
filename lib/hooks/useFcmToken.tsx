@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 import { Unsubscribe } from 'firebase/messaging';
 import { getMessagingInstance, fetchToken, requestNotificationPermission, setupForegroundMessageHandler } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,7 @@ interface FcmContextType {
   registerToken: () => Promise<string | null>;
 }
 
-const FcmContext = createContext<FcmContextType>({
+const FcmContext = React.createContext<FcmContextType>({
   token: null,
   notificationPermissionStatus: null,
   isLoading: false,
@@ -30,7 +30,7 @@ const FcmContext = createContext<FcmContextType>({
 });
 
 // Export hook to use the FCM Context
-export const useFcmContext = () => useContext(FcmContext);
+export const useFcmContext = () => React.useContext(FcmContext);
 
 // Helper to store token in Supabase
 const storeTokenInSupabase = async (tokenToStore: string): Promise<boolean> => {
@@ -138,16 +138,16 @@ export async function getNotificationPermissionAndToken(): Promise<string | null
 }
 
 export function useFcmToken() {
-  const [token, setToken] = useState<string | null>(null);
-  const [notificationPermissionStatus, setNotificationPermissionStatus] = useState<NotificationPermission | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const messageHandlerRef = useRef<Unsubscribe | null>(null);
-  const hasRegisteredLocallyRef = useRef(false);
+  const [token, setToken] = React.useState<string | null>(null);
+  const [notificationPermissionStatus, setNotificationPermissionStatus] = React.useState<NotificationPermission | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const messageHandlerRef = React.useRef<Unsubscribe | null>(null);
+  const hasRegisteredLocallyRef = React.useRef(false);
   const router = useRouter();
 
   // Check permission state on mount
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const checkPermission = async () => {
@@ -169,7 +169,7 @@ export function useFcmToken() {
   }, []);
 
   // Setup message handlers if permission is granted
-  useEffect(() => {
+  React.useEffect(() => {
     // Skip setup if not in browser or already registered
     if (typeof window === 'undefined' || hasRegisteredLocallyRef.current) return;
     

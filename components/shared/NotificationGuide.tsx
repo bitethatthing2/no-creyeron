@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useFcmContext, getNotificationPermissionAndToken } from '@/lib/hooks/useFcmToken';
@@ -16,12 +16,12 @@ export default function NotificationGuide({
   variant = 'button',
   className = ''
 }: NotificationGuideProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isBrowserSupported, setIsBrowserSupported] = React.useState(false);
   const { notificationPermissionStatus: permissionState, registerToken } = useFcmContext();
 
-  // Check browser support in useEffect to prevent hydration mismatch
-  useEffect(() => {
+  // Check browser support in React.useEffect to prevent hydration mismatch
+  React.useEffect(() => {
     setIsBrowserSupported('Notification' in window);
   }, []);
 

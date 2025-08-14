@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import { Play, Pause, Volume2, VolumeX, Maximize2 } from 'lucide-react';
 import { mediaOptimizer } from '@/lib/services/media-optimization.service';
@@ -40,17 +40,17 @@ export default function OptimizedMedia({
   onError,
   onClick
 }: OptimizedMediaProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(muted);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [optimizedMedia, setOptimizedMedia] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [currentQuality, setCurrentQuality] = useState('auto');
-  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(muted);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [optimizedMedia, setOptimizedMedia] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [hasError, setHasError] = React.useState(false);
+  const [currentQuality, setCurrentQuality] = React.useState('auto');
+  const [isIntersecting, setIsIntersecting] = React.useState(false);
 
   // Intersection Observer for lazy loading
-  useEffect(() => {
+  React.useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -69,7 +69,7 @@ export default function OptimizedMedia({
     return () => observer.disconnect();
   }, [url]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const optimizeMedia = async () => {
       // Only optimize when in viewport or priority is set
       if (!isIntersecting && !priority) return;

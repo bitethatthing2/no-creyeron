@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle, Clock, Database, AlertTriangle } from 'lucide-react';
@@ -19,10 +19,10 @@ interface ApiDiagnosticToolProps {
 }
 
 export function ApiDiagnosticTool({ compact = false }: ApiDiagnosticToolProps) {
-  const [results, setResults] = useState<Record<string, ApiTestResult>>({});
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
-  const [dbRelationshipStatus, setDbRelationshipStatus] = useState<'unknown' | 'checking' | 'ok' | 'error'>('unknown');
-  const [relationshipDetails, setRelationshipDetails] = useState<string | null>(null);
+  const [results, setResults] = React.useState<Record<string, ApiTestResult>>({});
+  const [loading, setLoading] = React.useState<Record<string, boolean>>({});
+  const [dbRelationshipStatus, setDbRelationshipStatus] = React.useState<'unknown' | 'checking' | 'ok' | 'error'>('unknown');
+  const [relationshipDetails, setRelationshipDetails] = React.useState<string | null>(null);
   
   const testEndpoints = [
     { name: 'Basic DB Test', url: '/api/admin/test-db' },

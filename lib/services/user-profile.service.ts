@@ -77,7 +77,7 @@ export class UserProfileService {
           wolfpack_join_date, last_seen_at, is_online,
           location_permissions_granted, phone, created_at, updated_at
         `)
-        .eq(isAuthId ? "auth_id" : "id", conversationid)
+        .eq(isAuthId ? "auth_id" : "id", userId)
         .single();
 
       if (error) {
@@ -192,7 +192,7 @@ export class UserProfileService {
           wolfpack_join_date, last_seen_at, is_online,
           location_permissions_granted, phone, created_at, updated_at
         `)
-        .in("id", conversationids);
+        .in("id", userIds);
 
       if (error) {
         throw error;
@@ -266,7 +266,7 @@ export class UserProfileService {
           { wolfpack_join_date: new Date().toISOString() }),
       };
 
-      return await this.updateUserProfile(userId, updates);
+      return await this.updateUserProfile(conversationid, updates);
     } catch (error) {
       console.error("Error updating Wolfpack membership:", error);
       throw error;

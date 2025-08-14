@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,14 +15,14 @@ function generateUniqueId() {
 }
 
 export function DeviceRegistration() {
-  const [deviceId, setDeviceId] = useState<string>('');
-  const [staffId, setStaffId] = useState<string>('');
-  const [isPrimary, setIsPrimary] = useState<boolean>(true);
-  const [isRegistering, setIsRegistering] = useState<boolean>(false);
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [deviceId, setDeviceId] = React.useState<string>('');
+  const [staffId, setStaffId] = React.useState<string>('');
+  const [isPrimary, setIsPrimary] = React.useState<boolean>(true);
+  const [isRegistering, setIsRegistering] = React.useState<boolean>(false);
+  const [isRegistered, setIsRegistered] = React.useState<boolean>(false);
 
   // Check if device is already registered on component mount
-  useEffect(() => {
+  React.useEffect(() => {
     // Try to get existing device ID from localStorage
     const storedDeviceId = localStorage.getItem('admin_device_id');
     if (storedDeviceId) {

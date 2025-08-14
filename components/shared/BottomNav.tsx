@@ -6,9 +6,9 @@ import { Home, MessageCircle, Music, UtensilsCrossed, ShoppingBag, Calendar, Log
 import { cn } from '@/lib/utils';
 import { getZIndexClass } from '@/lib/constants/z-index';
 // useWolfpackAccess functionality integrated into TikTok-style Wolfpack Local Pack
-import { useDJPermissions } from '@/hooks/useDJPermissions';
+import { useDJPermissions } from '@/lib/hooks/useDJPermissions';
 import { useAdminAccess } from '@/lib/hooks/useAdminAccess';
-import { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DynamicLogo } from './DynamicLogo';
 // import { usewolfpack_comments } from '@/lib/contexts/wolfpack_commentsContext';
@@ -20,20 +20,20 @@ export const BottomNav = () => {
   const { isActiveDJ } = useDJPermissions();
   const { isAdmin } = useAdminAccess();
   const { user } = useAuth();
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
   // const { iswolfpack_commentsOpen } = usewolfpack_comments();
   const iswolfpack_commentsOpen = false; // Temporarily disabled until context is working
 
   // Set up mounted state
-  useEffect(() => {
+  React.useEffect(() => {
     setIsMounted(true);
   }, []);
 
   // Debug state tracking
-  const lastStateRef = useRef<string>('');
+  const lastStateRef = React.useRef<string>('');
   
   // Debug logging (only in development and on state changes)
-  useEffect(() => {
+  React.useEffect(() => {
     if (isMounted && process.env.NODE_ENV === 'development') {
       const debugInfo = {
         user: !!user,
@@ -52,7 +52,7 @@ export const BottomNav = () => {
   }, [isMounted, user, canCheckout, isActiveDJ, isAdmin]);
 
   // Debug pathname changes
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('BottomNav pathname changed to:', pathname);
   }, [pathname]);
 

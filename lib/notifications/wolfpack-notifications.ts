@@ -147,7 +147,7 @@ export async function sendOrderUpdateNotification(
     const { data: user, error: userError } = await supabase
       .from("users")
       .select("id, notification_preferences")
-      .eq("id", conversationid)
+      .eq("id", userId)
       .single();
 
     if (userError || !user) {
@@ -168,7 +168,7 @@ export async function sendOrderUpdateNotification(
     const { data: deviceTokens, error: tokensError } = await supabase
       .from("user_fcm_tokens")
       .select("id, token, platform")
-      .eq("user_id", conversationid)
+      .eq("user_id", userId)
       .eq("is_active", true);
 
     if (tokensError || !deviceTokens || deviceTokens.length === 0) {
@@ -513,7 +513,7 @@ export async function getUserNotificationPreferences(
     const { data, error } = await supabase
       .from("users")
       .select("notification_preferences")
-      .eq("id", conversationid)
+      .eq("id", userId)
       .single();
 
     if (error) {
@@ -686,7 +686,7 @@ export async function getNotificationHistory(
         clicked_at,
         link
       `)
-      .eq("user_id", conversationid)
+      .eq("user_id", userId)
       .order("sent_at", { ascending: false })
       .limit(limit);
 

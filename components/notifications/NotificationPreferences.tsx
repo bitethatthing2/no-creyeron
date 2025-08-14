@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Bell, Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,7 +78,7 @@ export function NotificationPreferences({
  conversationid,
   onClose 
 }: NotificationPreferencesProps) {
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
+  const [preferences, setPreferences] = React.useState<NotificationPreferences>({
     events: true,
     marketing: false,
     announcements: true,
@@ -87,12 +87,12 @@ export function NotificationPreferences({
     member_activity: true,
     social_interactions: true
   });
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [updating, setUpdating] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Load current preferences from the user's notification_preferences column
-  useEffect(() => {
+  React.useEffect(() => {
     const loadPreferences = async () => {
       try {
         setLoading(true);

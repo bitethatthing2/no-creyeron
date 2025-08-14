@@ -1,4 +1,4 @@
-import { WolfpackService } from "./wolfpack-auth.service";
+import { WolfpackAuthService } from "./wolfpack-auth.service";
 import {
   type LocationKey,
   SIDE_HUSTLE_LOCATIONS,
@@ -56,7 +56,7 @@ export class WolfpackMembershipService {
    * Check user's current membership status - consolidates multiple implementations
    */
   static async checkMembership(
-    conversationid: string,
+    userId: string,
     locationId?: string,
   ): Promise<MembershipStatus> {
     try {
@@ -69,7 +69,7 @@ export class WolfpackMembershipService {
           wolfpack_joined_at,
           created_at
         `)
-        .eq("id", conversationid)
+        .eq("id", userId)
         .eq("is_wolfpack_member", true);
 
       // Add location filter if provided
@@ -270,7 +270,7 @@ export class WolfpackMembershipService {
    * Update member profile information
    */
   static async updateMemberProfile(
-    conversationid: string,
+    userId: string,
     locationId: string,
     profileData: Partial<MemberProfile>,
   ): Promise<boolean> {
@@ -285,7 +285,7 @@ export class WolfpackMembershipService {
           instagram_handle: profileData.instagram_handle,
           last_activity: new Date().toISOString(),
         })
-        .eq("id", conversationid)
+        .eq("id", userId)
         .eq("is_wolfpack_member", true);
 
       if (memberError) throw memberError;
@@ -306,7 +306,7 @@ export class WolfpackMembershipService {
       const { data: memberData, error: memberError } = await supabase
         .from("users")
         .select("*")
-        .eq("id", conversationid)
+        .eq("id", userId)
         .eq("is_wolfpack_member", true)
         .single();
 
@@ -368,7 +368,7 @@ export class WolfpackMembershipService {
       const { data: recentMembership, error } = await supabase
         .from("users")
         .select("last_activity, wolfpack_joined_at")
-        .eq("id", conversationid)
+        .eq("id", userId)
         .order("wolfpack_joined_at", { ascending: false })
         .limit(1)
         .single();

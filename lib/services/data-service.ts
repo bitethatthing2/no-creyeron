@@ -102,12 +102,8 @@ class DataService {
         }
 
         // Handle different types of errors
-        throw errorService.handleDatabaseError(err, operation, {
-          attempt,
-          maxRetries: retries,
-          cacheKey,
-          timeout,
-        });
+        errorService.logError(err, operation);
+        throw new Error(`${operation} failed: ${err.message}`);
       }
     };
 
@@ -153,7 +149,7 @@ class DataService {
         await this.supabase
           .from("users")
           .update(updates)
-          .eq("id", conversationid)
+          .eq("id", userId)
           .select()
           .single(),
       "updateWolfpackMember",
@@ -180,12 +176,12 @@ class DataService {
           .from("wolf_private_messages")
           .select(`
           *,
-          sender_user:users!wolf_private_messages_sender_id_fkey(
+          sender_user:users!wolf_private_messages_conversation_id_fkey(
             display_name, wolf_emoji, profile_image_url
           )
         `)
           .or(
-            `and(sender_id.eq.${userId1},receiver_id.eq.${userId2}),and(sender_id.eq.${userId2},receiver_id.eq.${userId1})`,
+            `and(conversation_id.eq.${userId1},receiver_id.eq.${conversationid2}),and(conversation_id.eq.${conversationid2},receiver_id.eq.${userId1})`,
           )
           .eq("is_deleted", false)
           .order("created_at", { ascending: true })
@@ -209,7 +205,7 @@ class DataService {
         await this.supabase
           .from("wolf_private_messages")
           .insert({
-            sender_id: senderId,
+            conversation_id: senderId,
             receiver_id: receiverId,
             message,
             is_read: false,
@@ -352,7 +348,7 @@ class DataService {
         await this.supabase
           .from("users")
           .select("*")
-          .eq("id", conversationid)
+          .eq("id", userId)
           .single(),
       "getUser",
       {
@@ -369,7 +365,7 @@ class DataService {
         await this.supabase
           .from("users")
           .update(updates)
-          .eq("id", conversationid)
+          .eq("id", userId)
           .select()
           .single(),
       "updateUser",
@@ -406,28 +402,16 @@ class DataService {
       });
 
       if (failed.length > 0) {
-        errorService.createError(
-          `Batch operation partially failed: ${operationName}`,
-          "Some operations could not be completed",
-          ErrorSeverity.MEDIUM,
-          ErrorCategory.DATABASE,
-          {
-            operation: operationName,
-            metadata: {
-              successfulCount: successful.length,
-              failedCount: failed.length,
-              totalCount: operations.length,
-            },
-          },
+        errorService.logError(
+          new Error(`Batch operation partially failed: ${operationName}`),
+          "batchExecute"
         );
       }
 
       return successful;
     } catch (error) {
-      throw errorService.handleDatabaseError(
-        error as Error,
-        `batchExecute: ${operationName}`,
-      );
+      errorService.logError(error as Error, "batchExecute");
+      throw new Error(`batchExecute failed: ${operationName}`);
     }
   }
 
@@ -513,10 +497,7 @@ class DataService {
 
       return !error;
     } catch (error) {
-      errorService.handleDatabaseError(
-        error as Error,
-        "testConnection",
-      );
+      errorService.logError(error as Error, "testConnection");
       return false;
     }
   }

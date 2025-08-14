@@ -16,9 +16,9 @@ npm run db:check
 
 ### 3. Use Typed Functions
 ```typescript
-import { usewolfpack_comments } from '@/hooks/usewolfpack_comments'
-import { useLikes } from '@/hooks/useLikes'
-import { usewolfpack_posts } from '@/hooks/usewolfpack_posts'
+import { usewolfpack_comments } from '@/lib/hooks/usewolfpack_comments'
+import { useLikes } from '@/lib/hooks/useLikes'
+import { usewolfpack_posts } from '@/lib/hooks/usewolfpack_posts'
 ```
 
 ## 📋 Table of Contents
@@ -211,7 +211,7 @@ function FeedComponent() {
 ### Real-time wolfpack_comments
 
 ```typescript
-import { useRealtimewolfpack_comments } from '@/hooks/useRealtimeSync'
+import { useRealtimewolfpack_comments } from '@/lib/hooks/useRealtimeSync'
 
 function wolfpack_commentsSection({ postId }: { postId: string }) {
   const { wolfpack_comments, addComment } = usewolfpack_comments(postId)
@@ -235,7 +235,7 @@ function wolfpack_commentsSection({ postId }: { postId: string }) {
 ### Real-time Likes
 
 ```typescript
-import { useRealtimeLikes } from '@/hooks/useRealtimeSync'
+import { useRealtimeLikes } from '@/lib/hooks/useRealtimeSync'
 
 function LikeCounter({ postId }: { postId: string }) {
   const { liked, likeCount } = useLikes(postId)

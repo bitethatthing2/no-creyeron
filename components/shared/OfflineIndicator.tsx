@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useOffline } from "@/hooks/useOffline";
+import * as React from 'react';
+import { useOffline } from "@/lib/hooks/useOffline";
 import { WifiOff, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +18,11 @@ interface OfflineIndicatorProps {
 
 export function OfflineIndicator({ className = "" }: OfflineIndicatorProps) {
   const { isOnline, lastOnline, syncPending, syncItems } = useOffline();
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [lastOnlineText, setLastOnlineText] = useState<string>("");
+  const [showTooltip, setShowTooltip] = React.useState(false);
+  const [lastOnlineText, setLastOnlineText] = React.useState<string>("");
 
   // Update last online text every minute
-  useEffect(() => {
+  React.useEffect(() => {
     if (!lastOnline) return;
 
     const updateLastOnlineText = () => {

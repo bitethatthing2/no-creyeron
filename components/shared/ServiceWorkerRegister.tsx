@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import * as React from 'react';
 
 // Performance metric types
 interface PerformanceMetric {
@@ -52,10 +52,10 @@ const reportWebVitals = (metric: PerformanceMetric) => {
 };
 
 export default function ServiceWorkerRegister() {
-  const [, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const registrationAttempted = useRef(false);
+  const [, setSwRegistration] = React.useState<ServiceWorkerRegistration | null>(null);
+  const registrationAttempted = React.useRef(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Initialize performance monitoring
     if ('PerformanceObserver' in window) {
       try {

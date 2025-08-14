@@ -24,7 +24,7 @@ Your new feature flag system perfectly complements the new user fixes we just im
 
 ### Basic Feature Check
 ```typescript
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag';
 import { FEATURE_FLAGS } from '@/lib/services/feature-flags.service';
 
 function MyComponent() {
@@ -39,7 +39,7 @@ function MyComponent() {
 
 ### Multiple Features
 ```typescript
-import { useMultipleFeatureFlags } from '@/hooks/useFeatureFlag';
+import { useMultipleFeatureFlags } from '@/lib/hooks/useFeatureFlag';
 
 function SocialComponent() {
   const { features, loading } = useMultipleFeatureFlags([
@@ -62,7 +62,7 @@ function SocialComponent() {
 
 ### Authentication + Feature Check
 ```typescript
-import { useAuthenticatedFeature } from '@/hooks/useFeatureFlag';
+import { useAuthenticatedFeature } from '@/lib/hooks/useFeatureFlag';
 
 function PostCreator() {
   const { hasAccess, loading, error, user } = useAuthenticatedFeature(
@@ -78,7 +78,7 @@ function PostCreator() {
 
 ### Simple Boolean Check
 ```typescript
-import { useFeatureAccess } from '@/hooks/useFeatureFlag';
+import { useFeatureAccess } from '@/lib/hooks/useFeatureFlag';
 
 function MenuItem() {
   const canUpload = useFeatureAccess(FEATURE_FLAGS.WOLFPACK_VIDEO_UPLOAD);
@@ -122,7 +122,7 @@ function MenuItem() {
 
 ### Toggle Features for Testing
 ```typescript
-import { useFeatureFlagAdmin } from '@/hooks/useFeatureFlag';
+import { useFeatureFlagAdmin } from '@/lib/hooks/useFeatureFlag';
 
 function AdminPanel() {
   const { flags, toggleFeature, loading } = useFeatureFlagAdmin();

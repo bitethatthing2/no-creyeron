@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,7 +31,7 @@ interface SpecialRoleActionsProps {
 
 export function SpecialRoleActions({ isOpen, onClose, memberData }: SpecialRoleActionsProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleQuickOrder = () => {
     setIsLoading(true);

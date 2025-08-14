@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 
 export function TopNav() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
   const pathname = usePathname();
   const { user, currentUser } = useAuth();
 

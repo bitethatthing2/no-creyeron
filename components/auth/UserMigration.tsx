@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function UserMigration({ email }: { email: string }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const { refreshSession } = useAuth();
 
   const handleMigration = async () => {

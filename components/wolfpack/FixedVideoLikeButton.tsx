@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
 import { useFixedServices } from '@/components/shared/FixedUnifiedInit';
 
 interface FixedVideoLikeButtonProps {
@@ -20,13 +20,13 @@ export default function FixedVideoLikeButton({
 }: FixedVideoLikeButtonProps) {
   const { likesService, ready } = useFixedServices();
   
-  const [liked, setLiked] = useState(initialLiked);
-  const [likeCount, setLikeCount] = useState(initialCount);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [liked, setLiked] = React.useState(initialLiked);
+  const [likeCount, setLikeCount] = React.useState(initialCount);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Load initial like status
-  const loadLikeStatus = useCallback(async () => {
+  const loadLikeStatus = React.useCallback(async () => {
     if (!likesService || !ready || !videoId) return;
     
     try {
@@ -41,7 +41,7 @@ export default function FixedVideoLikeButton({
   }, [likesService, ready, videoId]);
 
   // Load status when service is ready
-  useEffect(() => {
+  React.useEffect(() => {
     if (ready && likesService) {
       loadLikeStatus();
     }

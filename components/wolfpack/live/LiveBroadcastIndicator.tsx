@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -62,17 +62,17 @@ export default function LiveBroadcastIndicator({
   onClick, 
   showDetails = false 
 }: LiveBroadcastIndicatorProps) {
-  const [activeBroadcasts, setActiveBroadcasts] = useState<LiveBroadcast[]>([]);
-  const [currentBroadcast, setCurrentBroadcast] = useState<LiveBroadcast | null>(null);
-  const [recentResponses, setRecentResponses] = useState<BroadcastResponse[]>([]);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeBroadcasts, setActiveBroadcasts] = React.useState<LiveBroadcast[]>([]);
+  const [currentBroadcast, setCurrentBroadcast] = React.useState<LiveBroadcast | null>(null);
+  const [recentResponses, setRecentResponses] = React.useState<BroadcastResponse[]>([]);
+  const [timeRemaining, setTimeRemaining] = React.useState<number>(0);
+  const [isLoading, setIsLoading] = React.useState(true);
   
-  const subscriptionRef = useRef<RealtimeChannel | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const subscriptionRef = React.useRef<RealtimeChannel | null>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Initialize live broadcasts
-  useEffect(() => {
+  React.useEffect(() => {
     const initializeLiveBroadcasts = async () => {
       try {
         // Check for expired broadcasts first
@@ -151,7 +151,7 @@ export default function LiveBroadcastIndicator({
   };
 
   // Calculate time remaining for broadcast and handle expiration
-  useEffect(() => {
+  React.useEffect(() => {
     if (!currentBroadcast || !currentBroadcast.expires_at) return;
 
     const calculateTimeRemaining = async () => {
@@ -186,7 +186,7 @@ export default function LiveBroadcastIndicator({
   }, [currentBroadcast]);
 
   // Set up real-time subscriptions
-  useEffect(() => {
+  React.useEffect(() => {
     const channel = supabase
       .channel('live_broadcasts_updates')
       .on(
@@ -253,7 +253,7 @@ export default function LiveBroadcastIndicator({
   }, [currentBroadcast]);
 
   // Cleanup on unmount
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();

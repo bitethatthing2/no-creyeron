@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import { FixedNotificationService } from '@/lib/services/fixed-notification.service';
 import { FixedLikesService } from '@/lib/services/fixed-likes.service';
 
@@ -13,10 +13,10 @@ declare global {
 }
 
 export default function FixedUnifiedInit() {
-  const [initialized, setInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const initializeServices = async () => {
       try {
         console.log('Initializing fixed unified services...');
@@ -83,9 +83,9 @@ export default function FixedUnifiedInit() {
 
 // Hook for easy access to services
 export function useFixedServices() {
-  const [servicesReady, setServicesReady] = useState(false);
+  const [servicesReady, setServicesReady] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const checkServices = () => {
       if (typeof window !== 'undefined' && 
           window.fixedLikesService && 

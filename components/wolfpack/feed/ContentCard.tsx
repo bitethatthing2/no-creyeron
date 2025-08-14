@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
 import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, Calendar, Clock, MapPin, Users, Ticket, ExternalLink, Phone, Globe, Star, DollarSign, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -73,14 +73,14 @@ export default function ContentCard({
   event_data,
   business_data
 }: ContentCardProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(true);
+  const [showLikeAnimation, setShowLikeAnimation] = React.useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
 
   // Auto-play video when card becomes active
-  useEffect(() => {
+  React.useEffect(() => {
     if (isActive && media_type === 'video' && videoRef.current) {
       videoRef.current.play().catch(console.error);
       setIsPlaying(true);
@@ -91,7 +91,7 @@ export default function ContentCard({
   }, [isActive, media_type]);
 
   // Auto-play audio for DJ live content
-  useEffect(() => {
+  React.useEffect(() => {
     if (isActive && type === 'dj_live' && audioRef.current) {
       audioRef.current.play().catch(console.error);
       setIsPlaying(true);

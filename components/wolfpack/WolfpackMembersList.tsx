@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+'use client';
+
+import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext'
 import type { Database } from '@/types/database.types'
 import { errorService, ErrorSeverity, ErrorCategory } from '@/lib/services/error-service'
@@ -79,14 +81,14 @@ function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
 ): T {
-  const timeoutRef = useRef<NodeJS.Timeout>()
-  const callbackRef = useRef(callback)
+  const timeoutRef = React.useRef<NodeJS.Timeout>()
+  const callbackRef = React.useRef(callback)
 
-  useEffect(() => {
+  React.useEffect(() => {
     callbackRef.current = callback
   }, [callback])
 
-  const debouncedCallback = useCallback(
+  const debouncedCallback = React.useCallback(
     (...args: Parameters<T>) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
@@ -103,14 +105,14 @@ function useDebouncedCallback<T extends (...args: any[]) => any>(
 
 export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn {
   const { user } = useAuth()
-  const [packMembers, setPackMembers] = useState<WolfPackMember[]>([])
-  const [activeEvents, setActiveEvents] = useState<WolfPackEvent[]>([])
-  const [membership, setMembership] = useState<WolfpackMembership | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected')
+  const [packMembers, setPackMembers] = React.useState<WolfPackMember[]>([])
+  const [activeEvents, setActiveEvents] = React.useState<WolfPackEvent[]>([])
+  const [membership, setMembership] = React.useState<WolfpackMembership | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = React.useState<'connected' | 'disconnected' | 'reconnecting'>('connected')
   
-  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
+  const subscriptionRef = React.useRef<{ unsubscribe: () => void } | null>(null)
   const locationId = locationKey ? LOCATION_IDS[locationKey] : null
 
   // Debounced refresh to prevent excessive updates
@@ -119,7 +121,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
   }, 1000)
 
   // Enhanced membership check with error handling and caching
-  const checkMembership = useCallback(async () => {
+  const checkMembership = React.useCallback(async () => {
     if (!user) {
       setMembership(null)
       setLoading(false)
@@ -312,7 +314,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
   }
 
   // Manual refresh with loading state
-  const refreshMembership = useCallback(async () => {
+  const refreshMembership = React.useCallback(async () => {
     setLoading(true)
     await checkMembership()
     await fetchMembers(false)
@@ -320,7 +322,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
   }, [checkMembership])
 
   // Optimized member fetching with Data Service
-  const fetchMembers = useCallback(async (showLoading = true) => {
+  const fetchMembers = React.useCallback(async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true)
       setError(null)
@@ -383,7 +385,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
   }, [locationKey])
 
   // Enhanced real-time subscription with error handling and reconnection
-  useEffect(() => {
+  React.useEffect(() => {
     const setupRealtimeSubscription = () => {
       try {
         // Clean up existing subscription
@@ -465,7 +467,7 @@ export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn 
   }, [debouncedRefresh])
 
   // Initial data loading
-  useEffect(() => {
+  React.useEffect(() => {
     const initializeData = async () => {
       await checkMembership()
       await fetchMembers(true)

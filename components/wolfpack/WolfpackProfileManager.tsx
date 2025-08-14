@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,16 +123,16 @@ const LOOKING_FOR_OPTIONS = [
 
 export function WolfpackProfileManager() {
   const { currentUser, loading: userLoading } = useAuth();
-  const [profile, setProfile] = useState<WolfpackProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setSaving] = useState(false);
+  const [profile, setProfile] = React.useState<WolfpackProfile | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setSaving] = React.useState(false);
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   
   // Form state with proper typing
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = React.useState<FormData>({
     first_name: '',
     last_name: '',
     display_name: '',
@@ -266,7 +266,7 @@ export function WolfpackProfileManager() {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Load profile when user is loaded OR when we're not loading
     if (!userLoading) {
       loadProfile();

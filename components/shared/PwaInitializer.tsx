@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import { initPwaEventListeners, refreshInstallationState } from '@/lib/pwa/pwaEventHandler';
 
 export function PwaInitializer() {
   const pathname = usePathname();
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Initialize PWA functionality early to prevent duplicate handlers
     try {
       initPwaEventListeners();
@@ -17,7 +17,7 @@ export function PwaInitializer() {
   }, []);
 
   // Handle route changes
-  useEffect(() => {
+  React.useEffect(() => {
     // Refresh PWA state on route changes to handle navigation scenarios
     try {
       refreshInstallationState();

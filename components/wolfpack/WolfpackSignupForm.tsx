@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,8 @@ interface SignupFormData {
 
 export function WolfpackSignupForm() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<SignupFormData>({
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [formData, setFormData] = React.useState<SignupFormData>({
     firstName: '',
     lastName: '',
     email: '',

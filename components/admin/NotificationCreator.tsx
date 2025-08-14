@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import * as React from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,7 +37,7 @@ type FormValues = z.infer<typeof formSchema>;
  * Used in the admin dashboard
  */
 export function NotificationCreator() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,7 +58,7 @@ export function NotificationCreator() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-         conversationid: values.userId,
+         conversationid: values.conversationid,
           type: values.type,
           body: values.body,
           link: values.link || undefined,
@@ -91,8 +91,8 @@ export function NotificationCreator() {
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="userId"
-              render={({ field }: { field: ControllerRenderProps<FormValues, "userId"> }) => (
+              name="conversationid"
+              render={({ field }: { field: ControllerRenderProps<FormValues, "conversationid"> }) => (
                 <FormItem>
                   <FormLabel>User ID</FormLabel>
                   <FormControl>

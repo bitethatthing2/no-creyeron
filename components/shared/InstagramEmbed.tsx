@@ -37,7 +37,7 @@ export function InstagramEmbed({ className = '' }: { className?: string }) {
         height="570"
         frameBorder="0"
         scrolling="no"
-        allowtransparency="true"
+        allowTransparency={true}
       />
     </div>
   );

@@ -1,13 +1,13 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { ReactNode } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { LogIn, UserPlus } from 'lucide-react';
 
 interface AuthGateProps {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
   message?: string;
   showSignUp?: boolean;
   className?: string;

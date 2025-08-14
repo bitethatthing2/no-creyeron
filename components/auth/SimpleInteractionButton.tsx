@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +25,7 @@ export function SimpleInteractionButton({
   size = 'default'
 }: SimpleInteractionButtonProps) {
   const { user, loading } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   const handleClick = async () => {
     console.log('Button clicked, user:', !!user, 'requiresAuth:', requiresAuth);

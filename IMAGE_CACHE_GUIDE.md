@@ -61,7 +61,7 @@ import { getFreshImageUrl } from '@/lib/utils/image-cache';
 For dynamic scenarios:
 
 ```tsx
-import { useImageCache } from '@/hooks/useImageCache';
+import { useImageCache } from '@/lib/hooks/useImageCache';
 
 function MyComponent() {
   const logoUrl = useImageCache('/icons/wolf-icon.png');

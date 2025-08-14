@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { MapPin, Navigation, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,11 +18,11 @@ export function DynamicGoogleMaps({
   showLocationSwitcher = true,
   height = '400px'
 }: DynamicGoogleMapsProps) {
-  const [selectedLocationKey, setSelectedLocationKey] = useState<LocationKey>('salem');
-  const [mounted, setMounted] = useState(false);
+  const [selectedLocationKey, setSelectedLocationKey] = React.useState<LocationKey>('salem');
+  const [mounted, setMounted] = React.useState(false);
 
   // Initialize from localStorage
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {
       const savedLocationKey = localStorage.getItem('sidehustle-selected-location') as LocationKey;

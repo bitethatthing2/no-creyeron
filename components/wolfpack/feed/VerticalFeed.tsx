@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import * as React from 'react';
 import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Users, Music, Calendar, Store, Sparkles, Activity, Camera } from 'lucide-react';
 import Image from 'next/image';
 import GestureHandler from './GestureHandler';
@@ -72,17 +72,17 @@ export default function VerticalFeed({
   onUserProfile,
   isConnected
 }: VerticalFeedProps) {
-  const [feedMode, setFeedMode] = useState<FeedMode>('all');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const [showReactions, setShowReactions] = useState<string | null>(null);
-  const [showDJOverlay, setShowDJOverlay] = useState(true);
-  const [isDJOverlayExpanded, setIsDJOverlayExpanded] = useState(false);
-  const [showLiveDJOverlay, setShowLiveDJOverlay] = useState(false);
-  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+  const [feedMode, setFeedMode] = React.useState<FeedMode>('all');
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [isScrolling, setIsScrolling] = React.useState(false);
+  const [showReactions, setShowReactions] = React.useState<string | null>(null);
+  const [showDJOverlay, setShowDJOverlay] = React.useState(true);
+  const [isDJOverlayExpanded, setIsDJOverlayExpanded] = React.useState(false);
+  const [showLiveDJOverlay, setShowLiveDJOverlay] = React.useState(false);
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = React.useState(false);
   
-  const feedContainerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const feedContainerRef = React.useRef<HTMLDivElement>(null);
+  const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
 
   // Filter content based on feed mode
   const filteredContent = content.filter(item => {
@@ -101,7 +101,7 @@ export default function VerticalFeed({
   });
 
   // Optimized scroll to item with debouncing
-  const scrollToItem = useCallback(
+  const scrollToItem = React.useCallback(
     debounce('scrollToItem', (index: number) => {
       if (itemRefs.current[index] && feedContainerRef.current) {
         const item = itemRefs.current[index];
@@ -118,17 +118,17 @@ export default function VerticalFeed({
   );
 
   // Gesture handlers
-  const handleSwipeUp = useCallback(() => {
+  const handleSwipeUp = React.useCallback(() => {
     const nextIndex = Math.min(filteredContent.length - 1, currentIndex + 1);
     scrollToItem(nextIndex);
   }, [currentIndex, filteredContent.length, scrollToItem]);
 
-  const handleSwipeDown = useCallback(() => {
+  const handleSwipeDown = React.useCallback(() => {
     const prevIndex = Math.max(0, currentIndex - 1);
     scrollToItem(prevIndex);
   }, [currentIndex, scrollToItem]);
 
-  const handleSwipeLeft = useCallback(() => {
+  const handleSwipeLeft = React.useCallback(() => {
     // Cycle through feed modes
     const modes: FeedMode[] = ['all', 'social', 'live', 'events', 'businesses'];
     const currentModeIndex = modes.indexOf(feedMode);
@@ -136,7 +136,7 @@ export default function VerticalFeed({
     setFeedMode(modes[nextModeIndex]);
   }, [feedMode]);
 
-  const handleSwipeRight = useCallback(() => {
+  const handleSwipeRight = React.useCallback(() => {
     // Cycle through feed modes (backwards)
     const modes: FeedMode[] = ['all', 'social', 'live', 'events', 'businesses'];
     const currentModeIndex = modes.indexOf(feedMode);
@@ -144,14 +144,14 @@ export default function VerticalFeed({
     setFeedMode(modes[prevModeIndex]);
   }, [feedMode]);
 
-  const handleDoubleTap = useCallback(() => {
+  const handleDoubleTap = React.useCallback(() => {
     // Like current item
     if (filteredContent[currentIndex]) {
       onLike(filteredContent[currentIndex].id);
     }
   }, [currentIndex, filteredContent, onLike]);
 
-  const handleLongPress = useCallback(() => {
+  const handleLongPress = React.useCallback(() => {
     // Check if current item is DJ live content
     if (filteredContent[currentIndex] && filteredContent[currentIndex].type === 'dj_live') {
       setShowLiveDJOverlay(true);
@@ -163,7 +163,7 @@ export default function VerticalFeed({
   }, [currentIndex, filteredContent, showReactions]);
 
   // Simple scroll tracking without auto-snap
-  useEffect(() => {
+  React.useEffect(() => {
     const container = feedContainerRef.current;
     if (!container) return;
 

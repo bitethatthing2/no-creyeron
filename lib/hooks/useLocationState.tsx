@@ -1,7 +1,7 @@
 // lib/hooks/useLocationState.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import * as React from 'react';
 
 // Type for location keys matching the database
 export type LocationValue = 'salem' | 'portland';
@@ -11,15 +11,15 @@ interface LocationContextType {
   setLocation: (location: LocationValue) => void;
 }
 
-const LocationContext = createContext<LocationContextType | undefined>(undefined);
+const LocationContext = React.createContext<LocationContextType | undefined>(undefined);
 
 // Provider component
 export function LocationProvider({ children }: { children: ReactNode }) {
-  const [location, setLocationState] = useState<LocationValue>('salem');
-  const [mounted, setMounted] = useState(false);
+  const [location, setLocationState] = React.useState<LocationValue>('salem');
+  const [mounted, setMounted] = React.useState(false);
 
   // Load location from localStorage on mount
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {
       const savedLocation = localStorage.getItem('sidehustle-selected-location') as LocationValue;
@@ -30,7 +30,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Memoize setLocation to prevent unnecessary re-renders
-  const setLocation = useCallback((newLocation: LocationValue) => {
+  const setLocation = React.useCallback((newLocation: LocationValue) => {
     setLocationState(newLocation);
     if (typeof window !== 'undefined') {
       localStorage.setItem('sidehustle-selected-location', newLocation);
@@ -38,7 +38,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
+  const contextValue = React.useMemo(() => ({
     location,
     setLocation
   }), [location, setLocation]);
@@ -57,7 +57,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
 // Hook to use location state
 export function useLocationState() {
-  const context = useContext(LocationContext);
+  const context = React.useContext(LocationContext);
   if (context === undefined) {
     throw new Error('useLocationState must be used within a LocationProvider');
   }

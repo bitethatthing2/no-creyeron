@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -27,10 +27,10 @@ export default function VarietyImageGallery({
   columns = 3,
   aspectRatio = 'landscape'
 }: VarietyImageGalleryProps) {
-  const [mounted, setMounted] = useState(false);
-  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [mounted, setMounted] = React.useState(false);
+  const [hoveredImage, setHoveredImage] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 

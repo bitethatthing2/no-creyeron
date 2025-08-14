@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,10 +29,10 @@ interface VerificationHistory {
 }
 
 export function WolfPackVerificationPanel() {
-  const [userEmail, setUserEmail] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [recentVerifications, setRecentVerifications] = useState<VerificationHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [userEmail, setUserEmail] = React.useState('');
+  const [isVerifying, setIsVerifying] = React.useState(false);
+  const [recentVerifications, setRecentVerifications] = React.useState<VerificationHistory[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
   // Using sonner toast (imported above)
 
   // Quick verify a user at the bar
@@ -114,7 +114,7 @@ export function WolfPackVerificationPanel() {
   };
 
   // Load verification history on component mount
-  useEffect(() => {
+  React.useEffect(() => {
     loadRecentVerifications();
   }, []);
 

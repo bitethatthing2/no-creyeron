@@ -129,7 +129,7 @@ export class TopicManagement {
     const { data, error } = await this.supabase
       .from("topic_subscriptions")
       .select("*")
-      .eq("id", conversationid)
+      .eq("id", userId)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -247,7 +247,7 @@ export class TopicManagement {
     token: string,
   ): Promise<TopicSubscription> {
     return this.createSubscription({
-      id: conversationid,
+      id: userId,
       topic,
       token,
     });
@@ -257,7 +257,7 @@ export class TopicManagement {
     const { error } = await this.supabase
       .from("topic_subscriptions")
       .delete()
-      .eq("id", conversationid)
+      .eq("id", userId)
       .eq("topic", topic);
 
     if (error) throw error;
@@ -267,7 +267,7 @@ export class TopicManagement {
     const { data, error } = await this.supabase
       .from("topic_subscriptions")
       .select("topic")
-      .eq("id", conversationid);
+      .eq("id", userId);
 
     if (error) throw error;
     return data?.map((sub) => sub.topic) || [];

@@ -408,7 +408,7 @@ class AuthService {
         "You don't have permission to perform this action",
         ErrorSeverity.HIGH,
         ErrorCategory.AUTHORIZATION,
-        { action: "updateUserRole", targetUserId: conversationid, newRole },
+        { action: "updateUserRole", targetUserId: userId, newRole },
       );
     }
 
@@ -426,7 +426,7 @@ class AuthService {
       throw errorService.handleDatabaseError(
         error as Error,
         "updateUserRole",
-        { conversationid, newRole },
+        { userId, newRole },
       );
     }
   }
@@ -494,7 +494,7 @@ class AuthService {
       const permissions = this.getRolePermissions(role);
 
       const user: AuthUser = {
-        id: conversationid,
+        id: userId,
         email: userData.email,
         role,
         permissions,
@@ -533,7 +533,7 @@ class AuthService {
       throw errorService.handleDatabaseError(
         error as Error,
         "loadUserProfile",
-        { conversationid },
+        { userId },
       );
     }
   }
@@ -567,7 +567,7 @@ class AuthService {
       throw errorService.handleDatabaseError(
         error as Error,
         "createMissingUserProfile",
-        { conversationid: authUser.id },
+        { userId: authUser.id },
       );
     }
   }
@@ -582,7 +582,7 @@ class AuthService {
               last_login: new Date().toISOString(),
               // login_count field not available in schema
             })
-            .eq("id", conversationid),
+            .eq("id", userId),
         "updateLoginMetadata",
       );
     } catch (error) {

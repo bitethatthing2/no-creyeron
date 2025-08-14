@@ -662,7 +662,7 @@ export type Database = {
       wolfpack_interactions: {
         Row: {
           id: string;
-          sender_id: string;
+          conversation_id: string;
           receiver_id: string;
           interaction_type: string;
           metadata: Json | null;
@@ -674,7 +674,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          sender_id: string;
+          conversation_id: string;
           receiver_id: string;
           interaction_type: string;
           metadata?: Json | null;
@@ -686,7 +686,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          sender_id?: string;
+          conversation_id?: string;
           receiver_id?: string;
           interaction_type?: string;
           metadata?: Json | null;
@@ -776,7 +776,7 @@ export type Database = {
       wolfpack_direct_messages: {
         Row: {
           id: string;
-          sender_id: string;
+          conversation_id: string;
           recipient_id: string;
           content: string;
           is_read: boolean | null;
@@ -789,7 +789,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          sender_id: string;
+          conversation_id: string;
           recipient_id: string;
           content: string;
           is_read?: boolean | null;
@@ -802,7 +802,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          sender_id?: string;
+          conversation_id?: string;
           recipient_id?: string;
           content?: string;
           is_read?: boolean | null;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import ContentCard from './ContentCard';
 // PackDollarSystem functionality integrated into TikTok-style Wolfpack Local Pack
 import { supabase } from '@/lib/supabase';
@@ -90,15 +90,15 @@ export default function UnifiedContentRenderer({
   onUserProfile,
   className = ''
 }: UnifiedContentRendererProps) {
-  const [userInteractions, setUserInteractions] = useState({
+  const [userInteractions, setUserInteractions] = React.useState({
     liked: content.user_liked || false,
     shared: content.user_shared || false,
     commented: content.user_commented || false
   });
-  const [showPackDollars, setShowPackDollars] = useState(false);
+  const [showPackDollars, setShowPackDollars] = React.useState(false);
 
   // Update user interactions when content changes
-  useEffect(() => {
+  React.useEffect(() => {
     setUserInteractions({
       liked: content.user_liked || false,
       shared: content.user_shared || false,

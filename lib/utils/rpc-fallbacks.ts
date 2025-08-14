@@ -1,8 +1,6 @@
 // Fallback handlers for missing RPC functions after schema migration
 import { supabase } from "@/lib/supabase";
 
-const supabase = createClient();
-
 export class RPCFallbacks {
   // Fallback for check_user_membership
   static async checkUserMembership(userId: string, locationId?: string) {
@@ -10,7 +8,7 @@ export class RPCFallbacks {
       const { data, error } = await supabase
         .from("users")
         .select("id, is_wolfpack_member")
-        .eq("id", conversationid)
+        .eq("id", userId)
         .single();
 
       if (error) {
@@ -44,7 +42,7 @@ export class RPCFallbacks {
           display_name: data.displayName,
           wolf_emoji: data.emoji || "🐺",
         })
-        .eq("id", conversationid);
+        .eq("id", userId);
 
       if (error) {
         return { data: null, error: error.message };
@@ -53,7 +51,7 @@ export class RPCFallbacks {
       return {
         data: {
           success: true,
-          membership_user_id: conversationid,
+          membership_user_id: userId,
           message: "Successfully joined wolfpack",
         },
         error: null,
@@ -72,7 +70,7 @@ export class RPCFallbacks {
       const { error } = await supabase
         .from("users")
         .update({ is_wolfpack_member: false })
-        .eq("id", conversationid);
+        .eq("id", userId);
 
       if (error) {
         return { data: null, error: error.message };

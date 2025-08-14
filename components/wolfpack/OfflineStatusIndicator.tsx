@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,13 +38,13 @@ export default function OfflineStatusIndicator({
   showDetails = false,
   onSyncComplete 
 }: OfflineStatusIndicatorProps) {
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+  const [syncStatus, setSyncStatus] = React.useState<SyncStatus>({
     pendingCount: 0,
     lastSyncAttempt: null,
     isOnline: navigator.onLine
   });
-  const [isForceSync, setIsForceSync] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [isForceSync, setIsForceSync] = React.useState(false);
+  const [expanded, setExpanded] = React.useState(false);
 
   // Update sync status
   const updateSyncStatus = async () => {
@@ -56,7 +56,7 @@ export default function OfflineStatusIndicator({
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Initial load
     updateSyncStatus();
 

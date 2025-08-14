@@ -5,10 +5,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 
 export function FrequentlyAskedQuestions() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = React.useState<number | null>(null);
 
   const faqs = [
     {

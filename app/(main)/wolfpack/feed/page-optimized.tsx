@@ -1,23 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import TikTokStyleFeed from '@/components/wolfpack/feed/TikTokStyleFeed';
 import { PostCreator } from '@/components/wolfpack/PostCreator';
 import ShareModal from '@/components/wolfpack/ShareModal';
 import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';
-import { Loader2, Shield, Sparkles, MapPin } from 'lucide-react';
+import { Loader2, Sparkles, Shield, MapPin } from 'lucide-react';
 
 // Import React Query hooks
 import { 
   useInfiniteFeedWithCursor, 
   useToggleLike, 
   useDeletePost,
-  useIncrementViewCount,
-  usePrefetchNextFeedPage
+  useIncrementViewCount
 } from '@/lib/hooks/useWolfpackQuery';
-import { FeedItem } from '@/lib/services/wolfpack/types';
+import { WolfpackVideoItem, FeedPage } from '@/types/wolfpack-feed';
 
 export default function OptimizedWolfpackFeedPageWithReactQuery() {
   const router = useRouter();
@@ -49,7 +48,10 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   // Flatten the infinite query data
-  const videos = feedData?.pages.flatMap(page => page.items) || [];
+  const videos = useMemo(() => {
+    if (!feedData?.pages) return [];
+    return (feedData.pages as FeedPage[]).flatMap((page) => page.items);
+  }, [feedData]);
 
   // Debug user info
   useEffect(() => {
@@ -83,7 +85,10 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
 
   // Handle share
   const handleShare = useCallback((videoId: string) => {
-    const video = videos.find(v => v.id === videoId);
+    // Get videos from feedData instead of using the memoized value
+    if (!feedData?.pages) return;
+    const allVideos = (feedData.pages as FeedPage[]).flatMap((page) => page.items);
+    const video = allVideos.find(v => v.id === videoId);
     if (video) {
       setShareVideoData({
         id: videoId,
@@ -92,7 +97,7 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
       });
       setShowShareModal(true);
     }
-  }, [videos]);
+  }, [feedData]);
 
   // Handle like/unlike with React Query optimistic updates
   const handleLike = useCallback(async (videoId: string) => {
@@ -140,31 +145,41 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
   }, [incrementViewMutation]);
 
   // Handle infinite scroll
-  const handleLoadMore = useCallback(() => {
+  const handleLoadMore = useCallback(async (): Promise<WolfpackVideoItem[]> => {
     if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      const result = await fetchNextPage();
+      if (!result?.data?.pages) return [];
+      const items = (result.data.pages as any[]).flatMap((page) => page.items || []);
+      return items.map((item: any): WolfpackVideoItem => ({
+        ...item,
+        thumbnail_url: item.thumbnail_url || undefined,
+        avatar_url: item.avatar_url || undefined
+      }));
     }
+    return [];
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Transform data for component compatibility
-  const transformedVideos = videos.map(video => ({
+  const transformedVideos: WolfpackVideoItem[] = videos.map((video: any): WolfpackVideoItem => ({
     id: video.id,
     user_id: video.user_id,
     username: video.username,
-    avatar_url: video.avatar_url,
+    avatar_url: video.avatar_url || undefined,
     caption: video.caption || '',
-    video_url: video.video_url || '',
-    thumbnail_url: video.thumbnail_url,
+    video_url: video.video_url,
+    thumbnail_url: video.thumbnail_url || undefined,
     likes_count: video.likes_count || 0,
     wolfpack_comments_count: video.wolfpack_comments_count || 0,
     shares_count: video.shares_count || 0,
     created_at: video.created_at,
     music_name: video.music_name || 'Original Sound',
     hashtags: video.hashtags || [],
-    view_count: 0,
-    location_tag: undefined,
-    // Add user interaction data if available
-    user_liked: (video as any).user_liked || false,
+    location: video.location,
+    is_following: video.is_following,
+    has_viewed: video.has_viewed,
+    user_liked: video.user_liked || false,
+    view_count: video.view_count || 0,
+    location_tag: video.location_tag || undefined,
   }));
 
   // Show minimal loading for faster perceived performance
@@ -247,26 +262,25 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
     <div className="relative">
       {/* Main Feed */}
       <TikTokStyleFeed
-        videos={transformedVideos}
+        wolfpack_videos={transformedVideos}
+        currentUser={currentUser}
         onLike={handleLike}
         onComment={handleComment}
         onShare={handleShare}
+        onFollow={() => {}}
         onDelete={handleDelete}
-        onVideoView={handleVideoView}
         onLoadMore={handleLoadMore}
-        hasNextPage={hasNextPage}
-        isLoadingMore={isFetchingNextPage}
-        currentUser={currentUser}
-        likingVideo={toggleLikeMutation.variables?.videoId || null}
+        hasMore={hasNextPage}
+        isLoading={isFetchingNextPage}
       />
 
       {/* Post Creator Modal */}
       {showPostCreator && (
         <PostCreator
+          isOpen={showPostCreator}
           onClose={() => setShowPostCreator(false)}
-          onVideoCreated={() => {
+          onSuccess={() => {
             setShowPostCreator(false);
-            // Refetch the feed to include the new video
             refetch();
           }}
         />
@@ -289,11 +303,13 @@ export default function OptimizedWolfpackFeedPageWithReactQuery() {
       {/* Comments Modal */}
       {showComments && activeVideoId && (
         <VideoComments
-          videoId={activeVideoId}
+          postId={activeVideoId}
+          isOpen={showComments}
           onClose={() => {
             setShowComments(false);
             setActiveVideoId(null);
           }}
+          initialCommentCount={0}
         />
       )}
 

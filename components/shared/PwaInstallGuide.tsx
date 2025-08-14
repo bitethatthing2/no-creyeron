@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { DownloadIcon, Smartphone } from 'lucide-react';
@@ -18,11 +18,11 @@ interface PwaInstallGuideProps {
 }
 
 export function PwaInstallGuide({ className, fullButton = false }: PwaInstallGuideProps) {
-  const [appInstalled, setAppInstalled] = useState(false);
-  const [promptAvailable, setPromptAvailable] = useState(false); // Re-added this state
-  const [isIOS, setIsIOS] = useState(false);
-  const [isInstalling, setIsInstalling] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false); // Track if we've finished initializing
+  const [appInstalled, setAppInstalled] = React.useState(false);
+  const [promptAvailable, setPromptAvailable] = React.useState(false); // Re-added this state
+  const [isIOS, setIsIOS] = React.useState(false);
+  const [isInstalling, setIsInstalling] = React.useState(false);
+  const [hasInitialized, setHasInitialized] = React.useState(false); // Track if we've finished initializing
 
   // Handle installation button click
   const handleInstallClick = async () => {
@@ -83,7 +83,7 @@ export function PwaInstallGuide({ className, fullButton = false }: PwaInstallGui
   };
 
   // Initialize PWA functionality and check status
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof window === 'undefined') return;
 
     console.log('[PWA Install] Checking PWA status');
@@ -127,7 +127,7 @@ export function PwaInstallGuide({ className, fullButton = false }: PwaInstallGui
     }, []);
 
   // Set initialized after checking status to prevent layout shifts
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(() => {
       setHasInitialized(true);
     }, 100); // Small delay to ensure all checks are complete

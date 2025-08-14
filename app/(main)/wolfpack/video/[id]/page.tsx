@@ -1,27 +1,51 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVideoComments } from '@/lib/hooks/useVideoComments';
 import { useLikeVideo } from '@/lib/hooks/useLikeVideo';
-import { ArrowLeft, Heart, MessageCircle, Share, Send } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Send } from 'lucide-react';
+import { Database } from '@/types/supabase';
+
+// Type definitions based on your database schema
+type User = Database['public']['Tables']['users']['Row'];
+type Video = Database['public']['Tables']['wolfpack_videos']['Row'];
+type Comment = Database['public']['Tables']['wolfpack_comments']['Row'];
+
+// Extended types with relations
+interface VideoWithUser extends Video {
+  users: Pick<User, 'username' | 'display_name' | 'first_name' | 'last_name' | 'avatar_url' | 'profile_image_url'> | null;
+}
+
+interface CommentWithUser extends Comment {
+  user?: Pick<User, 'avatar_url' | 'display_name' | 'username'> | null;
+  replies?: CommentWithUser[];
+}
 
 export default function VideoDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useAuth();
   const videoId = params.id as string;
   
-  const [video, setVideo] = useState(null);
+  const [video, setVideo] = useState<VideoWithUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   
-  const { comments, loading: commentsLoading, addComment, refreshComments } = useVideoComments(videoId);
-  const { likeVideo, unlikeVideo, isLoading: likingVideo } = useLikeVideo();
+  const { 
+    comments, 
+    loading: commentsLoading, 
+    addComment
+  } = useVideoComments(videoId);
+  
+  const { 
+    toggleLike, 
+    loading: likingVideo 
+  } = useLikeVideo();
 
   // Load video details
   useEffect(() => {
@@ -51,7 +75,9 @@ export default function VideoDetailPage() {
           return;
         }
 
-        setVideo(data);
+        if (data) {
+          setVideo(data as VideoWithUser);
+        }
 
         // Check if user liked this video
         if (user) {
@@ -76,30 +102,32 @@ export default function VideoDetailPage() {
 
   const handleLike = async () => {
     if (!user) {
-      alert('Please log in to like wolfpack_videos');
+      alert('Please log in to like videos');
       return;
     }
 
     try {
-      let success;
-      if (isLiked) {
-        success = await unlikeVideo(videoId);
-      } else {
-        success = await likeVideo(videoId);
-      }
+      const result = await toggleLike(videoId, isLiked);
 
-      if (success) {
+      if (result.success) {
         setIsLiked(!isLiked);
         // Update video like count
-        setVideo(prev => prev ? {
-          ...prev,
-          likes_count: isLiked 
-            ? Math.max(0, (prev.likes_count || 0) - 1)
-            : (prev.likes_count || 0) + 1,
-          like_count: isLiked 
-            ? Math.max(0, (prev.like_count || 0) - 1)
-            : (prev.like_count || 0) + 1
-        } : null);
+        setVideo(prev => {
+          if (!prev) return null;
+          
+          const currentLikeCount = prev.like_count || prev.likes_count || 0;
+          const newLikeCount = isLiked 
+            ? Math.max(0, currentLikeCount - 1)
+            : currentLikeCount + 1;
+          
+          return {
+            ...prev,
+            likes_count: newLikeCount,
+            like_count: newLikeCount
+          };
+        });
+      } else {
+        console.error('Failed to toggle like:', result.error);
       }
     } catch (err) {
       console.error('Error handling like:', err);
@@ -113,11 +141,17 @@ export default function VideoDetailPage() {
     if (success) {
       setCommentText('');
       // Update video comment count
-      setVideo(prev => prev ? {
-        ...prev,
-        wolfpack_comments_count: (prev.wolfpack_comments_count || 0) + 1,
-        comment_count: (prev.comment_count || 0) + 1
-      } : null);
+      setVideo(prev => {
+        if (!prev) return null;
+        
+        const currentCommentCount = prev.comment_count || prev.comments_count || 0;
+        
+        return {
+          ...prev,
+          comments_count: currentCommentCount + 1,
+          comment_count: currentCommentCount + 1
+        };
+      });
     }
   };
 
@@ -135,6 +169,7 @@ export default function VideoDetailPage() {
         <div className="text-center">
           <h2 className="text-xl font-bold mb-4">Video not found</h2>
           <button 
+            type="button"
             onClick={() => router.back()}
             className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
           >
@@ -145,13 +180,21 @@ export default function VideoDetailPage() {
     );
   }
 
+  // Get display values with proper fallbacks
+  const userDisplayName = video.users?.display_name || video.users?.username || 'Anonymous';
+  const userAvatar = video.users?.avatar_url || video.users?.profile_image_url || '/icons/wolf-icon.png';
+  const likeCount = video.like_count || video.likes_count || 0;
+  const commentCount = video.comment_count || video.comments_count || 0;
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <button 
+          type="button"
           onClick={() => router.back()}
           className="flex items-center gap-2 text-white hover:text-red-400"
+          aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />
           Back
@@ -166,7 +209,7 @@ export default function VideoDetailPage() {
           {video.video_url ? (
             <video
               src={video.video_url}
-              poster={video.thumbnail_url}
+              poster={video.thumbnail_url || undefined}
               controls
               className="max-w-full max-h-full rounded-lg"
             />
@@ -178,22 +221,24 @@ export default function VideoDetailPage() {
           )}
         </div>
 
-        {/* wolfpack_comments Section */}
+        {/* Comments Section */}
         <div className="w-full lg:w-96 border-l border-gray-800 flex flex-col">
           {/* Video Info */}
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center gap-3 mb-3">
-              <img
-                src={video.users?.avatar_url || video.users?.profile_image_url || '/icons/wolf-icon.png'}
+              <Image
+                src={userAvatar}
                 alt="Avatar"
-                className="w-10 h-10 rounded-full"
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full object-cover"
               />
               <div>
                 <p className="font-semibold">
-                  {video.users?.display_name || video.users?.username || 'Anonymous'}
+                  {userDisplayName}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {new Date(video.created_at).toLocaleDateString()}
+                  {new Date(video.created_at || '').toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -205,6 +250,7 @@ export default function VideoDetailPage() {
             {/* Action Buttons */}
             <div className="flex items-center gap-4">
               <button
+                type="button"
                 onClick={handleLike}
                 disabled={likingVideo}
                 className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${
@@ -212,19 +258,20 @@ export default function VideoDetailPage() {
                     ? 'bg-red-600 text-white' 
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
+                aria-label={isLiked ? 'Unlike video' : 'Like video'}
               >
                 <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-                <span className="text-sm">{video.likes_count || video.like_count || 0}</span>
+                <span className="text-sm">{likeCount}</span>
               </button>
               
               <div className="flex items-center gap-2 text-gray-400">
                 <MessageCircle className="h-4 w-4" />
-                <span className="text-sm">{video.wolfpack_comments_count || video.comment_count || 0}</span>
+                <span className="text-sm">{commentCount}</span>
               </div>
             </div>
           </div>
 
-          {/* wolfpack_comments List */}
+          {/* Comments List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {commentsLoading ? (
               <div className="flex justify-center">
@@ -233,13 +280,15 @@ export default function VideoDetailPage() {
             ) : comments.length === 0 ? (
               <p className="text-gray-400 text-center">No comments yet. Be the first to comment!</p>
             ) : (
-              comments.map((comment) => (
+              (comments as CommentWithUser[]).map((comment) => (
                 <div key={comment.id} className="space-y-2">
                   <div className="flex items-start gap-3">
-                    <img
+                    <Image
                       src={comment.user?.avatar_url || '/icons/wolf-icon.png'}
                       alt="Avatar"
-                      className="w-8 h-8 rounded-full flex-shrink-0"
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
                     />
                     <div className="flex-1">
                       <div className="bg-gray-800 rounded-lg p-3">
@@ -249,7 +298,7 @@ export default function VideoDetailPage() {
                         <p className="text-sm text-gray-300">{comment.content}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1 ml-3">
-                        {new Date(comment.created_at).toLocaleString()}
+                        {new Date(comment.created_at || '').toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -259,10 +308,12 @@ export default function VideoDetailPage() {
                     <div className="ml-11 space-y-2">
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="flex items-start gap-3">
-                          <img
+                          <Image
                             src={reply.user?.avatar_url || '/icons/wolf-icon.png'}
                             alt="Avatar"
-                            className="w-6 h-6 rounded-full flex-shrink-0"
+                            width={24}
+                            height={24}
+                            className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
                           />
                           <div className="flex-1">
                             <div className="bg-gray-700 rounded-lg p-2">
@@ -272,7 +323,7 @@ export default function VideoDetailPage() {
                               <p className="text-xs text-gray-300">{reply.content}</p>
                             </div>
                             <p className="text-xs text-gray-500 mt-1 ml-2">
-                              {new Date(reply.created_at).toLocaleString()}
+                              {new Date(reply.created_at || '').toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -288,10 +339,12 @@ export default function VideoDetailPage() {
           {user ? (
             <div className="p-4 border-t border-gray-800">
               <div className="flex items-center gap-3">
-                <img
+                <Image
                   src={user.user_metadata?.avatar_url || '/icons/wolf-icon.png'}
                   alt="Your avatar"
-                  className="w-8 h-8 rounded-full flex-shrink-0"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
                 />
                 <div className="flex-1 flex items-center gap-2">
                   <input
@@ -308,9 +361,11 @@ export default function VideoDetailPage() {
                     }}
                   />
                   <button
+                    type="button"
                     onClick={handleAddComment}
                     disabled={!commentText.trim()}
                     className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed p-2 rounded-lg transition-colors"
+                    aria-label="Send comment"
                   >
                     <Send className="h-4 w-4" />
                   </button>

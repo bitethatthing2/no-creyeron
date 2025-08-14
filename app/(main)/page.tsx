@@ -1,52 +1,64 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useLocationState } from '@/lib/hooks/useLocationState';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Utensils, Download, Bell, Star, Users, MapPin, Clock, Loader2 } from "lucide-react";
-import dynamic from 'next/dynamic';
-import { PwaInstallGuide } from '@/components/shared/PwaInstallGuide';
-import { NotificationErrorBoundary } from '@/components/shared/NotificationErrorBoundary';
-import { DynamicLogo } from '@/components/shared/DynamicLogo';
-import { DynamicGoogleMaps } from '@/components/shared/DynamicGoogleMaps';
-import { InstagramEmbed } from '@/components/shared/InstagramEmbed';
-import React, { Suspense } from 'react';
+import { Utensils, Star, Users, MapPin, Clock } from "lucide-react";
 import { VideoBackground } from '@/components/shared/VideoBackground';
 import { FoodDrinkCarousel } from '@/components/shared/FoodDrinkCarousel';
 import { Footer } from '@/components/shared/Footer';
 import { TopNav } from '@/components/shared/TopNav';
 import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
+import { DynamicGoogleMaps } from '@/components/shared/DynamicGoogleMaps';
+import { InstagramEmbed } from '@/components/shared/InstagramEmbed';
 
-// Dynamically import components that use browser APIs
-const NotificationIndicator = dynamic(
-  () => import('@/components/notifications/NotificationIndicator').then(mod => ({ default: mod.NotificationIndicator })),
-  { ssr: false }
-);
+// Type for video props
+interface VideoProps {
+  src: string;
+  className?: string;
+  autoPlay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  playsInline?: boolean;
+  preload?: 'none' | 'metadata' | 'auto';
+}
 
-// Loading fallback component
-const NotificationIndicatorFallback = () => (
-  <Button className="gap-1.5">
-    <span className="h-4 w-4 animate-pulse bg-muted rounded-full"></span>
-    <span>Loading...</span>
-  </Button>
-);
-
+// Video component with proper attributes
+const VideoPlayer: React.FC<VideoProps> = ({ 
+  src, 
+  className = '', 
+  autoPlay = true, 
+  muted = true, 
+  loop = true, 
+  playsInline = true,
+  preload = 'metadata'
+}) => {
+  return (
+    <video
+      className={className}
+      autoPlay={autoPlay}
+      muted={muted}
+      loop={loop}
+      playsInline={playsInline}
+      preload={preload}
+      {...{
+        'webkit-playsinline': 'true',
+        'x5-playsinline': 'true'
+      } as React.VideoHTMLAttributes<HTMLVideoElement>}
+    >
+      <source src={src} type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  );
+};
 
 export default function Page() {
-  const [mounted, setMounted] = useState(false);
-  const { location } = useLocationState();
-
-  // Wait for component to mount to ensure client-side rendering
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Removed unused variables - mounted and location were not being used
 
   return (
     <div className="main-content bg-black text-white min-h-screen">
       <TopNav />
+      
       {/* Hero Section with Video Background - Responsive Height */}
       <div className="relative h-screen w-full overflow-hidden mb-8 sm:mb-16">
         <div className="absolute inset-0 -top-14">
@@ -146,8 +158,7 @@ export default function Page() {
                   alt="DoorDash" 
                   width={28} 
                   height={28}
-                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform"
-                  style={{width: 'auto', height: 'auto'}}
+                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform w-auto h-auto"
                 />
               </a>
               <a 
@@ -162,8 +173,7 @@ export default function Page() {
                   alt="Uber Eats" 
                   width={28} 
                   height={28}
-                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform"
-                  style={{width: 'auto', height: 'auto'}}
+                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform w-auto h-auto"
                 />
               </a>
               <a 
@@ -178,27 +188,25 @@ export default function Page() {
                   alt="Postmates" 
                   width={28} 
                   height={28}
-                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform"
-                  style={{width: 'auto', height: 'auto'}}
+                  className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform w-auto h-auto"
                 />
               </a>
             </div>
           </div>
         </div>
-        
       </div>
 
       {/* Featured Section */}
       <section className="pt-16 pb-16 px-4 bg-zinc-900">
         <div className="container mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-center mb-4 text-white leading-tight">
-            Executive Chef Rebecca Sanchez's <span className="text-red-400">Culinary Vision</span>
+            Executive Chef Rebecca Sanchez&apos;s <span className="text-red-400">Culinary Vision</span>
           </h2>
           <p className="text-base sm:text-lg text-white/90 mb-8 leading-relaxed max-w-3xl mx-auto text-center">
-            Under Chef Rebecca's leadership, our kitchen has become the talk of Salem. Every dish is crafted with passion, 
+            Under Chef Rebecca&apos;s leadership, our kitchen has become the talk of Salem. Every dish is crafted with passion, 
             from our signature birria that melts in your mouth to our innovative fusion creations that push boundaries. 
             With house-made salsas prepared fresh daily and locally-sourced ingredients whenever possible, 
-            we're not just serving food – we're creating experiences.
+            we&apos;re not just serving food – we&apos;re creating experiences.
           </p>
           
           {/* Variety Image Section with Overlay */}
@@ -217,7 +225,7 @@ export default function Page() {
                 {/* Overlay Content */}
                 <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-4">
                   <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-white mb-6 leading-tight">
-                    Experience Our Kitchen's
+                    Experience Our Kitchen&apos;s
                     <br />
                     <span className="text-red-400">Signature Creations</span>
                   </h3>
@@ -248,7 +256,7 @@ export default function Page() {
               </div>
               <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">House-Made Everything</h3>
               <p className="text-xs sm:text-sm text-white/80">
-                From our "bomb" salsas to fresh guacamole and hand-pressed tortillas, 
+                From our &quot;bomb&quot; salsas to fresh guacamole and hand-pressed tortillas, 
                 we believe authentic flavor comes from doing things the right way.
               </p>
             </div>
@@ -259,7 +267,7 @@ export default function Page() {
               <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">Value Meets Quality</h3>
               <p className="text-xs sm:text-sm text-white/80">
                 With most dishes between $10-20, we prove that exceptional Mexican cuisine 
-                doesn't have to break the bank.
+                doesn&apos;t have to break the bank.
               </p>
             </div>
           </div>
@@ -276,44 +284,25 @@ export default function Page() {
           <div className="max-w-6xl mx-auto mb-20">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">
               <div className="lg:col-span-2 text-center lg:text-left">
-                <h3 className="text-3xl font-serif text-red-400 mb-6">Salem's Premier Entertainment Destination</h3>
+                <h3 className="text-3xl font-serif text-red-400 mb-6">Salem&apos;s Premier Entertainment Destination</h3>
                 <p className="text-lg text-white/90 leading-relaxed mb-6">
-                  Since opening in late 2023, our flagship Salem location at 145 Liberty St NE has redefined Oregon's bar scene. 
+                  Since opening in late 2023, our flagship Salem location at 145 Liberty St NE has redefined Oregon&apos;s bar scene. 
                   Executive Chef Rebecca Sanchez leads our kitchen with an innovative Mexican menu that goes far beyond typical bar food. 
-                  From our legendary birria tacos that locals can't stop raving about to our house-made salsas crafted fresh daily, 
+                  From our legendary birria tacos that locals can&apos;t stop raving about to our house-made salsas crafted fresh daily, 
                   every dish reflects our commitment to authentic flavors and quality ingredients.
                 </p>
                 <p className="text-lg text-white/80 leading-relaxed">
                   With over <span className="text-red-400 font-semibold">750+ five-star reviews</span> and a growing community of 
-                  <span className="text-red-400 font-semibold"> 101,000+ Instagram followers</span>, we've proven that Salem was ready 
+                  <span className="text-red-400 font-semibold"> 101,000+ Instagram followers</span>, we&apos;ve proven that Salem was ready 
                   for something different - a place where exceptional food meets high-energy entertainment.
                 </p>
               </div>
               <div className="lg:col-span-3 relative">
                 <div className="aspect-[4/3] lg:aspect-video rounded-xl overflow-hidden shadow-2xl bg-black relative">
-                  <video 
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline
-                    preload="metadata"
-                    webkit-playsinline="true"
-                    x5-playsinline="true"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{ 
-                      objectFit: 'cover',
-                      objectPosition: 'center',
-                      transform: 'scale(1.05)',
-                      WebkitTransform: 'scale(1.05)',
-                      width: '105%',
-                      height: '105%',
-                      left: '-2.5%',
-                      top: '-2.5%'
-                    }}
-                  >
-                    <source src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/entertainment-destination.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  <VideoPlayer
+                    src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/entertainment-destination.mp4"
+                    className="absolute w-[105%] h-[105%] -left-[2.5%] -top-[2.5%] object-cover object-center scale-105"
+                  />
                 </div>
               </div>
             </div>
@@ -321,6 +310,7 @@ export default function Page() {
 
         </div>
       </section>
+
       {/* Oregon's UFC House Section */}
       <section className="py-8 sm:py-12 lg:py-16 px-4 bg-black">
         <div className="container mx-auto">
@@ -328,18 +318,18 @@ export default function Page() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif mb-4 text-white leading-tight">
-                  Oregon's Premier <span className="text-red-400">UFC House</span>
+                  Oregon&apos;s Premier <span className="text-red-400">UFC House</span>
                 </h2>
                 <p className="text-base text-white/90 mb-4 leading-relaxed">
-                  We've earned our reputation as the ultimate fight destination with multiple large screens, 
+                  We&apos;ve earned our reputation as the ultimate fight destination with multiple large screens, 
                   no cover charges, and an electric atmosphere that draws capacity crowds for every major event. 
-                  Whether it's UFC, boxing, or your favorite team's big game, our state-of-the-art viewing setup 
-                  ensures you won't miss a second of the action.
+                  Whether it&apos;s UFC, boxing, or your favorite team&apos;s big game, our state-of-the-art viewing setup 
+                  ensures you won&apos;t miss a second of the action.
                 </p>
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-white/90 text-sm">Multiple 75" screens throughout the venue</span>
+                    <span className="text-white/90 text-sm">Multiple 75&quot; screens throughout the venue</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -378,7 +368,6 @@ export default function Page() {
         </div>
       </section>
 
-
       {/* Wolf Pack Community Section */}
       <section className="py-20 px-4 bg-black">
         <div className="container mx-auto">
@@ -396,20 +385,9 @@ export default function Page() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] rounded-xl overflow-hidden shadow-2xl bg-black">
-              <video
-                className="absolute inset-0 w-full h-full object-cover"
+              <VideoPlayer
                 src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/welcome-to%20-sidehustle.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                webkit-playsinline="true"
-                x5-playsinline="true"
-                style={{
-                  WebkitTransform: 'translateZ(0)',
-                  transform: 'translateZ(0)'
-                }}
+                className="absolute inset-0 w-full h-full object-cover transform-gpu"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6">
@@ -422,13 +400,13 @@ export default function Page() {
               <h3 className="text-3xl font-serif mb-6 text-white">From Family-Friendly to Nightlife Destination</h3>
               <p className="text-lg text-white/80 mb-8 leading-relaxed">
                 Our multi-level venue seamlessly transitions from family-friendly restaurant by day to vibrant nightclub by night. 
-                With gaming areas, outdoor parklet seating, and intimate lounges, there's a perfect spot for every occasion and every member of the pack.
+                With gaming areas, outdoor parklet seating, and intimate lounges, there&apos;s a perfect spot for every occasion and every member of the pack.
               </p>
               
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-4">
                   <div className="w-4 h-4 bg-red-500 rounded-full flex-shrink-0"></div>
-                  <span className="text-white/90 text-lg">Game Night Live with trivia and R0CK'N Bingo</span>
+                  <span className="text-white/90 text-lg">Game Night Live with trivia and R0CK&apos;N Bingo</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="w-4 h-4 bg-red-500 rounded-full flex-shrink-0"></div>
@@ -455,7 +433,6 @@ export default function Page() {
         </div>
       </section>
 
-
       {/* Portland Expansion Section */}
       <section className="py-20 px-4 bg-zinc-900">
         <div className="container mx-auto max-w-6xl">
@@ -465,7 +442,7 @@ export default function Page() {
             </h2>
             <p className="text-lg sm:text-xl text-white/90 leading-relaxed max-w-3xl mx-auto">
               The Wolf Pack is growing. Our Portland location at 327 SW Morrison Street brings the same legendary food, 
-              electric atmosphere, and community spirit to Oregon's biggest city. With extended late-night hours and 
+              electric atmosphere, and community spirit to Oregon&apos;s biggest city. With extended late-night hours and 
               an even bigger stage for live music, Portland is ready for the Side Hustle experience.
             </p>
           </div>
@@ -482,7 +459,7 @@ export default function Page() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6">
                 <h3 className="text-white font-bold text-2xl mb-2">327 SW Morrison Street</h3>
-                <p className="text-white/90 text-lg">Downtown Portland's newest entertainment destination</p>
+                <p className="text-white/90 text-lg">Downtown Portland&apos;s newest entertainment destination</p>
               </div>
             </div>
           </div>
@@ -494,7 +471,7 @@ export default function Page() {
               </div>
               <h3 className="text-xl font-semibold mb-3 text-white">Prime Downtown Location</h3>
               <p className="text-white/80">
-                327 SW Morrison Street puts us in the heart of Portland's entertainment district, 
+                327 SW Morrison Street puts us in the heart of Portland&apos;s entertainment district, 
                 perfect for pre-game drinks or post-work celebrations.
               </p>
             </div>
@@ -505,7 +482,7 @@ export default function Page() {
               </div>
               <h3 className="text-xl font-semibold mb-3 text-white">Extended Hours</h3>
               <p className="text-white/80">
-                Open until 3 AM on weekends, we're here for Portland's night owls who want 
+                Open until 3 AM on weekends, we&apos;re here for Portland&apos;s night owls who want 
                 authentic Mexican food and craft cocktails until the early hours.
               </p>
             </div>
@@ -529,8 +506,6 @@ export default function Page() {
           </div>
         </div>
       </section>
-
-
 
       {/* Find Us Section */}
       <section className="py-20 px-4 bg-black">
@@ -558,7 +533,6 @@ export default function Page() {
 
       {/* Footer - Only on main page */}
       <Footer />
-
     </div>
   );
 }

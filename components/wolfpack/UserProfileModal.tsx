@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { CenteredModal } from '@/components/shared/CenteredModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,18 +58,18 @@ export function UserProfileModal({
 }: UserProfileModalProps) {
   const { currentUser } = useAuth();
   const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = React.useState<UserProfile | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen &&conversationid) {
       loadUserProfile();
     }
   }, [isOpen,conversationid]);
 
   // Add/remove class to body when modal opens/closes
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen) {
       document.body.classList.add('profile-modal-open');
     } else {
@@ -127,7 +127,7 @@ export function UserProfileModal({
     if (!profile || !currentUser) return;
     
     // Navigate to private chat with this user
-    router.push(`/wolfpack/chat/private/${userId}`);
+    router.push(`/wolfpack/chat/private/${conversationid}`);
     onClose();
   };
 

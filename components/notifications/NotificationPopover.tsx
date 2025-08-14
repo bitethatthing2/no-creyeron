@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
 import {
   Popover,
   PopoverContent,
@@ -36,14 +36,14 @@ interface Notification {
  * Displays notifications in a popover with tabs for unread and all notifications
  */
 export function NotificationPopover() {
-  const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('unread');
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [open, setOpen] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState('unread');
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // Initialize Supabase client
     // Fetch notifications directly from Supabase
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc('fetch_notifications', {
@@ -121,7 +121,7 @@ export function NotificationPopover() {
   };
 
   // Load notifications on mount
-  useEffect(() => {
+  React.useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 

@@ -138,7 +138,7 @@ export function checkRateLimit(
   windowMs: number = 60000, // 1 minute
   keyPrefix: string = "message",
 ): boolean {
-  const key = `${keyPrefix}_${userId}`;
+  const key = `${keyPrefix}_${conversationid}`;
   const now = Date.now();
   const limit = rateLimitStore.get(key);
 
@@ -180,7 +180,7 @@ export function getRateLimitStatus(
   windowMs: number = 60000,
   keyPrefix: string = "message",
 ): { remaining: number; resetTime: number } {
-  const key = `${keyPrefix}_${userId}`;
+  const key = `${keyPrefix}_${conversationid}`;
   const now = Date.now();
   const limit = rateLimitStore.get(key);
 
@@ -244,8 +244,8 @@ export function validateMessage(
   }
 
   // Check rate limit
-  if (options.checkRateLimit && options.userId) {
-    if (!checkRateLimit(options.userId)) {
+  if (options.checkRateLimit && options.conversationid) {
+    if (!checkRateLimit(options.conversationid)) {
       errors.push("Rate limit exceeded. Please slow down.");
     }
   }
@@ -384,7 +384,7 @@ export function groupMessages(
   let currentGroup: MessageGroup | null = null;
 
   for (const message of sortedMessages) {
-    const isSameSender = currentGroup?.senderId === message.sender_id;
+    const isSameSender = currentGroup?.senderId === message.conversation_id;
     const timeDiff = currentGroup
       ? new Date(message.created_at).getTime() -
         new Date(currentGroup.timestamp).getTime()
@@ -393,8 +393,8 @@ export function groupMessages(
     // Start new group if different sender or more than 5 minutes apart
     if (!isSameSender || timeDiff > 300000) {
       currentGroup = {
-        senderId: message.sender_id,
-        senderName: message.sender_id === currentUserId
+        senderId: message.conversation_id,
+        senderName: message.conversation_id === currentUserId
           ? "You"
           : (message.sender_user?.display_name || "Unknown"),
         senderAvatar: message.sender_user?.profile_image_url,

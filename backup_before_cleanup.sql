@@ -318,7 +318,7 @@ BEGIN
 
     -- Send system message about new participants
     INSERT INTO wolfpack_messages (
-        conversation_id, sender_id, content, message_type
+        conversation_id, conversation_id, content, message_type
     ) VALUES (
         p_conversation_id, 
         v_adder_id,
@@ -3164,7 +3164,7 @@ BEGIN
         recipient_id,
         message,
         image_url,
-        sender_id,
+        conversation_id,
         receiver_id,
         created_at
     ) VALUES (
@@ -3677,7 +3677,7 @@ BEGIN
         FROM wolfpack_comments
         WHERE id = p_content_id;
     ELSIF p_content_type = 'message' THEN
-        SELECT id, message AS text_content, sender_id AS user_id, created_at
+        SELECT id, message AS text_content, conversation_id AS user_id, created_at
         INTO v_content_record
         FROM wolfpack_direct_messages
         WHERE id = p_content_id;
@@ -5221,7 +5221,7 @@ $$;
 ALTER FUNCTION "public"."can_message_user"("p_target_user_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."can_message_user"("p_sender_id" "uuid", "p_receiver_id" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "public"."can_message_user"("p_conversation_id" "uuid", "p_receiver_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
@@ -5245,8 +5245,8 @@ BEGIN
         WHERE interaction_type = 'block' 
         AND status = 'active'
         AND (
-            (sender_id = p_sender_id AND receiver_id = p_receiver_id) OR
-            (sender_id = p_receiver_id AND receiver_id = p_sender_id)
+            (conversation_id = p_conversation_id AND receiver_id = p_receiver_id) OR
+            (conversation_id = p_receiver_id AND receiver_id = p_conversation_id)
         )
     ) INTO v_is_blocked;
     
@@ -5255,10 +5255,10 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."can_message_user"("p_sender_id" "uuid", "p_receiver_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."can_message_user"("p_conversation_id" "uuid", "p_receiver_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."can_message_user"("p_sender_id" "uuid", "p_receiver_id" "uuid") IS 'Check if a user is allowed to send messages to another user (not blocked, receiver allows messages)';
+COMMENT ON FUNCTION "public"."can_message_user"("p_conversation_id" "uuid", "p_receiver_id" "uuid") IS 'Check if a user is allowed to send messages to another user (not blocked, receiver allows messages)';
 
 
 
@@ -9574,16 +9574,16 @@ CREATE OR REPLACE FUNCTION "public"."create_wolf_interaction"("p_receiver_id" "u
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
 DECLARE
-    v_sender_id uuid;
+    v_conversation_id uuid;
     v_interaction_id uuid;
     v_error text;
 BEGIN
     -- Get sender id from auth
-    SELECT id INTO v_sender_id
+    SELECT id INTO v_conversation_id
     FROM users
     WHERE auth_id = auth.uid();
     
-    IF v_sender_id IS NULL THEN
+    IF v_conversation_id IS NULL THEN
         RETURN jsonb_build_object(
             'success', false,
             'error', 'User not authenticated or not found'
@@ -9591,7 +9591,7 @@ BEGIN
     END IF;
     
     -- Validate inputs
-    IF v_sender_id = p_receiver_id THEN
+    IF v_conversation_id = p_receiver_id THEN
         RETURN jsonb_build_object(
             'success', false,
             'error', 'Cannot interact with yourself'
@@ -9608,13 +9608,13 @@ BEGIN
     -- Try to insert the interaction
     BEGIN
         INSERT INTO wolf_pack_interactions (
-            sender_id,
+            conversation_id,
             receiver_id,
             interaction_type,
             message_content,
             location_id
         ) VALUES (
-            v_sender_id,
+            v_conversation_id,
             p_receiver_id,
             p_interaction_type,
             p_message_content,
@@ -13183,7 +13183,7 @@ BEGIN
     -- Check if users are blocked
     SELECT EXISTS (
         SELECT 1 FROM wolf_pack_interactions
-        WHERE sender_id = p_current_user_id 
+        WHERE conversation_id = p_current_user_id 
         AND receiver_id = p_other_user_id
         AND interaction_type = 'block'
         AND status = 'active'
@@ -13217,7 +13217,7 @@ BEGIN
     WITH ordered_messages AS (
         SELECT 
             wpm.id,
-            wpm.sender_id,
+            wpm.conversation_id,
             wpm.receiver_id,
             wpm.message,
             wpm.image_url,
@@ -13231,7 +13231,7 @@ BEGIN
             wpm.flagged_at,
             wpm.image_id,
             CASE 
-                WHEN wpm.sender_id = p_other_user_id THEN
+                WHEN wpm.conversation_id = p_other_user_id THEN
                     json_build_object(
                         'display_name', COALESCE(u_sender.display_name, u_sender.first_name),
                         'wolf_emoji', COALESCE(u_sender.wolf_emoji, '🐺'),
@@ -13240,10 +13240,10 @@ BEGIN
                 ELSE NULL
             END AS sender_user
         FROM wolf_private_messages wpm
-        LEFT JOIN users u_sender ON wpm.sender_id = u_sender.id
+        LEFT JOIN users u_sender ON wpm.conversation_id = u_sender.id
         WHERE (
-            (wpm.sender_id = p_current_user_id AND wpm.receiver_id = p_other_user_id)
-            OR (wpm.sender_id = p_other_user_id AND wpm.receiver_id = p_current_user_id)
+            (wpm.conversation_id = p_current_user_id AND wpm.receiver_id = p_other_user_id)
+            OR (wpm.conversation_id = p_other_user_id AND wpm.receiver_id = p_current_user_id)
         )
         AND wpm.is_deleted = false
         ORDER BY wpm.created_at ASC
@@ -13251,7 +13251,7 @@ BEGIN
     SELECT COALESCE(json_agg(
         json_build_object(
             'id', om.id,
-            'sender_id', om.sender_id,
+            'conversation_id', om.conversation_id,
             'receiver_id', om.receiver_id,
             'message', om.message,
             'image_url', om.image_url,
@@ -13474,7 +13474,7 @@ $$;
 ALTER FUNCTION "public"."get_conversation"("p_user1_id" "uuid", "p_user2_id" "uuid", "p_limit" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."get_conversation_messages"("p_conversation_id" "uuid", "p_user_id" "uuid", "p_limit" integer DEFAULT 50, "p_before_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("message_id" "uuid", "sender_id" "uuid", "sender_name" "text", "sender_avatar" "text", "message" "text", "message_type" "text", "created_at" timestamp with time zone, "is_read" boolean, "is_own_message" boolean)
+CREATE OR REPLACE FUNCTION "public"."get_conversation_messages"("p_conversation_id" "uuid", "p_user_id" "uuid", "p_limit" integer DEFAULT 50, "p_before_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("message_id" "uuid", "conversation_id" "uuid", "sender_name" "text", "sender_avatar" "text", "message" "text", "message_type" "text", "created_at" timestamp with time zone, "is_read" boolean, "is_own_message" boolean)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -13490,16 +13490,16 @@ BEGIN
     RETURN QUERY
     SELECT 
         m.id AS message_id,
-        m.sender_id,
+        m.conversation_id,
         u.display_name AS sender_name,
         u.avatar_url AS sender_avatar,
         m.message,
         m.message_type,
         m.created_at,
         m.is_read,
-        m.sender_id = p_user_id AS is_own_message
+        m.conversation_id = p_user_id AS is_own_message
     FROM wolfpack_direct_messages m
-    JOIN users u ON m.sender_id = u.id
+    JOIN users u ON m.conversation_id = u.id
     WHERE m.conversation_id = p_conversation_id
     AND (p_before_id IS NULL OR m.created_at < (
         SELECT created_at FROM wolfpack_direct_messages WHERE id = p_before_id
@@ -13521,12 +13521,12 @@ BEGIN
     RETURN QUERY
     WITH message_counts AS (
         SELECT 
-            sender_id,
+            conversation_id,
             COUNT(*) as msg_count
         FROM wolfpack_messages
         WHERE conversation_id = p_conversation_id
         AND NOT is_deleted
-        GROUP BY sender_id
+        GROUP BY conversation_id
         ORDER BY msg_count DESC
         LIMIT 1
     )
@@ -13537,11 +13537,11 @@ BEGIN
         (SELECT COUNT(*) FROM wolfpack_message_attachments ma 
          JOIN wolfpack_messages m ON m.id = ma.message_id 
          WHERE m.conversation_id = p_conversation_id),
-        mc.sender_id,
+        mc.conversation_id,
         u.display_name,
         mc.msg_count
     FROM message_counts mc
-    JOIN users u ON u.id = mc.sender_id;
+    JOIN users u ON u.id = mc.conversation_id;
 END;
 $$;
 
@@ -14217,7 +14217,7 @@ BEGIN
             'sidehustle-22a6a.firebaseapp.com'
         ),
         'messagingSenderId', COALESCE(
-            (SELECT value FROM secure_env_vars WHERE key = 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+            (SELECT value FROM secure_env_vars WHERE key = 'NEXT_PUBLIC_FIREBASE_MESSAGING_conversation_id'),
             '993911155207'
         )
     ) INTO v_result;
@@ -15806,7 +15806,7 @@ BEGIN
         'idx_order_items_menu_item_id',
         'idx_bartender_orders_location_id',
         'idx_pack_messages_pack_id',
-        'idx_pack_messages_sender_id',
+        'idx_pack_messages_conversation_id',
         'idx_pack_messages_reply_to_id',
         'idx_wolfpack_posts_pack_id',
         'idx_wolfpack_posts_author_id',
@@ -15997,43 +15997,43 @@ BEGIN
     WITH latest_messages AS (
         SELECT 
             CASE 
-                WHEN wpm.sender_id = p_user_id THEN wpm.receiver_id
-                ELSE wpm.sender_id
+                WHEN wpm.conversation_id = p_user_id THEN wpm.receiver_id
+                ELSE wpm.conversation_id
             END as other_user_id,
             wpm.message as last_message,
             wpm.created_at as last_message_time,
             ROW_NUMBER() OVER (
                 PARTITION BY 
                     CASE 
-                        WHEN wpm.sender_id = p_user_id THEN wpm.receiver_id
-                        ELSE wpm.sender_id
+                        WHEN wpm.conversation_id = p_user_id THEN wpm.receiver_id
+                        ELSE wpm.conversation_id
                     END 
                 ORDER BY wpm.created_at DESC
             ) as rn
         FROM wolf_private_messages wpm
-        WHERE (wpm.sender_id = p_user_id OR wpm.receiver_id = p_user_id)
+        WHERE (wpm.conversation_id = p_user_id OR wpm.receiver_id = p_user_id)
         AND wpm.is_deleted = FALSE
     ),
     unread_counts AS (
         SELECT 
-            sender_id as other_user_id,
+            conversation_id as other_user_id,
             COUNT(*)::BIGINT as unread_count
         FROM wolf_private_messages
         WHERE receiver_id = p_user_id
         AND is_read = FALSE
         AND is_deleted = FALSE
         AND flagged = FALSE
-        GROUP BY sender_id
+        GROUP BY conversation_id
     ),
     block_status AS (
         SELECT 
             CASE 
-                WHEN wpi.sender_id = p_user_id THEN wpi.receiver_id
-                ELSE wpi.sender_id
+                WHEN wpi.conversation_id = p_user_id THEN wpi.receiver_id
+                ELSE wpi.conversation_id
             END as other_user_id,
             TRUE as is_blocked
         FROM wolf_pack_interactions wpi
-        WHERE (wpi.sender_id = p_user_id OR wpi.receiver_id = p_user_id)
+        WHERE (wpi.conversation_id = p_user_id OR wpi.receiver_id = p_user_id)
         AND wpi.interaction_type = 'block'
         AND wpi.status = 'active'
     )
@@ -17467,17 +17467,17 @@ BEGIN
     SELECT 
         i.id,
         CASE 
-            WHEN i.sender_id = user_uuid THEN i.receiver_id 
-            ELSE i.sender_id 
+            WHEN i.conversation_id = user_uuid THEN i.receiver_id 
+            ELSE i.conversation_id 
         END as other_user_id,
         i.interaction_type,
-        (i.sender_id = user_uuid) as is_sender,
+        (i.conversation_id = user_uuid) as is_sender,
         i.message_content,
         i.status,
         i.read_at,
         i.created_at
     FROM wolf_pack_interactions i
-    WHERE (i.sender_id = user_uuid OR i.receiver_id = user_uuid)
+    WHERE (i.conversation_id = user_uuid OR i.receiver_id = user_uuid)
       AND (interaction_types IS NULL OR i.interaction_type = ANY(interaction_types))
       AND i.status = 'active'
     ORDER BY i.created_at DESC;
@@ -17488,7 +17488,7 @@ $$;
 ALTER FUNCTION "public"."get_user_interactions"("user_uuid" "uuid", "interaction_types" "text"[]) OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_user_interactions"("user_uuid" "uuid", "interaction_types" "text"[]) IS 'Helper function to get interactions for a user with standardized sender_id/receiver_id columns. Returns the other user ID and whether the queried user was the sender.';
+COMMENT ON FUNCTION "public"."get_user_interactions"("user_uuid" "uuid", "interaction_types" "text"[]) IS 'Helper function to get interactions for a user with standardized conversation_id/receiver_id columns. Returns the other user ID and whether the queried user was the sender.';
 
 
 
@@ -21748,7 +21748,7 @@ BEGIN
 
     -- Send system message
     INSERT INTO wolfpack_messages (
-        conversation_id, sender_id, content, message_type
+        conversation_id, conversation_id, content, message_type
     ) VALUES (
         p_conversation_id, 
         v_user_id,
@@ -22497,7 +22497,7 @@ BEGIN
         SELECT m.id
         FROM wolfpack_messages m
         WHERE m.conversation_id = p_conversation_id
-        AND m.sender_id != v_user_id
+        AND m.conversation_id != v_user_id
         AND NOT EXISTS (
             SELECT 1 FROM wolfpack_message_read_receipts r
             WHERE r.message_id = m.id AND r.user_id = v_user_id
@@ -22700,8 +22700,8 @@ BEGIN
     -- Migrate each unique sender/recipient pair
     FOR r IN 
         SELECT DISTINCT 
-            LEAST(sender_id, recipient_id) as user1,
-            GREATEST(sender_id, recipient_id) as user2
+            LEAST(conversation_id, recipient_id) as user1,
+            GREATEST(conversation_id, recipient_id) as user2
         FROM wolfpack_direct_messages
     LOOP
         -- Create conversation
@@ -22709,12 +22709,12 @@ BEGIN
         
         -- Migrate messages
         INSERT INTO wolfpack_messages (
-            conversation_id, sender_id, content, message_type, 
+            conversation_id, conversation_id, content, message_type, 
             created_at, metadata
         )
         SELECT 
             v_conversation_id,
-            sender_id,
+            conversation_id,
             content,
             COALESCE(message_type, 'text'),
             created_at,
@@ -22725,8 +22725,8 @@ BEGIN
                 'shared_video_id', shared_video_id
             )
         FROM wolfpack_direct_messages
-        WHERE (sender_id = r.user1 AND recipient_id = r.user2)
-           OR (sender_id = r.user2 AND recipient_id = r.user1)
+        WHERE (conversation_id = r.user1 AND recipient_id = r.user2)
+           OR (conversation_id = r.user2 AND recipient_id = r.user1)
         ORDER BY created_at;
         
         -- Update read receipts
@@ -23203,7 +23203,7 @@ BEGIN
     -- Get sender's name
     SELECT COALESCE(first_name || ' ' || last_name, email) INTO v_sender_name
     FROM public.users
-    WHERE id = NEW.sender_id;
+    WHERE id = NEW.conversation_id;
     
     -- Check recipient's preferences from users table (since notification_preferences may not exist)
     -- Check if the recipient allows messages
@@ -23244,7 +23244,7 @@ BEGIN
         jsonb_build_object(
             'type', 'private_message',
             'message_id', NEW.id,
-            'from_user_id', NEW.sender_id,
+            'from_user_id', NEW.conversation_id,
             'from_user_name', v_sender_name,
             'has_image', NEW.image_url IS NOT NULL
         ),
@@ -26233,7 +26233,7 @@ BEGIN
         m.created_at,
         ts_rank(to_tsvector('english', m.content), plainto_tsquery('english', p_search_term)) AS relevance
     FROM wolfpack_messages m
-    JOIN users u ON u.id = m.sender_id
+    JOIN users u ON u.id = m.conversation_id
     JOIN wolfpack_conversation_participants cp ON cp.conversation_id = m.conversation_id
     WHERE cp.user_id = v_user_id
     AND cp.is_active = TRUE
@@ -26675,7 +26675,7 @@ $$;
 ALTER FUNCTION "public"."send_chat_message_simple"("p_content" "text", "p_session_id" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."send_direct_message"("p_sender_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text" DEFAULT 'text'::"text") RETURNS "jsonb"
+CREATE OR REPLACE FUNCTION "public"."send_direct_message"("p_conversation_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text" DEFAULT 'text'::"text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -26687,7 +26687,7 @@ BEGIN
     -- Check if sender can send messages
     IF NOT EXISTS (
         SELECT 1 FROM users 
-        WHERE id = p_sender_id 
+        WHERE id = p_conversation_id 
         AND wolfpack_status = 'active'
     ) THEN
         RETURN jsonb_build_object('success', false, 'error', 'Sender not authorized');
@@ -26705,14 +26705,14 @@ BEGIN
     -- Get or create conversation
     SELECT id INTO v_conversation_id
     FROM wolfpack_dm_conversations
-    WHERE (user1_id = p_sender_id AND user2_id = p_recipient_id)
-       OR (user1_id = p_recipient_id AND user2_id = p_sender_id);
+    WHERE (user1_id = p_conversation_id AND user2_id = p_recipient_id)
+       OR (user1_id = p_recipient_id AND user2_id = p_conversation_id);
     
     IF v_conversation_id IS NULL THEN
         INSERT INTO wolfpack_dm_conversations (user1_id, user2_id)
         VALUES (
-            LEAST(p_sender_id, p_recipient_id),
-            GREATEST(p_sender_id, p_recipient_id)
+            LEAST(p_conversation_id, p_recipient_id),
+            GREATEST(p_conversation_id, p_recipient_id)
         )
         RETURNING id INTO v_conversation_id;
     END IF;
@@ -26720,14 +26720,14 @@ BEGIN
     -- Insert message
     INSERT INTO wolfpack_direct_messages (
         conversation_id,
-        sender_id,
+        conversation_id,
         recipient_id,
         message,
         message_type,
         created_at
     ) VALUES (
         v_conversation_id,
-        p_sender_id,
+        p_conversation_id,
         p_recipient_id,
         p_message,
         p_message_type,
@@ -26755,7 +26755,7 @@ BEGIN
         'New Message',
         LEFT(p_message, 50),
         jsonb_build_object(
-            'sender_id', p_sender_id,
+            'conversation_id', p_conversation_id,
             'conversation_id', v_conversation_id,
             'message_id', v_message_id
         ),
@@ -26773,7 +26773,7 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."send_direct_message"("p_sender_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."send_direct_message"("p_conversation_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."send_dj_broadcast_to_pack"("p_dj_id" "uuid", "p_location_id" "uuid", "p_message" "text", "p_template_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
@@ -27214,13 +27214,13 @@ CREATE OR REPLACE FUNCTION "public"."send_message"("p_conversation_id" "uuid", "
     AS $$
 DECLARE
     v_message_id UUID;
-    v_sender_id UUID;
+    v_conversation_id UUID;
     v_media_url TEXT;
 BEGIN
     -- Get sender ID
-    SELECT id INTO v_sender_id FROM users WHERE auth_id = auth.uid();
+    SELECT id INTO v_conversation_id FROM users WHERE auth_id = auth.uid();
     
-    IF v_sender_id IS NULL THEN
+    IF v_conversation_id IS NULL THEN
         RAISE EXCEPTION 'User not found';
     END IF;
 
@@ -27228,7 +27228,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM wolfpack_conversation_participants
         WHERE conversation_id = p_conversation_id 
-        AND user_id = v_sender_id 
+        AND user_id = v_conversation_id 
         AND is_active = TRUE
     ) THEN
         RAISE EXCEPTION 'Not a participant in this conversation';
@@ -27238,7 +27238,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM wolfpack_conversation_participants cp
         JOIN wolfpack_blocked_users wb ON (
-            (wb.blocker_id = cp.user_id AND wb.blocked_id = v_sender_id)
+            (wb.blocker_id = cp.user_id AND wb.blocked_id = v_conversation_id)
         )
         WHERE cp.conversation_id = p_conversation_id
     ) THEN
@@ -27247,10 +27247,10 @@ BEGIN
 
     -- Insert message
     INSERT INTO wolfpack_messages (
-        conversation_id, sender_id, content, message_type, 
+        conversation_id, conversation_id, content, message_type, 
         parent_message_id, metadata
     ) VALUES (
-        p_conversation_id, v_sender_id, p_content, p_message_type,
+        p_conversation_id, v_conversation_id, p_content, p_message_type,
         p_parent_message_id, p_metadata
     ) RETURNING id INTO v_message_id;
 
@@ -27273,7 +27273,7 @@ BEGIN
     SET 
         last_message_at = NOW(),
         last_message_preview = LEFT(p_content, 100),
-        last_message_sender_id = v_sender_id,
+        last_message_conversation_id = v_conversation_id,
         updated_at = NOW()
     WHERE id = p_conversation_id;
 
@@ -27395,7 +27395,7 @@ BEGIN
   
   -- Create message
   INSERT INTO pack_messages (
-    sender_id,
+    conversation_id,
     pack_id,
     content,
     message_type,
@@ -27471,7 +27471,7 @@ BEGIN
         recipient_id,
         message,
         image_url,
-        sender_id,
+        conversation_id,
         receiver_id,
         is_read,
         created_at
@@ -27523,16 +27523,16 @@ CREATE OR REPLACE FUNCTION "public"."send_private_message"("p_receiver_id" "uuid
     SET "search_path" TO 'pg_catalog', 'public'
     AS $$
 DECLARE
-    v_sender_id uuid;
+    v_conversation_id uuid;
     v_message_id uuid;
     v_error text;
 BEGIN
     -- Get sender id from auth
-    SELECT id INTO v_sender_id
+    SELECT id INTO v_conversation_id
     FROM users
     WHERE auth_id = auth.uid();
     
-    IF v_sender_id IS NULL THEN
+    IF v_conversation_id IS NULL THEN
         RETURN jsonb_build_object(
             'success', false,
             'error', 'User not authenticated or not found'
@@ -27540,7 +27540,7 @@ BEGIN
     END IF;
     
     -- Validate inputs
-    IF v_sender_id = p_receiver_id THEN
+    IF v_conversation_id = p_receiver_id THEN
         RETURN jsonb_build_object(
             'success', false,
             'error', 'Cannot send message to yourself'
@@ -27564,13 +27564,13 @@ BEGIN
     -- Try to insert the message
     BEGIN
         INSERT INTO wolf_private_messages (
-            sender_id,
+            conversation_id,
             receiver_id,
             message,
             image_url,
             is_flirt_message
         ) VALUES (
-            v_sender_id,
+            v_conversation_id,
             p_receiver_id,
             p_message,
             p_image_url,
@@ -27580,7 +27580,7 @@ BEGIN
         RETURN jsonb_build_object(
             'success', true,
             'message_id', v_message_id,
-            'sender_id', v_sender_id,
+            'conversation_id', v_conversation_id,
             'receiver_id', p_receiver_id
         );
     EXCEPTION WHEN OTHERS THEN
@@ -27925,7 +27925,7 @@ CREATE OR REPLACE FUNCTION "public"."set_dm_user_ids"() RETURNS "trigger"
     SET "search_path" TO 'public', 'pg_catalog', 'pg_temp'
     AS $$
 BEGIN
-  NEW.sender_id := auth.uid();
+  NEW.conversation_id := auth.uid();
   RETURN NEW;
 END;
 $$;
@@ -30043,7 +30043,7 @@ BEGIN
         last_seen_at = NOW(),
         last_activity = NOW(),
         updated_at = NOW()
-    WHERE id = NEW.sender_id;
+    WHERE id = NEW.conversation_id;
     
     RETURN NEW;
 END;
@@ -35271,7 +35271,7 @@ ALTER TABLE "public"."wolfpack_comment_reaction_summary" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."wolfpack_direct_messages" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "sender_id" "uuid" NOT NULL,
+    "conversation_id" "uuid" NOT NULL,
     "recipient_id" "uuid" NOT NULL,
     "message_type" character varying(20) DEFAULT 'text'::character varying,
     "content" "text",
@@ -35286,7 +35286,7 @@ CREATE TABLE IF NOT EXISTS "public"."wolfpack_direct_messages" (
     "edited_at" timestamp with time zone,
     "deleted_at" timestamp with time zone,
     "reactions" "jsonb" DEFAULT '{}'::"jsonb",
-    CONSTRAINT "wolfpack_direct_messages_check" CHECK (("sender_id" <> "recipient_id")),
+    CONSTRAINT "wolfpack_direct_messages_check" CHECK (("conversation_id" <> "recipient_id")),
     CONSTRAINT "wolfpack_direct_messages_message_type_check" CHECK ((("message_type")::"text" = ANY (ARRAY[('text'::character varying)::"text", ('video'::character varying)::"text", ('image'::character varying)::"text", ('post_share'::character varying)::"text"])))
 );
 
@@ -35448,7 +35448,7 @@ ALTER TABLE "public"."wolfpack_ingestion_jobs" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."wolfpack_interactions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "sender_id" "uuid" NOT NULL,
+    "conversation_id" "uuid" NOT NULL,
     "receiver_id" "uuid" NOT NULL,
     "interaction_type" "text" NOT NULL,
     "location_id" "uuid",
@@ -35459,7 +35459,7 @@ CREATE TABLE IF NOT EXISTS "public"."wolfpack_interactions" (
     "expires_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
-    CONSTRAINT "wolf_pack_interactions_check" CHECK (("sender_id" <> "receiver_id")),
+    CONSTRAINT "wolf_pack_interactions_check" CHECK (("conversation_id" <> "receiver_id")),
     CONSTRAINT "wolf_pack_interactions_interaction_type_check" CHECK (("interaction_type" = ANY (ARRAY['wink'::"text", 'message'::"text", 'block'::"text", 'like'::"text", 'super_like'::"text", 'report'::"text", 'view_profile'::"text"]))),
     CONSTRAINT "wolf_pack_interactions_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'deleted'::"text", 'expired'::"text"])))
 )
@@ -35473,7 +35473,7 @@ COMMENT ON TABLE "public"."wolfpack_interactions" IS 'Wolfpack social interactio
 
 
 
-COMMENT ON COLUMN "public"."wolfpack_interactions"."sender_id" IS 'User who initiated the interaction';
+COMMENT ON COLUMN "public"."wolfpack_interactions"."conversation_id" IS 'User who initiated the interaction';
 
 
 
@@ -36729,7 +36729,7 @@ CREATE INDEX "idx_wolfpack_comments_video_created" ON "public"."wolfpack_comment
 
 
 
-CREATE INDEX "idx_wolfpack_dm_conversation" ON "public"."wolfpack_direct_messages" USING "btree" (LEAST("sender_id", "recipient_id"), GREATEST("sender_id", "recipient_id"), "created_at" DESC);
+CREATE INDEX "idx_wolfpack_dm_conversation" ON "public"."wolfpack_direct_messages" USING "btree" (LEAST("conversation_id", "recipient_id"), GREATEST("conversation_id", "recipient_id"), "created_at" DESC);
 
 
 
@@ -37331,7 +37331,7 @@ ALTER TABLE ONLY "public"."wolfpack_interactions"
 
 
 ALTER TABLE ONLY "public"."wolfpack_interactions"
-    ADD CONSTRAINT "wolf_pack_interactions_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "wolf_pack_interactions_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -37416,7 +37416,7 @@ ALTER TABLE ONLY "public"."wolfpack_direct_messages"
 
 
 ALTER TABLE ONLY "public"."wolfpack_direct_messages"
-    ADD CONSTRAINT "wolfpack_direct_messages_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "wolfpack_direct_messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -37789,7 +37789,7 @@ CREATE POLICY "Users can respond to broadcasts" ON "public"."dj_broadcast_respon
 
 
 
-CREATE POLICY "Users can send messages" ON "public"."wolfpack_direct_messages" FOR INSERT WITH CHECK (("sender_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can send messages" ON "public"."wolfpack_direct_messages" FOR INSERT WITH CHECK (("conversation_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -37853,7 +37853,7 @@ CREATE POLICY "Users can view metrics" ON "public"."upload_performance_metrics" 
 
 
 
-CREATE POLICY "Users can view own messages" ON "public"."wolfpack_direct_messages" FOR SELECT TO "authenticated" USING ((("sender_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("recipient_id" = ( SELECT "auth"."uid"() AS "uid"))));
+CREATE POLICY "Users can view own messages" ON "public"."wolfpack_direct_messages" FOR SELECT TO "authenticated" USING ((("conversation_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("recipient_id" = ( SELECT "auth"."uid"() AS "uid"))));
 
 
 
@@ -38497,11 +38497,11 @@ ALTER TABLE "public"."wolfpack_ingestion_jobs" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."wolfpack_interactions" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "wolfpack_interactions_unified_delete" ON "public"."wolfpack_interactions" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "sender_id"));
+CREATE POLICY "wolfpack_interactions_unified_delete" ON "public"."wolfpack_interactions" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "conversation_id"));
 
 
 
-CREATE POLICY "wolfpack_interactions_unified_insert" ON "public"."wolfpack_interactions" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "sender_id"));
+CREATE POLICY "wolfpack_interactions_unified_insert" ON "public"."wolfpack_interactions" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "conversation_id"));
 
 
 
@@ -38509,7 +38509,7 @@ CREATE POLICY "wolfpack_interactions_unified_select" ON "public"."wolfpack_inter
 
 
 
-CREATE POLICY "wolfpack_interactions_unified_update" ON "public"."wolfpack_interactions" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "sender_id"));
+CREATE POLICY "wolfpack_interactions_unified_update" ON "public"."wolfpack_interactions" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "conversation_id"));
 
 
 
@@ -39412,9 +39412,9 @@ GRANT ALL ON FUNCTION "public"."can_message_user"("p_target_user_id" "uuid") TO 
 
 
 
-GRANT ALL ON FUNCTION "public"."can_message_user"("p_sender_id" "uuid", "p_receiver_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."can_message_user"("p_sender_id" "uuid", "p_receiver_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."can_message_user"("p_sender_id" "uuid", "p_receiver_id" "uuid") TO "service_role";
+GRANT ALL ON FUNCTION "public"."can_message_user"("p_conversation_id" "uuid", "p_receiver_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."can_message_user"("p_conversation_id" "uuid", "p_receiver_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can_message_user"("p_conversation_id" "uuid", "p_receiver_id" "uuid") TO "service_role";
 
 
 
@@ -42338,9 +42338,9 @@ GRANT ALL ON FUNCTION "public"."send_chat_message_simple"("p_content" "text", "p
 
 
 
-GRANT ALL ON FUNCTION "public"."send_direct_message"("p_sender_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."send_direct_message"("p_sender_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."send_direct_message"("p_sender_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."send_direct_message"("p_conversation_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."send_direct_message"("p_conversation_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_direct_message"("p_conversation_id" "uuid", "p_recipient_id" "uuid", "p_message" "text", "p_message_type" "text") TO "service_role";
 
 
 

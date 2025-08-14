@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -21,9 +21,9 @@ export const AuthGuard = ({
 }: AuthGuardProps) => {
   const { isAuthenticated, hasProfile, isReady, loading } = useAuth();
   const router = useRouter();
-  const [shouldRender, setShouldRender] = useState(false);
+  const [shouldRender, setShouldRender] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isReady || loading) {
       return;
     }

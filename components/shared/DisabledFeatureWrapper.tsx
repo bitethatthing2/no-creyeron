@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useWolfpackAccess } from '@/lib/hooks/useWolfpackAccess';
 import type { WolfpackStatusType } from '@/types/features/wolfpack-interfaces';
@@ -12,7 +12,7 @@ import { Shield, MapPin, Users, ArrowRight, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DisabledFeatureWrapperProps {
-  children: ReactNode;
+  children: React.ReactNode;
   featureType: 'chat' | 'bartab' | 'cart' | 'events';
   featureName: string;
   description?: string;
@@ -38,8 +38,8 @@ export function DisabledFeatureWrapper({
   const checkFeatureAccess = () => Promise.resolve(true);
   const requestLocationAccess = checkLocationPermission;
   const joinWolfpack = refreshData;
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isChecking, setIsChecking] = React.useState(false);
 
   // If explicitly disabled, show disabled state
   if (disabled) {

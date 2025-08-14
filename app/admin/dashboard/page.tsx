@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LogoutButton } from '@/components/auth/LogoutButton';
-import BroadcastCleanupManager from '@/components/admin/BroadcastArchiveManager';
+// BroadcastArchiveManager removed - DJ system eliminated
 import { NotificationTest } from '@/components/notifications/NotificationTest';
 
 export default function AdminDashboard() {
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Broadcast Cleanup Management Section */}
-      <BroadcastCleanupManager />
+      {/* BroadcastCleanupManager removed - DJ system eliminated */}
 
       {/* Push Notification Test Section */}
       <div id="notification-test" className="grid gap-4 md:grid-cols-2">

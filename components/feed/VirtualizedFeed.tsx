@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import * as React from 'react';
 import { useOptimizedFeed, type OptimizedVideoItem } from '@/lib/hooks/useOptimizedFeed';
 import { VideoCard } from './VideoCard';
 import { FeedSkeleton } from './FeedSkeleton';
@@ -44,14 +44,14 @@ export function VirtualizedFeed({
     enableVirtualization: true
   });
 
-  const [scrollTop, setScrollTop] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-  const loadMoreTriggeredRef = useRef(false);
+  const [scrollTop, setScrollTop] = React.useState(0);
+  const [containerHeight, setContainerHeight] = React.useState(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const loadMoreTriggeredRef = React.useRef(false);
 
   // Calculate visible range based on scroll position
-  const visibleRange = useMemo(() => {
+  const visibleRange = React.useMemo(() => {
     if (!containerHeight || !itemHeight) {
       return { start: 0, end: Math.min(10, wolfpack_videos.length) };
     }
@@ -64,12 +64,12 @@ export function VirtualizedFeed({
   }, [scrollTop, containerHeight, itemHeight, overscan, wolfpack_videos.length]);
 
   // Get visible wolfpack_videos
-  const visiblewolfpack_videos = useMemo(() => {
+  const visiblewolfpack_videos = React.useMemo(() => {
     return wolfpack_videos.slice(visibleRange.start, visibleRange.end);
   }, [wolfpack_videos, visibleRange.start, visibleRange.end]);
 
   // Handle scroll events with throttling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const newScrollTop = target.scrollTop;
     
@@ -97,7 +97,7 @@ export function VirtualizedFeed({
   }, [hasMore, loadingMore, loadMore]);
 
   // Update container height on resize
-  useEffect(() => {
+  React.useEffect(() => {
     const updateHeight = () => {
       if (containerRef.current) {
         setContainerHeight(containerRef.current.clientHeight);
@@ -120,7 +120,7 @@ export function VirtualizedFeed({
   }, []);
 
   // Handle pull-to-refresh
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = React.useCallback(async () => {
     await refreshFeed();
     setScrollTop(0);
     if (containerRef.current) {
@@ -129,7 +129,7 @@ export function VirtualizedFeed({
   }, [refreshFeed]);
 
   // Handle video interactions
-  const handleLike = useCallback(async (videoId: string, isLiked: boolean) => {
+  const handleLike = React.useCallback(async (videoId: string, isLiked: boolean) => {
     // Optimistic update
     updatewolfpack_videostats(videoId, {
       is_liked: isLiked,
@@ -139,7 +139,7 @@ export function VirtualizedFeed({
     // TODO: Make API call to actually like/unlike
   }, [updatewolfpack_videostats, wolfpack_videos]);
 
-  const handleComment = useCallback((videoId: string) => {
+  const handleComment = React.useCallback((videoId: string) => {
     const video = wolfpack_videos.find(v => v.id === videoId);
     if (video && onwolfpack_videoselect) {
       onwolfpack_videoselect(video);

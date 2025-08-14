@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import * as React from 'react';
 import { toast } from "sonner";
 
 export interface ErrorContext {
@@ -222,13 +222,13 @@ export function withErrorTracking<T extends unknown[], R>(
 
 // React error boundary helper
 export function createErrorBoundary(
-  fallbackComponent: React.ComponentType<{ error: Error }>,
+  fallbackComponent: ComponentType<{ error: Error }>,
 ) {
   return class ErrorBoundary extends React.Component<
-    { children: React.ReactNode },
+    { children: ReactNode },
     { hasError: boolean; error?: Error }
   > {
-    constructor(props: { children: React.ReactNode }) {
+    constructor(props: { children: ReactNode }) {
       super(props);
       this.state = { hasError: false };
     }
@@ -237,7 +237,7 @@ export function createErrorBoundary(
       return { hasError: true, error };
     }
 
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
       errorTracker.logError(error, {
         feature: "react",
         action: "component_error",

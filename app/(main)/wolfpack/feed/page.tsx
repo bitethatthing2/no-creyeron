@@ -9,13 +9,13 @@ import TikTokStyleFeed from '@/components/wolfpack/feed/TikTokStyleFeed';
 import { PostCreator } from '@/components/wolfpack/PostCreator';
 import ShareModal from '@/components/wolfpack/ShareModal';
 import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';
-import { Loader2, Shield, Sparkles, MapPin } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { WolfpackVideoItem as VideoItem } from '@/types/wolfpack-feed';
 
 export default function OptimizedWolfpackFeedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentUser, user: authUser, isAuthenticated, loading: authLoading } = useAuth();
-  const [likingVideo, setLikingVideo] = useState<string | null>(null);
   
   // Debug user info
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function OptimizedWolfpackFeedPage() {
   }, [currentUser, authUser, isAuthenticated, authLoading]);
   
   // State management
-  const [wolfpack_videos, setwolfpack_videos] = useState<any[]>([]);
+  const [wolfpack_videos, setwolfpack_videos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLikes, setUserLikes] = useState(new Set<string>());
@@ -67,7 +67,7 @@ export default function OptimizedWolfpackFeedPage() {
         return;
       }
 
-      const videos = response.data || [];
+      const videos = response.data ?? [];
       console.log(`[FEED] Loaded ${videos.length} videos`);
       
       // Transform for component compatibility
@@ -75,10 +75,10 @@ export default function OptimizedWolfpackFeedPage() {
         id: video.id,
         user_id: video.user_id,
         username: wolfpackService.getDisplayName(video.users || {} as any),
-        avatar_url: wolfpackService.getAvatarUrl(video.users || {} as any),
+        avatar_url: wolfpackService.getAvatarUrl(video.users || {} as any) || undefined,
         caption: video.caption || '',
         video_url: video.video_url,
-        thumbnail_url: video.thumbnail_url,
+        thumbnail_url: video.thumbnail_url || undefined,
         likes_count: video.like_count || 0,
         wolfpack_comments_count: video.comment_count || 0,
         shares_count: 0,
@@ -115,7 +115,7 @@ export default function OptimizedWolfpackFeedPage() {
         // Update videos with real comment counts
         setwolfpack_videos(prev => prev.map(video => ({
           ...video,
-          wolfpack_comments_count: response.data[video.id] || 0
+          wolfpack_comments_count: response.data?.[video.id] || 0
         })));
       }
     };
@@ -156,7 +156,7 @@ export default function OptimizedWolfpackFeedPage() {
       clearInterval(interval);
       channels.forEach(channel => channel.unsubscribe());
     };
-  }, [wolfpack_videos.length]);
+  }, [wolfpack_videos]);
 
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -202,7 +202,6 @@ export default function OptimizedWolfpackFeedPage() {
     }
     
     if (response.success) {
-      const isLiked = userLikes.has(videoId);
       
       // Update local state
       setUserLikes(prev => {
@@ -331,9 +330,12 @@ export default function OptimizedWolfpackFeedPage() {
         onFollow={() => {}}
         onDelete={handleDelete}
         onCreatePost={() => setShowPostCreator(true)}
-        onLoadMore={() => {}}
+        onLoadMore={async () => {
+          // Return empty array as we don't have pagination implemented yet
+          return [] as VideoItem[];
+        }}
         hasMore={false}
-        isLoading={!!likingVideo}
+        isLoading={loading}
         userLikes={userLikes}
         initialVideoId={searchParams.get('videoId') || undefined}
       />

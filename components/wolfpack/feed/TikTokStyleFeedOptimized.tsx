@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, Share2, Music, Play, Volume2, VolumeX, Search, Plus, UserPlus, Users, Home, ShoppingBag, Mail, User, MoreHorizontal, Trash2, Loader2, Send } from 'lucide-react';
 import Image from 'next/image';
@@ -78,38 +78,38 @@ function OptimizedVideoItem({
   currentUser: any;
   likingVideo?: string | null;
 }) {
-  const [muted, setMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [muted, setMuted] = React.useState(true);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [showComments, setShowComments] = React.useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Memoize optimized URLs
-  const optimizedAvatarUrl = useMemo(() => {
+  const optimizedAvatarUrl = React.useMemo(() => {
     if (!video.avatar_url) return undefined;
     return optimizeImageUrl(video.avatar_url, 'avatar', getBestImageFormat());
   }, [video.avatar_url]);
 
-  const optimizedThumbnailUrl = useMemo(() => {
+  const optimizedThumbnailUrl = React.useMemo(() => {
     if (!video.thumbnail_url) return undefined;
     return optimizeImageUrl(video.thumbnail_url, getAdaptiveImageSize(), getBestImageFormat());
   }, [video.thumbnail_url]);
 
-  const optimizedVideoUrl = useMemo(() => {
+  const optimizedVideoUrl = React.useMemo(() => {
     if (!video.video_url) return undefined;
     return optimizeVideoUrl(video.video_url, getAdaptiveVideoQuality());
   }, [video.video_url]);
 
   // Responsive srcSet for thumbnails
-  const thumbnailSrcSet = useMemo(() => {
+  const thumbnailSrcSet = React.useMemo(() => {
     if (!video.thumbnail_url) return undefined;
     return createResponsiveSrcSet(video.thumbnail_url);
   }, [video.thumbnail_url]);
 
   // Intersection observer for lazy loading
-  useEffect(() => {
+  React.useEffect(() => {
     if (!containerRef.current) return;
 
     const observer = new IntersectionObserver(
@@ -138,7 +138,7 @@ function OptimizedVideoItem({
   }, [video.id, video.video_url, optimizedVideoUrl, isVideoLoaded, onVideoView]);
 
   // Video playback control
-  useEffect(() => {
+  React.useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
@@ -159,7 +159,7 @@ function OptimizedVideoItem({
   };
 
   // Handle video click to toggle play/pause
-  const handleVideoClick = useCallback(() => {
+  const handleVideoClick = React.useCallback(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
@@ -173,7 +173,7 @@ function OptimizedVideoItem({
   }, [isPlaying]);
 
   // Handle like with loading state
-  const handleLike = useCallback(() => {
+  const handleLike = React.useCallback(() => {
     if (likingVideo === video.id) return; // Prevent double clicks
     onLike(video.id);
   }, [video.id, onLike, likingVideo]);
@@ -357,12 +357,12 @@ export default function OptimizedTikTokStyleFeed({
   isLoadingMore,
   likingVideo
 }: OptimizedTikTokStyleFeedProps) {
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const [currentVideoIndex, setCurrentVideoIndex] = React.useState(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isUserScrolling, setIsUserScrolling] = React.useState(false);
 
   // Handle scroll with intersection observer for better performance
-  useEffect(() => {
+  React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -390,7 +390,7 @@ export default function OptimizedTikTokStyleFeed({
   }, [videos.length, hasNextPage, isLoadingMore, onLoadMore]);
 
   // Preload adjacent videos for smoother scrolling
-  useEffect(() => {
+  React.useEffect(() => {
     const preloadAdjacent = async () => {
       const preloadPromises = [];
       

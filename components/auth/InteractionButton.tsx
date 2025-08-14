@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +27,7 @@ export function InteractionButton({
   size = 'default'
 }: InteractionButtonProps) {
   const { isAuthenticated, loading, isReady } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   const handleClick = async () => {
     if (disabled || isProcessing) return;

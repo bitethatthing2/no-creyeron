@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS wolfpack_conversation_participants (
 CREATE TABLE IF NOT EXISTS wolfpack_messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   conversation_id UUID NOT NULL REFERENCES wolfpack_conversations(id) ON DELETE CASCADE,
-  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  conversation_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   content TEXT NOT NULL CHECK (char_length(content) > 0 AND char_length(content) <= 1000),
   message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'video', 'audio')),
   media_url TEXT,
@@ -40,7 +40,7 @@ CREATE INDEX idx_wolfpack_conversations_updated_at ON wolfpack_conversations(upd
 CREATE INDEX idx_wolfpack_conversation_participants_user_id ON wolfpack_conversation_participants(user_id);
 CREATE INDEX idx_wolfpack_conversation_participants_conversation_id ON wolfpack_conversation_participants(conversation_id);
 CREATE INDEX idx_wolfpack_messages_conversation_id ON wolfpack_messages(conversation_id);
-CREATE INDEX idx_wolfpack_messages_sender_id ON wolfpack_messages(sender_id);
+CREATE INDEX idx_wolfpack_messages_conversation_id ON wolfpack_messages(conversation_id);
 CREATE INDEX idx_wolfpack_messages_created_at ON wolfpack_messages(created_at DESC);
 
 -- Enable Row Level Security
@@ -91,7 +91,7 @@ CREATE POLICY "Users can view messages in their conversations" ON wolfpack_messa
 
 CREATE POLICY "Users can create messages in their conversations" ON wolfpack_messages
   FOR INSERT WITH CHECK (
-    auth.uid() = sender_id AND
+    auth.uid() = conversation_id AND
     conversation_id IN (
       SELECT conversation_id FROM wolfpack_conversation_participants 
       WHERE user_id = auth.uid() AND is_active = TRUE
@@ -99,7 +99,7 @@ CREATE POLICY "Users can create messages in their conversations" ON wolfpack_mes
   );
 
 CREATE POLICY "Users can update their own messages" ON wolfpack_messages
-  FOR UPDATE USING (auth.uid() = sender_id) WITH CHECK (auth.uid() = sender_id);
+  FOR UPDATE USING (auth.uid() = conversation_id) WITH CHECK (auth.uid() = conversation_id);
 
 -- Function to create or get a conversation between two users
 CREATE OR REPLACE FUNCTION get_or_create_conversation(user1_id UUID, user2_id UUID)
@@ -159,7 +159,7 @@ BEGIN
       FROM wolfpack_messages m
       WHERE m.conversation_id = c.id 
       AND m.created_at > current_participant.last_read_at
-      AND m.sender_id != user_uuid
+      AND m.conversation_id != user_uuid
       AND NOT m.is_deleted
     ) as unread_count
   FROM wolfpack_conversations c

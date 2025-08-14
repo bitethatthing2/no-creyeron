@@ -35,11 +35,11 @@ export const WOLFPACK_QUERY_KEYS = {
   followingFeed: (
     userId: string,
     options?: PaginationOptions,
-  ) => ["wolfpack", "feed", "following", conversationid, options],
+  ) => ["wolfpack", "feed", "following", userId, options],
   userPosts: (
     userId: string,
     options?: PaginationOptions,
-  ) => ["wolfpack", "posts", "user", conversationid, options],
+  ) => ["wolfpack", "posts", "user", userId, options],
   searchPosts: (
     query: string,
     options?: PaginationOptions,
@@ -53,14 +53,14 @@ export const WOLFPACK_QUERY_KEYS = {
   userLikes: (
     userId: string,
     videoId: string,
-  ) => ["wolfpack", "likes", conversationid, videoId],
+  ) => ["wolfpack", "likes", userId, videoId],
   isLiked: (
     videoId: string,
     conversationid: string,
   ) => ["wolfpack", "liked", videoId, conversationid],
 
   // User queries
-  userProfile: (userId: string) => ["wolfpack", "user", conversationid],
+  userProfile: (userId: string) => ["wolfpack", "user", userId],
 } as const;
 
 // ============================================================================

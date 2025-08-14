@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import * as React from 'react';
 import { X, Upload, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthenticatedFeature } from '@/hooks/useFeatureFlag';
+import { useAuthenticatedFeature } from '@/lib/hooks/useFeatureFlag';
 import { FEATURE_FLAGS } from '@/lib/services/feature-flags.service';
-import { useCamera } from '@/hooks/wolfpack/useCamera';
-import { useRecording } from '@/hooks/wolfpack/useRecording';
-import { useMediaUpload } from '@/hooks/wolfpack/useMediaUpload';
+import { useCamera } from '@/lib/hooks/wolfpack/useCamera';
+import { useRecording } from '@/lib/hooks/wolfpack/useRecording';
+import { useMediaUpload } from '@/lib/hooks/wolfpack/useMediaUpload';
 import { CameraView } from './PostCreator/CameraView';
 import { RecordingControls } from './PostCreator/RecordingControls';
 import { CaptionInput } from './PostCreator/CaptionInput';
@@ -26,15 +26,15 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
   const { posting, createPost } = useMediaUpload();
   
   // Local states
-  const [caption, setCaption] = useState<string>('');
-  const [showCaptionInput, setShowCaptionInput] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [caption, setCaption] = React.useState<string>('');
+  const [showCaptionInput, setShowCaptionInput] = React.useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = React.useState(1);
+  const [errorMessage, setErrorMessage] = React.useState<string>('');
   
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
 
   // Set error message based on feature flag status
-  useEffect(() => {
+  React.useEffect(() => {
     if (featureError) {
       setErrorMessage(featureError);
     } else if (!canUploadwolfpack_videos && !featureLoading) {
@@ -46,13 +46,13 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
     }
   }, [canUploadwolfpack_videos, featureLoading, featureError, camera.errorMessage]);
   
-  const setVideoRef = useCallback((element: HTMLVideoElement | null) => {
+  const setVideoRef = React.useCallback((element: HTMLVideoElement | null) => {
     videoRef.current = element;
     // Use the new updateVideoElement function from the camera hook
     camera.updateVideoElement(element);
   }, [camera]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen && !camera.streamRef.current) {
       console.log('Opening camera...');
       camera.startCamera();
@@ -63,13 +63,13 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
   }, [isOpen]);
 
   // Hook up recording media updates
-  useEffect(() => {
+  React.useEffect(() => {
     if (recording.mediaUrl) {
       setShowCaptionInput(true);
     }
   }, [recording.mediaUrl]);
 
-  const handleUpload = useCallback(() => {
+  const handleUpload = React.useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
@@ -89,7 +89,7 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
     input.click();
   }, []);
 
-  const handleMainAction = useCallback(() => {
+  const handleMainAction = React.useCallback(() => {
     if (recording.recordingMode === 'photo' && videoRef.current) {
       recording.takePhoto(videoRef.current);
     } else {
@@ -101,7 +101,7 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
     }
   }, [recording, camera.streamRef]);
 
-  const handlePost = useCallback(async () => {
+  const handlePost = React.useCallback(async () => {
     if (!recording.capturedMedia) return;
 
     const postData = await createPost({
@@ -124,13 +124,13 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
     }
   }, [recording.capturedMedia, createPost, caption, recording.recordingMode, recording.recordingTime, onSuccess, onClose]);
 
-  const resetState = useCallback(() => {
+  const resetState = React.useCallback(() => {
     recording.resetMedia();
     setCaption('');
     setShowCaptionInput(false);
   }, [recording]);
 
-  const handleRetake = useCallback(() => {
+  const handleRetake = React.useCallback(() => {
     resetState();
   }, [resetState]);
 

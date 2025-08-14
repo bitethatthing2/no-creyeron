@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { cleanupAndResetAuth } from '@/lib/utils/cookie-utils';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export function AuthFixButton() {
-  const [isFixing, setIsFixing] = useState(false);
-  const [showButton, setShowButton] = useState(false);
+  const [isFixing, setIsFixing] = React.useState(false);
+  const [showButton, setShowButton] = React.useState(false);
 
   // Only show in development or if there's an auth issue
   if (process.env.NODE_ENV === 'production' && !showButton) {

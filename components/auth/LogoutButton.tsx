@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export function LogoutButton({
   children,
   redirectTo = '/login'
 }: LogoutButtonProps) {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { signOut } = useAuth();
   const router = useRouter();
   const { toast } = useToast();

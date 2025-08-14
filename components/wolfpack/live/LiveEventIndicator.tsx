@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -55,17 +55,17 @@ export default function LiveEventIndicator({
   onClick, 
   showDetails = false 
 }: LiveEventIndicatorProps) {
-  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
-  const [activeEvent, setActiveEvent] = useState<LiveEvent | null>(null);
-  const [participants, setParticipants] = useState<EventParticipant[]>([]);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [liveEvents, setLiveEvents] = React.useState<LiveEvent[]>([]);
+  const [activeEvent, setActiveEvent] = React.useState<LiveEvent | null>(null);
+  const [participants, setParticipants] = React.useState<EventParticipant[]>([]);
+  const [timeRemaining, setTimeRemaining] = React.useState<number>(0);
+  const [isLoading, setIsLoading] = React.useState(true);
   
-  const subscriptionRef = useRef<RealtimeChannel | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const subscriptionRef = React.useRef<RealtimeChannel | null>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Initialize live events
-  useEffect(() => {
+  React.useEffect(() => {
     const initializeLiveEvents = async () => {
       try {
         // Check for active live events
@@ -135,7 +135,7 @@ export default function LiveEventIndicator({
   };
 
   // Calculate time remaining
-  useEffect(() => {
+  React.useEffect(() => {
     if (!activeEvent || !activeEvent.end_time) return;
 
     const calculateTimeRemaining = () => {
@@ -156,7 +156,7 @@ export default function LiveEventIndicator({
   }, [activeEvent]);
 
   // Set up real-time subscriptions
-  useEffect(() => {
+  React.useEffect(() => {
     const channel = supabase
       .channel('live_events_updates')
       .on(
@@ -212,7 +212,7 @@ export default function LiveEventIndicator({
   }, [activeEvent]);
 
   // Cleanup on unmount
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();

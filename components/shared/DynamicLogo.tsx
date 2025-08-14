@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 
@@ -21,9 +20,9 @@ export function DynamicLogo({
   alt 
 }: DynamicLogoProps) {
   const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 

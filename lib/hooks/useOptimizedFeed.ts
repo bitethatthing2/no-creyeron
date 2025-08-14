@@ -4,7 +4,7 @@
  * caching, prefetching, and efficient updates
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as React from 'react';
 import { supabase } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -145,23 +145,23 @@ export function useOptimizedFeed({
   prefetchPages = 2,
   enableVirtualization = true,
 }: UseOptimizedFeedProps = {}): UseOptimizedFeedReturn {
-  const [wolfpack_videos, setwolfpack_videos] = useState<OptimizedVideoItem[]>(
+  const [wolfpack_videos, setwolfpack_videos] = React.useState<OptimizedVideoItem[]>(
     [],
   );
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const [currentPage, setCurrentPage] = React.useState(0);
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const mountedRef = useRef(true);
-  const visibleRangeRef = useRef({ start: 0, end: pageSize });
-  const prefetchTimeoutRef = useRef<NodeJS.Timeout>();
+  const channelRef = React.useRef<RealtimeChannel | null>(null);
+  const mountedRef = React.useRef(true);
+  const visibleRangeRef = React.useRef({ start: 0, end: pageSize });
+  const prefetchTimeoutRef = React.useRef<NodeJS.Timeout>();
 
   // Optimized feed fetch with caching
-  const fetchFeedPage = useCallback(
+  const fetchFeedPage = React.useCallback(
     async (page: number, append = false): Promise<OptimizedVideoItem[]> => {
       const cacheKey = `feed-page-${page}`;
 
@@ -257,7 +257,7 @@ export function useOptimizedFeed({
   );
 
   // Prefetch upcoming pages
-  const prefetchPages = useCallback(async (fromPage: number) => {
+  const prefetchPages = React.useCallback(async (fromPage: number) => {
     if (prefetchTimeoutRef.current) {
       clearTimeout(prefetchTimeoutRef.current);
     }
@@ -282,7 +282,7 @@ export function useOptimizedFeed({
   }, [fetchFeedPage, prefetchPages]);
 
   // Load initial feed
-  const loadInitialFeed = useCallback(async () => {
+  const loadInitialFeed = React.useCallback(async () => {
     if (!mountedRef.current) return;
 
     setLoading(true);
@@ -313,7 +313,7 @@ export function useOptimizedFeed({
   }, [fetchFeedPage, pageSize, prefetchPages]);
 
   // Load more wolfpack_videos
-  const loadMore = useCallback(async () => {
+  const loadMore = React.useCallback(async () => {
     if (loadingMore || !hasMore || !mountedRef.current) return;
 
     setLoadingMore(true);
@@ -351,14 +351,14 @@ export function useOptimizedFeed({
   ]);
 
   // Refresh feed (clear cache)
-  const refreshFeed = useCallback(async () => {
+  const refreshFeed = React.useCallback(async () => {
     feedCache.clear();
     setCurrentPage(0);
     await loadInitialFeed();
   }, [loadInitialFeed]);
 
   // Update video stats optimistically
-  const updatewolfpack_videostats = useCallback(
+  const updatewolfpack_videostats = React.useCallback(
     (videoId: string, updates: Partial<OptimizedVideoItem>) => {
       setwolfpack_videos((prev) =>
         prev.map((video) =>
@@ -370,12 +370,12 @@ export function useOptimizedFeed({
   );
 
   // Virtual scrolling support
-  const getVisibleRange = useCallback(() => {
+  const getVisibleRange = React.useCallback(() => {
     return visibleRangeRef.current;
   }, []);
 
   // Set up real-time subscriptions for live updates
-  useEffect(() => {
+  React.useEffect(() => {
     if (!mountedRef.current) return;
 
     const setupRealtime = () => {
@@ -430,7 +430,7 @@ export function useOptimizedFeed({
   }, [currentPage, refreshFeed, updatewolfpack_videostats]);
 
   // Initialize feed on mount
-  useEffect(() => {
+  React.useEffect(() => {
     loadInitialFeed();
 
     return () => {
@@ -438,7 +438,7 @@ export function useOptimizedFeed({
     };
   }, [loadInitialFeed]);
 
-  const cacheStats = useMemo(() => feedCache.getStats(), [wolfpack_videos]);
+  const cacheStats = React.useMemo(() => feedCache.getStats(), [wolfpack_videos]);
 
   return {
     wolfpack_videos,

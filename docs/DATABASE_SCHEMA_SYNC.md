@@ -124,9 +124,9 @@ import {
 **Import standardized hooks:**
 
 ```typescript
-import { usewolfpack_comments } from '@/hooks/usewolfpack_comments'
-import { useLikes } from '@/hooks/useLikes'
-import { usewolfpack_posts } from '@/hooks/usewolfpack_posts'
+import { usewolfpack_comments } from '@/lib/hooks/usewolfpack_comments'
+import { useLikes } from '@/lib/hooks/useLikes'
+import { usewolfpack_posts } from '@/lib/hooks/usewolfpack_posts'
 
 function VideoCard({ postId }: { postId: string }) {
   const { wolfpack_comments, addComment } = usewolfpack_comments(postId)

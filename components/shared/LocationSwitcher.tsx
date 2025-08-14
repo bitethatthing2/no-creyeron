@@ -1,7 +1,7 @@
 // components/shared/LocationSwitcher.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -60,9 +60,9 @@ interface LocationSwitcherProps {
 // Export LocationSwitcher component
 export function LocationSwitcher({ onLocationChange, className = '' }: LocationSwitcherProps) {
   const { location, setLocation } = useLocationState();
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 

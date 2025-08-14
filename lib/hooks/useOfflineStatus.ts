@@ -2,7 +2,7 @@
  * Hook for detecting and managing offline status
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
 import WolfpackOfflineManager from '@/lib/utils/wolfpack-offline-manager';
 
 interface OfflineStatus {
@@ -21,7 +21,7 @@ interface UseOfflineStatusOptions {
 export function useOfflineStatus(options: UseOfflineStatusOptions = {}) {
   const { autoSync = true, syncInterval = 30000 } = options;
   
-  const [status, setStatus] = useState<OfflineStatus>({
+  const [status, setStatus] = React.useState<OfflineStatus>({
     isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
     hasPendingActions: false,
     pendingCount: 0,
@@ -30,7 +30,7 @@ export function useOfflineStatus(options: UseOfflineStatusOptions = {}) {
   });
 
   // Update status from WolfpackOfflineManager
-  const updateStatus = useCallback(async () => {
+  const updateStatus = React.useCallback(async () => {
     try {
       const syncStatus = await WolfpackOfflineManager.getSyncStatus();
       setStatus(prev => ({
@@ -44,7 +44,7 @@ export function useOfflineStatus(options: UseOfflineStatusOptions = {}) {
   }, []);
 
   // Force sync pending actions
-  const forceSyncNow = useCallback(async () => {
+  const forceSyncNow = React.useCallback(async () => {
     if (!status.isOnline || status.isRetrying) return { success: false, synced: 0, failed: 0 };
 
     setStatus(prev => ({ ...prev, isRetrying: true }));
@@ -62,7 +62,7 @@ export function useOfflineStatus(options: UseOfflineStatusOptions = {}) {
   }, [status.isOnline, status.isRetrying, updateStatus]);
 
   // Check if we should auto-retry sync
-  const shouldAutoRetry = useCallback(() => {
+  const shouldAutoRetry = React.useCallback(() => {
     if (!autoSync || !status.isOnline || !status.hasPendingActions || status.isRetrying) {
       return false;
     }
@@ -76,7 +76,7 @@ export function useOfflineStatus(options: UseOfflineStatusOptions = {}) {
     return true;
   }, [autoSync, status.isOnline, status.hasPendingActions, status.isRetrying, status.lastSyncAttempt, syncInterval]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Initial status load
     updateStatus();
 
@@ -154,11 +154,11 @@ export function useOfflineStatus(options: UseOfflineStatusOptions = {}) {
 
 // Simplified hook for just online/offline status
 export function useOnlineStatus() {
-  const [isOnline, setIsOnline] = useState(
+  const [isOnline, setIsOnline] = React.useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 

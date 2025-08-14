@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Calendar, CheckCircle2 } from 'lucide-react';
 import { useLocationState } from '@/lib/hooks/useLocationState';
 import { BookingForm } from '@/components/booking/BookingForm';
@@ -48,7 +48,7 @@ const LOCATION_CONFIG = {
 
 export default function BookingPage() {
   const { location } = useLocationState();
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
 
   const handleSuccess = () => {
     setSubmitted(true);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import { 
   Calendar, 
@@ -57,13 +57,13 @@ export default function VideoEventCard({
   previewImage,
   className = ''
 }: VideoEventCardProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(true);
+  const [showLikeAnimation, setShowLikeAnimation] = React.useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
 
   // Auto-play video when card becomes active
-  useEffect(() => {
+  React.useEffect(() => {
     if (isActive && hasVideo && videoRef.current) {
       videoRef.current.play().catch(console.error);
       setIsPlaying(true);

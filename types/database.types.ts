@@ -3807,57 +3807,57 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "active_wolfpack_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "current_user_profile";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "user_interaction_permissions";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "user_storage_stats";
             referencedColumns: ["user_id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["user_id"];
@@ -4483,7 +4483,7 @@ export type Database = {
           metadata: Json | null;
           read_at: string | null;
           receiver_id: string;
-          sender_id: string;
+          conversation_id: string;
           status: string | null;
           updated_at: string | null;
         };
@@ -4497,7 +4497,7 @@ export type Database = {
           metadata?: Json | null;
           read_at?: string | null;
           receiver_id: string;
-          sender_id: string;
+          conversation_id: string;
           status?: string | null;
           updated_at?: string | null;
         };
@@ -4511,7 +4511,7 @@ export type Database = {
           metadata?: Json | null;
           read_at?: string | null;
           receiver_id?: string;
-          sender_id?: string;
+          conversation_id?: string;
           status?: string | null;
           updated_at?: string | null;
         };
@@ -4580,57 +4580,57 @@ export type Database = {
             referencedColumns: ["user_id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "active_wolfpack_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "current_user_profile";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "user_interaction_permissions";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "user_storage_stats";
             referencedColumns: ["user_id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolf_pack_interactions_sender_id_fkey";
-            columns: ["sender_id"];
+            foreignKeyName: "wolf_pack_interactions_conversation_id_fkey";
+            columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["user_id"];
@@ -9051,7 +9051,7 @@ export type Database = {
       };
       can_message_user: {
         Args:
-          | { p_sender_id: string; p_receiver_id: string }
+          | { p_conversation_id: string; p_receiver_id: string }
           | { p_target_user_id: string };
         Returns: boolean;
       };
@@ -10295,7 +10295,7 @@ export type Database = {
         };
         Returns: {
           message_id: string;
-          sender_id: string;
+          conversation_id: string;
           sender_name: string;
           sender_avatar: string;
           message: string;
@@ -12570,7 +12570,7 @@ export type Database = {
       };
       send_direct_message: {
         Args: {
-          p_sender_id: string;
+          p_conversation_id: string;
           p_recipient_id: string;
           p_message: string;
           p_message_type?: string;

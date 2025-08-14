@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useEffect, useRef } from 'react'
+import * as React from 'react';
 
 interface DynamicFormProps<T extends z.ZodRawShape = z.ZodRawShape> {
   schema: z.ZodObject<T>
@@ -80,7 +80,7 @@ export function DynamicForm<T extends z.ZodRawShape = z.ZodRawShape>({
   labels,
   columnInfo,
 }: DynamicFormProps<T>) {
-  const isInitializingRef = useRef(true)
+  const isInitializingRef = React.useRef(true)
 
   const defaultValues = Object.keys(schema.shape).reduce(
     (acc, key) => {
@@ -141,7 +141,7 @@ export function DynamicForm<T extends z.ZodRawShape = z.ZodRawShape>({
     defaultValues: defaultValues as any,
   })
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (initialValues) {
       isInitializingRef.current = true
       const schemaKeys = Object.keys(schema.shape)
@@ -149,7 +149,7 @@ export function DynamicForm<T extends z.ZodRawShape = z.ZodRawShape>({
         (acc, key) => {
           const fieldDefFromSchema = schema.shape[key]
           if (typeof fieldDefFromSchema === 'undefined') {
-            throw new Error(`Schema error in useEffect: schema.shape['${key}'] is undefined.`)
+            throw new Error(`Schema error in React.useEffect: schema.shape['${key}'] is undefined.`)
           }
           const value = initialValues.hasOwnProperty(key) ? initialValues[key] : undefined
           const baseFieldType = unwrapZodType(fieldDefFromSchema)

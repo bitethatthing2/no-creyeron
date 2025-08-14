@@ -6,7 +6,7 @@ ALTER TABLE wolfpack_conversation_participants
 DROP CONSTRAINT IF EXISTS wolfpack_conversation_participants_user_id_fkey;
 
 ALTER TABLE wolfpack_messages 
-DROP CONSTRAINT IF EXISTS wolfpack_messages_sender_id_fkey;
+DROP CONSTRAINT IF EXISTS wolfpack_messages_conversation_id_fkey;
 
 -- Recreate foreign keys to reference the public.users table instead of auth.users
 ALTER TABLE wolfpack_conversation_participants 
@@ -14,8 +14,8 @@ ADD CONSTRAINT wolfpack_conversation_participants_user_id_fkey
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE wolfpack_messages 
-ADD CONSTRAINT wolfpack_messages_sender_id_fkey 
-FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
+ADD CONSTRAINT wolfpack_messages_conversation_id_fkey 
+FOREIGN KEY (conversation_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- Update RLS policies to work with the correct user mapping
 -- Drop existing policies
@@ -97,7 +97,7 @@ CREATE POLICY "Users can view messages in their conversations" ON wolfpack_messa
 
 CREATE POLICY "Users can create messages in their conversations" ON wolfpack_messages
   FOR INSERT WITH CHECK (
-    sender_id IN (
+    conversation_id IN (
       SELECT id FROM users WHERE auth_id = auth.uid()
     ) AND
     conversation_id IN (
@@ -110,11 +110,11 @@ CREATE POLICY "Users can create messages in their conversations" ON wolfpack_mes
 
 CREATE POLICY "Users can update their own messages" ON wolfpack_messages
   FOR UPDATE USING (
-    sender_id IN (
+    conversation_id IN (
       SELECT id FROM users WHERE auth_id = auth.uid()
     )
   ) WITH CHECK (
-    sender_id IN (
+    conversation_id IN (
       SELECT id FROM users WHERE auth_id = auth.uid()
     )
   );
@@ -179,7 +179,7 @@ BEGIN
       FROM wolfpack_messages m
       WHERE m.conversation_id = c.id 
       AND m.created_at > current_participant.last_read_at
-      AND m.sender_id != user_uuid
+      AND m.conversation_id != user_uuid
       AND NOT m.is_deleted
     ) as unread_count
   FROM wolfpack_conversations c

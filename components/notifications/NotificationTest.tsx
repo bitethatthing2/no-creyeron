@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDeviceToken } from '@/hooks/useDeviceToken';
+import { useDeviceToken } from '@/lib/hooks/useDeviceToken';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +27,8 @@ export function NotificationTest({ className }: NotificationTestProps) {
     deviceInfo
   } = useDeviceToken(currentUser?.id);
 
-  const [sending, setSending] = useState(false);
-  const [testResult, setTestResult] = useState<{
+  const [sending, setSending] = React.useState(false);
+  const [testResult, setTestResult] = React.useState<{
     success: boolean;
     message: string;
   } | null>(null);

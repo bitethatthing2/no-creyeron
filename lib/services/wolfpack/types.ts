@@ -48,6 +48,18 @@ export interface PackMember extends UserProfile {
   last_seen: string | null; // Changed from string | undefined
 }
 
+// Response types for API calls
+export interface ErrorResponse {
+  success: false;
+  error: string;
+  code?: string;
+}
+
+export interface SuccessResponse<T = any> {
+  success: true;
+  data: T;
+}
+
 export interface LocationStats {
   memberCount: number;
   activeEvents: number;

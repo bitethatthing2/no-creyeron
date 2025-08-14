@@ -102,7 +102,7 @@ export default function ConversationPage() {
       }
       
       // Fall back to getting name from messages (sender info)
-      const otherUserMessage = messages.find(m => m.sender_id !== currentUserId);
+      const otherUserMessage = messages.find(m => m.conversation_id !== currentUserId);
       if (otherUserMessage) {
         return otherUserMessage.sender_display_name || 
                `${otherUserMessage.sender_first_name || ''} ${otherUserMessage.sender_last_name || ''}`.trim() ||
@@ -217,8 +217,8 @@ export default function ConversationPage() {
         ) : (
           <div className="p-4 space-y-3">
             {messages.map((message, index) => {
-              const isFromCurrentUser = message.sender_id === currentUserId;
-              const showAvatar = !isFromCurrentUser && (index === 0 || messages[index - 1]?.sender_id !== message.sender_id);
+              const isFromCurrentUser = message.conversation_id === currentUserId;
+              const showAvatar = !isFromCurrentUser && (index === 0 || messages[index - 1]?.conversation_id !== message.conversation_id);
               
               return (
                 <div

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -9,8 +9,8 @@ import { toast } from "sonner";
  * Component for notification system utilities like token cleanup and testing
  */
 export function NotificationUtilities() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<{
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [results, setResults] = React.useState<{
     action?: string;
     removed?: number;
     total?: number;

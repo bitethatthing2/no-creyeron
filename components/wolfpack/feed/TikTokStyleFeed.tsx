@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, Share2, Music, Play, Volume2, VolumeX, Search, Plus, UserPlus, Users, Home, ShoppingBag, Mail, User, MoreHorizontal, Trash2, Loader2, Send } from 'lucide-react';
 import Image from 'next/image';
@@ -10,25 +10,10 @@ import FindFriends from '@/components/wolfpack/FindFriends';
 import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
-
-interface VideoItem {
-  id: string;
-  user_id: string;
-  username: string;
-  avatar_url?: string;
-  caption: string;
-  video_url: string | null; // Can be null for image wolfpack_posts
-  thumbnail_url?: string;
-  likes_count: number;
-  wolfpack_comments_count: number;
-  shares_count: number;
-  music_name?: string;
-  hashtags?: string[];
-  created_at: string;
-}
+import { WolfpackVideoItem } from '@/types/wolfpack-feed';
 
 interface TikTokStyleFeedProps {
-  wolfpack_videos: VideoItem[];
+  wolfpack_videos: WolfpackVideoItem[];
   currentUser: any;
   onLike: (videoId: string) => void;
   onComment: (videoId: string) => void;
@@ -36,7 +21,7 @@ interface TikTokStyleFeedProps {
   onFollow: (userId: string) => void;
   onDelete?: (videoId: string) => void;
   onCreatePost?: () => void;
-  onLoadMore?: () => Promise<VideoItem[]>;
+  onLoadMore?: () => Promise<WolfpackVideoItem[]>;
   hasMore?: boolean;
   isLoading?: boolean;
   userLikes?: Set<string>;
@@ -60,18 +45,18 @@ export default function TikTokStyleFeed({
 }: TikTokStyleFeedProps) {
   const router = useRouter();
   const { currentUser: loggedInUser, authUser, isAuthenticated } = useAuth()
-  const [currentIndex, setCurrentIndex] = useState(() => {
+  const [currentIndex, setCurrentIndex] = React.useState(() => {
     if (initialVideoId) {
       const index = wolfpack_videos.findIndex(video => video.id === initialVideoId);
       return index >= 0 ? index : 0;
     }
     return 0;
   });
-  const [muted, setMuted] = useState(false);
-  const [userInteracted, setUserInteracted] = useState(false);
+  const [muted, setMuted] = React.useState(false);
+  const [userInteracted, setUserInteracted] = React.useState(false);
 
   // Enable user interaction on first document interaction
-  useEffect(() => {
+  React.useEffect(() => {
     const enableInteraction = () => {
       setUserInteracted(true);
       document.removeEventListener('click', enableInteraction);
@@ -91,30 +76,30 @@ export default function TikTokStyleFeed({
       document.removeEventListener('keydown', enableInteraction);
     };
   }, [userInteracted]);
-  const [liked, setLiked] = useState<Set<string>>(new Set());
-  const [showwolfpack_comments, setShowwolfpack_comments] = useState(false);
-  const [wolfpack_videostats, setwolfpack_videostats] = useState<Map<string, { likes_count: number; wolfpack_comments_count: number; user_liked: boolean }>>(new Map());
-  const [followingStatus, setFollowingStatus] = useState<Map<string, boolean>>(new Map());
-  const [currentCommentVideo, setCurrentCommentVideo] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState('For You');
-  const [showFriendSearch, setShowFriendSearch] = useState(false);
-  const [videoErrors, setVideoErrors] = useState<Set<string>>(new Set());
-  const [loadedwolfpack_videos, setLoadedwolfpack_videos] = useState<VideoItem[]>(wolfpack_videos);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const touchStartY = useRef(0);
-  const isScrolling = useRef(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [liked, setLiked] = React.useState<Set<string>>(new Set());
+  const [showwolfpack_comments, setShowwolfpack_comments] = React.useState(false);
+  const [wolfpack_videostats, setwolfpack_videostats] = React.useState<Map<string, { likes_count: number; wolfpack_comments_count: number; user_liked: boolean }>>(new Map());
+  const [followingStatus, setFollowingStatus] = React.useState<Map<string, boolean>>(new Map());
+  const [currentCommentVideo, setCurrentCommentVideo] = React.useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = React.useState('For You');
+  const [showFriendSearch, setShowFriendSearch] = React.useState(false);
+  const [videoErrors, setVideoErrors] = React.useState<Set<string>>(new Set());
+  const [loadedwolfpack_videos, setLoadedwolfpack_videos] = React.useState<VideoItem[]>(wolfpack_videos);
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const videoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
+  const touchStartY = React.useRef(0);
+  const isScrolling = React.useRef(false);
+  const observerRef = React.useRef<IntersectionObserver | null>(null);
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
 
   // Update loaded wolfpack_videos when prop changes
-  useEffect(() => {
+  React.useEffect(() => {
     setLoadedwolfpack_videos(wolfpack_videos);
   }, [wolfpack_videos]);
 
   // Use video data directly for fast rendering - skip additional stats loading
-  useEffect(() => {
+  React.useEffect(() => {
     if (!loadedwolfpack_videos?.length) return;
     
     // Initialize stats directly from video data for immediate rendering
@@ -133,7 +118,7 @@ export default function TikTokStyleFeed({
   // TODO: Re-enable after optimizing performance
 
   // Set up Intersection Observer for infinite loading
-  useEffect(() => {
+  React.useEffect(() => {
     if (!onLoadMore || !hasMore) return;
 
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {
@@ -170,7 +155,7 @@ export default function TikTokStyleFeed({
   }, [onLoadMore, hasMore, isLoadingMore]);
 
   // Auto-play current video and load adjacent videos lazily
-  useEffect(() => {
+  React.useEffect(() => {
     const currentVideo = videoRefs.current[currentIndex];
     
     // Load video sources for current and adjacent videos
@@ -205,7 +190,7 @@ export default function TikTokStyleFeed({
   }, [currentIndex, userInteracted, loadedwolfpack_videos]);
 
   // Handle scroll with snap behavior
-  const handleScroll = useCallback(() => {
+  const handleScroll = React.useCallback(() => {
     if (!containerRef.current || isScrolling.current) return;
 
     const container = containerRef.current;
@@ -350,7 +335,7 @@ export default function TikTokStyleFeed({
   };
 
   // Memoize the comment count change callback to prevent infinite re-renders
-  const handleCommentCountChange = useCallback((count: number) => {
+  const handleCommentCountChange = React.useCallback((count: number) => {
     if (currentCommentVideo) {
       setwolfpack_videostats(prev => {
         const newMap = new Map(prev);

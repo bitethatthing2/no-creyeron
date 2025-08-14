@@ -9,16 +9,7 @@ import { PwaInitializer } from '@/components/shared/PwaInitializer';
 import { LogoPreloader } from '@/components/shared/LogoPreloader';
 import dynamic from 'next/dynamic';
 
-// Dynamically import the image cache control component (dev only)
-const ImageCacheControl = dynamic(
-  () => import('@/components/dev/ImageCacheControl'),
-  { ssr: false }
-);
-
-const ForceImageRefresh = dynamic(
-  () => import('@/components/dev/ForceImageRefresh'),
-  { ssr: false }
-);
+// Dev components removed during cleanup
 
 // Configure fonts
 const playfair = Playfair_Display({ 
@@ -302,12 +293,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LogoPreloader />
           <PwaInitializer />
           <UnifiedNotificationInit />
-          {process.env.NODE_ENV === 'development' && (
-            <>
-              <ImageCacheControl />
-              <ForceImageRefresh />
-            </>
-          )}
+          {/* Dev components removed during cleanup */}
           <main>
             {children}
           </main>

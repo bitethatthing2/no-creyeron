@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useFcmContext } from '@/lib/hooks/useFcmToken';
@@ -8,11 +8,11 @@ import { toast } from "sonner";
 
 export function FcmTokenRegistration() {
   const { token, notificationPermissionStatus, registerToken, isLoading } = useFcmContext();
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+  const [isRegistering, setIsRegistering] = React.useState(false);
+  const [isBrowserSupported, setIsBrowserSupported] = React.useState(false);
   
-  // Check browser support in useEffect to avoid hydration mismatch
-  useEffect(() => {
+  // Check browser support in React.useEffect to avoid hydration mismatch
+  React.useEffect(() => {
     setIsBrowserSupported('Notification' in window);
   }, []);
   

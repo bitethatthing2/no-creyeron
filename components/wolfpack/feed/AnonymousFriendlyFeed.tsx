@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SimpleInteractionButton as InteractionButton } from '@/components/auth/SimpleInteractionButton';
 import { AuthGate } from '@/components/auth/AuthGate';
-import { useProtectedAction } from '@/hooks/useProtectedAction';
+import { useProtectedAction } from '@/lib/hooks/useProtectedAction';
 import { Heart, MessageCircle, Share2, Plus, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -39,9 +39,9 @@ export default function AnonymousFriendlyFeed({
 }: AnonymousFriendlyFeedProps) {
   const { user, loading } = useAuth();
   const { executeAction } = useProtectedAction();
-  const [localPosts, setLocalPosts] = useState<FeedPost[]>(posts);
+  const [localPosts, setLocalPosts] = React.useState<FeedPost[]>(posts);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setLocalPosts(posts);
   }, [posts]);
 

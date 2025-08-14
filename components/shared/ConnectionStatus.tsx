@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 
 export function ConnectionStatus() {
-  const [status, setStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
-  const [isVisible, setIsVisible] = useState(true);
+  const [status, setStatus] = React.useState<'connected' | 'connecting' | 'error'>('connecting');
+  const [isVisible, setIsVisible] = React.useState(true);
   
-  useEffect(() => {
+  React.useEffect(() => {
     // Check Supabase connection
     const checkConnection = async () => {
       try {
@@ -29,7 +29,7 @@ export function ConnectionStatus() {
   }, [supabase]);
 
   // Auto-hide success status after 3 seconds
-  useEffect(() => {
+  React.useEffect(() => {
     if (status === 'connected') {
       const timer = setTimeout(() => setIsVisible(false), 3000);
       return () => clearTimeout(timer);

@@ -1,4 +1,4 @@
-import { useEffect, RefObject, useCallback, useRef } from 'react';
+import * as React from 'react';
 
 /**
  * Hook that handles click outside of the passed ref
@@ -10,11 +10,11 @@ export function useOnClickOutside(
   handler: (event: MouseEvent | TouchEvent) => void
 ): void {
   // Use ref to store the latest handler to avoid stale closures
-  const handlerRef = useRef(handler);
+  const handlerRef = React.useRef(handler);
   handlerRef.current = handler;
 
   // Memoize the listener to prevent unnecessary re-creation
-  const listener = useCallback((event: MouseEvent | TouchEvent) => {
+  const listener = React.useCallback((event: MouseEvent | TouchEvent) => {
     // Do nothing if clicking ref's element or descendent elements
     if (!ref.current || ref.current.contains(event.target as Node)) {
       return;
@@ -23,7 +23,7 @@ export function useOnClickOutside(
     handlerRef.current(event);
   }, [ref]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     document.addEventListener('mousedown', listener);
     document.addEventListener('touchstart', listener);
     

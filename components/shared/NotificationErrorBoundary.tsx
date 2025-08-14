@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Component, ReactNode } from 'react';
+import * as React from 'react';
 
 interface Props {
   children: ReactNode;
@@ -16,7 +16,7 @@ interface State {
  * Error boundary specifically for notification-related errors
  * Prevents the entire app from crashing when notification context issues occur
  */
-export class NotificationErrorBoundary extends Component<Props, State> {
+export class NotificationErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };

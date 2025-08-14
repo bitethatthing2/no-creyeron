@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Volume2, VolumeX, Maximize, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,18 +18,18 @@ export default function WatchItMadeModal({
   wolfpack_videosrc,
   itemName
 }: WatchItMadeModalProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [showControls, setShowControls] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(true);
+  const [currentTime, setCurrentTime] = React.useState(0);
+  const [duration, setDuration] = React.useState(0);
+  const [showControls, setShowControls] = React.useState(true);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [hasError, setHasError] = React.useState(false);
 
   // Auto-hide controls after 3 seconds of inactivity
-  useEffect(() => {
+  React.useEffect(() => {
     let timeout: NodeJS.Timeout;
     
     if (showControls && isPlaying) {
@@ -44,7 +44,7 @@ export default function WatchItMadeModal({
   }, [showControls, isPlaying]);
 
   // Handle video events
-  useEffect(() => {
+  React.useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
@@ -101,7 +101,7 @@ export default function WatchItMadeModal({
   }, []);
 
   // Reset video when modal opens/closes and auto-play
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen && videoRef.current) {
       setIsLoading(true);
       setHasError(false);

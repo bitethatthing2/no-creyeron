@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useReducer } from 'react';
+import * as React from 'react';
 import { useSupabase } from '@/lib/hooks/useSupabase';
 import { notificationService } from '@/lib/services/notification.service';
 
@@ -62,10 +62,10 @@ interface UseNotificationsReturn extends NotificationState {
 
 export function useNotifications(): UseNotificationsReturn {
   const { user } = useSupabase();
-  const [state, dispatch] = useReducer(notificationReducer, initialState);
+  const [state, dispatch] = React.useReducer(notificationReducer, initialState);
 
   // Check initial state
-  useEffect(() => {
+  React.useEffect(() => {
     const checkInitialState = () => {
       const enabled = notificationService.isNotificationEnabled();
       const initialized = notificationService.getIsInitialized();
@@ -80,7 +80,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   // Initialize notifications when user is available
-  useEffect(() => {
+  React.useEffect(() => {
     const initializeNotifications = async () => {
       if (!user || state.isInitialized) return;
 
@@ -104,7 +104,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, [user, state.isInitialized]);
 
   // Enable notifications (request permission and initialize)
-  const enableNotifications = useCallback(async (): Promise<boolean> => {
+  const enableNotifications = React.useCallback(async (): Promise<boolean> => {
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
@@ -131,7 +131,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, [user?.id]);
 
   // Send notification
-  const sendNotification = useCallback(async (userId: string, payload: any): Promise<boolean> => {
+  const sendNotification = React.useCallback(async (userId: string, payload: any): Promise<boolean> => {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
       return await notificationService.sendNotification(userId, payload);
@@ -143,7 +143,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   // Subscribe to topic
-  const subscribeToTopic = useCallback(async (topicKey: string): Promise<boolean> => {
+  const subscribeToTopic = React.useCallback(async (topicKey: string): Promise<boolean> => {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
       return await notificationService.subscribeToTopic(topicKey);
@@ -155,7 +155,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   // Unsubscribe from topic
-  const unsubscribeFromTopic = useCallback(async (topicKey: string): Promise<boolean> => {
+  const unsubscribeFromTopic = React.useCallback(async (topicKey: string): Promise<boolean> => {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
       return await notificationService.unsubscribeFromTopic(topicKey);

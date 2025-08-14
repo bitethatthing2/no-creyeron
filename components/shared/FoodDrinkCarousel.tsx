@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Utensils, Wine, Star, DollarSign, Search, Play } from 'lucide-react';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
@@ -918,18 +918,18 @@ const getWatchItMadeVideo = (itemName: string, itemDescription: string): string 
 };
 
 export function FoodDrinkCarousel() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(2);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'food' | 'drink' | 'popular'>('all');
-  const [activeSubcategory, setActiveSubcategory] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showWatchItMadeModal, setShowWatchItMadeModal] = useState('');
-  const [sectionToggle, setSectionToggle] = useState<'food' | 'drinks'>('food');
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [itemsPerView, setItemsPerView] = React.useState(2);
+  const [isAutoPlaying, setIsAutoPlaying] = React.useState(false);
+  const [activeFilter, setActiveFilter] = React.useState<'all' | 'food' | 'drink' | 'popular'>('all');
+  const [activeSubcategory, setActiveSubcategory] = React.useState<string>('');
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [showWatchItMadeModal, setShowWatchItMadeModal] = React.useState('');
+  const [sectionToggle, setSectionToggle] = React.useState<'food' | 'drinks'>('food');
   
   // Touch handling states
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [touchStart, setTouchStart] = React.useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = React.useState<number | null>(null);
 
   // Filter items based on active filter, section toggle, and search query
   const filteredItems = carouselItems.filter(item => {
@@ -964,7 +964,7 @@ export function FoodDrinkCarousel() {
   });
 
   // Responsive items per view - more items on desktop for smaller cards
-  useEffect(() => {
+  React.useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
         setItemsPerView(1);
@@ -981,12 +981,12 @@ export function FoodDrinkCarousel() {
   }, []);
 
   // Reset current index when filter or search changes
-  useEffect(() => {
+  React.useEffect(() => {
     setCurrentIndex(0);
   }, [activeFilter, activeSubcategory, searchQuery]);
 
   // Auto-play functionality
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isAutoPlaying) return;
 
     const interval = setInterval(() => {

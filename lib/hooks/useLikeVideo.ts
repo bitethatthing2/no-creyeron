@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import * as React from 'react';
 import { supabase } from "@/lib/supabase";
 import { getAppUserId } from "@/lib/utils/auth-helpers";
 
@@ -11,9 +11,9 @@ interface LikeVideoHookReturn {
 }
 
 export function useLikeVideo(): LikeVideoHookReturn {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = React.useState(false);
 
-  const toggleLike = useCallback(
+  const toggleLike = React.useCallback(
     async (videoId: string, isCurrentlyLiked: boolean) => {
       setLoading(true);
 

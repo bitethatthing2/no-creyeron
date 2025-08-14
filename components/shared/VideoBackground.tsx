@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 
 interface VideoBackgroundProps {
   wolfpack_videosrc?: string;
@@ -19,14 +19,14 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
   overlay = true,
   overlayOpacity = 0.4
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [hasError, setHasError] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   // Detect mobile device
-  useEffect(() => {
+  React.useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
     };
@@ -36,7 +36,7 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (wolfpack_videosrc && videoRef.current) {
       const video = videoRef.current;
       
@@ -66,7 +66,7 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
     }
   }, [wolfpack_videosrc]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (instagramReelUrl && containerRef.current && window.instgrm) {
       window.instgrm.Embeds.process();
     }

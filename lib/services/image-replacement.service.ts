@@ -42,7 +42,7 @@ export class ProfileImageManager {
    * Replace user's profile image with proper cleanup
    */
   async replaceProfileImage(
-    conversationid: string,
+    userId: string,
     file: File,
     options: {
       deleteOld?: boolean;
@@ -192,7 +192,7 @@ export class ChatImageManager {
    */
   async replaceChatImage(
     messageId: string,
-    conversationid: string,
+    userId: string,
     file: File,
   ): Promise<ImageReplacementResult> {
     try {
@@ -232,7 +232,7 @@ export class ChatImageManager {
         {
           p_message_id: messageId,
           p_new_image_url: publicUrl,
-          p_user_id: conversationid,
+          p_user_id: userId,
         },
       );
 
@@ -278,7 +278,7 @@ export class ImageHistoryManager {
       const { data, error } = await this.supabase.rpc(
         "get_user_image_history",
         {
-          p_user_id: conversationid,
+          p_user_id: userId,
           p_image_type: imageType,
         },
       );
@@ -334,97 +334,7 @@ export class ImageHistoryManager {
 }
 
 // ============================================
-// ENHANCED IMAGE UPLOADER HOOK
+// SERVICE EXPORTS
 // ============================================
 
-import { useCallback, useState } from "react";
-
-export function useImageReplacement() {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string>("");
-
-  const profileManager = new ProfileImageManager();
-  const chatManager = new ChatImageManager();
-  const historyManager = new ImageHistoryManager();
-
-  const replaceProfileImage = useCallback(async (
-    conversationid: string,
-    file: File,
-    options?: { deleteOld?: boolean; keepHistory?: number },
-  ) => {
-    setUploading(true);
-    setError("");
-
-    const result = await profileManager.replaceProfileImage(
-      userId,
-      file,
-      options,
-    );
-
-    if (!result.success) {
-      setError(result.error || "Upload failed");
-    }
-
-    setUploading(false);
-    return result;
-  }, [profileManager]);
-
-  const replaceChatImage = useCallback(async (
-    messageId: string,
-    conversationid: string,
-    file: File,
-  ) => {
-    setUploading(true);
-    setError("");
-
-    const result = await chatManager.replaceChatImage(
-      messageId,
-      conversationid,
-      file,
-    );
-
-    if (!result.success) {
-      setError(result.error || "Upload failed");
-    }
-
-    setUploading(false);
-    return result;
-  }, [chatManager]);
-
-  const getImageHistory = useCallback(async (
-    conversationid: string,
-    imageType?: "profile" | "chat" | "banner" | "other",
-  ) => {
-    return historyManager.getUserImageHistory(userId, imageType);
-  }, [historyManager]);
-
-  const revertImage = useCallback(async (
-    conversationid: string,
-    historyItem: ImageHistoryItem,
-  ) => {
-    setUploading(true);
-    setError("");
-
-    const result = await historyManager.revertToPreviousImage(
-      userId,
-      historyItem,
-    );
-
-    if (!result.success) {
-      setError(result.error || "Revert failed");
-    }
-
-    setUploading(false);
-    return result;
-  }, [historyManager]);
-
-  return {
-    uploading,
-    error,
-    replaceProfileImage,
-    replaceChatImage,
-    getImageHistory,
-    revertImage,
-    clearError: () => setError(""),
-  };
-}
+// Classes are already exported above with their declarations

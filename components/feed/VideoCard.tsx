@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import { Heart, MessageCircle, Share, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { OptimizedVideoItem } from '@/lib/hooks/useOptimizedFeed';
@@ -22,7 +22,7 @@ interface VideoCardProps {
 }
 
 // Memoized component to prevent unnecessary re-renders
-export const VideoCard = memo(function VideoCard({
+export const VideoCard = React.memo(function VideoCard({
   video,
   onLike,
   onComment,
@@ -32,19 +32,19 @@ export const VideoCard = memo(function VideoCard({
   className = ''
 }: VideoCardProps) {
   
-  const [isVisible, setIsVisible] = useState(!lazy || priority);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [showControls, setShowControls] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isVisible, setIsVisible] = React.useState(!lazy || priority);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(true);
+  const [showControls, setShowControls] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [videoLoaded, setVideoLoaded] = React.useState(false);
   
-  const cardRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const observerRef = useRef<IntersectionObserver>();
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const observerRef = React.useRef<IntersectionObserver>();
 
   // Intersection Observer for lazy loading
-  useEffect(() => {
+  React.useEffect(() => {
     if (!lazy || priority) return;
 
     observerRef.current = new IntersectionObserver(
@@ -72,7 +72,7 @@ export const VideoCard = memo(function VideoCard({
   }, [lazy, priority]);
 
   // Video play/pause handling
-  const handleVideoToggle = useCallback(async () => {
+  const handleVideoToggle = React.useCallback(async () => {
     if (!videoRef.current) return;
 
     try {
@@ -89,7 +89,7 @@ export const VideoCard = memo(function VideoCard({
   }, [isPlaying]);
 
   // Mute/unmute handling
-  const handleMuteToggle = useCallback(() => {
+  const handleMuteToggle = React.useCallback(() => {
     if (!videoRef.current) return;
     
     videoRef.current.muted = !isMuted;
@@ -97,18 +97,18 @@ export const VideoCard = memo(function VideoCard({
   }, [isMuted]);
 
   // Like handling with optimistic updates
-  const handleLike = useCallback(async () => {
+  const handleLike = React.useCallback(async () => {
     const newLikedState = !video.is_liked;
     onLike(video.id, newLikedState);
   }, [video.id, video.is_liked, onLike]);
 
   // Comment handling
-  const handleComment = useCallback(() => {
+  const handleComment = React.useCallback(() => {
     onComment(video.id);
   }, [video.id, onComment]);
 
   // Share handling
-  const handleShare = useCallback(() => {
+  const handleShare = React.useCallback(() => {
     if (onShare) {
       onShare(video.id);
     } else {

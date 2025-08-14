@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Menu, Search, X } from 'lucide-react';
 import { 
   Sheet, 
@@ -49,8 +49,8 @@ export function Header({
   onSearch,
   variant = 'default'
 }: HeaderProps) {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
   
   // Get background style based on variant
   const getBgStyle = () => {

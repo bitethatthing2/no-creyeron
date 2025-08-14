@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Smile, Heart, ThumbsUp, PartyPopper, Coffee, Music } from 'lucide-react';
 
 interface EmojiPickerProps {
@@ -49,7 +49,7 @@ const EMOJI_CATEGORIES = {
 };
 
 export function EmojiPicker({ onEmojiSelect, isOpen, onClose }: EmojiPickerProps) {
-  const [activeCategory, setActiveCategory] = useState('recent');
+  const [activeCategory, setActiveCategory] = React.useState('recent');
 
   const handleEmojiClick = (emoji: string) => {
     onEmojiSelect(emoji);

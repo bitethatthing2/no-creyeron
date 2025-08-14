@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 
 interface GestureHandlerProps {
   onSwipeUp: () => void;
@@ -31,13 +31,13 @@ export default function GestureHandler({
   className = '',
   disabled = false
 }: GestureHandlerProps) {
-  const [touchStart, setTouchStart] = useState<TouchPoint | null>(null);
-  const [touchEnd, setTouchEnd] = useState<TouchPoint | null>(null);
-  const [lastTap, setLastTap] = useState<number>(0);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [touchStart, setTouchStart] = React.useState<TouchPoint | null>(null);
+  const [touchEnd, setTouchEnd] = React.useState<TouchPoint | null>(null);
+  const [lastTap, setLastTap] = React.useState<number>(0);
+  const [longPressTimer, setLongPressTimer] = React.useState<NodeJS.Timeout | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
   
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   
   // Configuration
   const MIN_SWIPE_DISTANCE = 50;
@@ -45,7 +45,7 @@ export default function GestureHandler({
   const DOUBLE_TAP_DELAY = 300;
   const LONG_PRESS_DELAY = 500;
   
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (longPressTimer) {
         clearTimeout(longPressTimer);
@@ -241,7 +241,7 @@ export default function GestureHandler({
   };
 
   // Keyboard support
-  useEffect(() => {
+  React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (disabled) return;
       

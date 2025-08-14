@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -42,7 +42,7 @@ interface UserProfileProps {
 
 export default function UserProfile({ isOpen, onClose,conversationid }: UserProfileProps) {
   const { user } = useConsistentAuth();
-  const [stats, setStats] = useState<UserStats>({
+  const [stats, setStats] = React.useState<UserStats>({
     followers: 1234,
     following: 567,
     wolfpack_posts: 89,
@@ -50,13 +50,13 @@ export default function UserProfile({ isOpen, onClose,conversationid }: UserProf
     wolfpack_level: 8,
     pack_coins: 2890
   });
-  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [isOwnProfile, setIsOwnProfile] = React.useState(true);
 
-  useEffect(() => {
-    if (userId && user) {
-      setIsOwnProfile(userId === user.id);
+  React.useEffect(() => {
+    if (conversationid && user) {
+      setIsOwnProfile(conversationid === user.id);
     }
-  }, [userId, user]);
+  }, [conversationid, user]);
 
 
   const userProfile = {

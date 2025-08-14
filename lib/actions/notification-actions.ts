@@ -50,8 +50,8 @@ export async function createBulkNotifications(
   try {
     const supabase = await createServerClient();
 
-    const notifications = conversationids.map((userId) => ({
-      id: conversationid,
+    const notifications = userIds.map((userId) => ({
+      id: userId,
       title: data.type.charAt(0).toUpperCase() + data.type.slice(1), // Convert type to title
       body: data.body,
       type: data.type,

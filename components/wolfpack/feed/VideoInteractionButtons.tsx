@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import * as React from 'react';
 import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
 import { InteractionButton } from '@/components/auth/InteractionButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,8 +32,8 @@ export default function VideoInteractionButtons({
   className
 }: VideoInteractionButtonsProps) {
   const { user } = useAuth();
-  const [localIsLiked, setLocalIsLiked] = useState(isLiked);
-  const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+  const [localIsLiked, setLocalIsLiked] = React.useState(isLiked);
+  const [localLikesCount, setLocalLikesCount] = React.useState(likesCount);
 
   const handleLike = async () => {
     // Optimistic update

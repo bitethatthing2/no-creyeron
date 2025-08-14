@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import { User } from 'lucide-react';
 
@@ -23,11 +23,11 @@ export function ImageWithFallback({
   onError,
   onLoad
 }: ImageWithFallbackProps) {
-  const [currentSrc, setCurrentSrc] = useState<string | null>(src || null);
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(!!src);
+  const [currentSrc, setCurrentSrc] = React.useState<string | null>(src || null);
+  const [hasError, setHasError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(!!src);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setCurrentSrc(src || null);
     setHasError(false);
     setIsLoading(!!src);
@@ -198,7 +198,7 @@ export function preloadImages(urls: string[]): Promise<void[]> {
   return Promise.all(
     urls.map(url => 
       new Promise<void>((resolve, reject) => {
-        const img = new Image();
+        const img = new window.Image();
         img.onload = () => resolve();
         img.onerror = () => reject(new Error(`Failed to load ${url}`));
         img.src = url;
@@ -219,7 +219,9 @@ class ImageCache {
   markValid(url: string): void {
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(url, true);
   }
