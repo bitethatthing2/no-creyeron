@@ -10,17 +10,19 @@ const errorService = {
     console.error(`[${context}] ${error.message}`, error);
   } };
 
-enum {
+enum Priority {
   LOW = "low",
   MEDIUM = "medium",
   HIGH = "high",
-  CRITICAL = "critical" }
+  CRITICAL = "critical"
+}
 
-enum {
+enum DataSource {
   DATABASE = "database",
   NETWORK = "network",
   VALIDATION = "validation",
-  AUTH = "auth" }
+  AUTH = "auth"
+}
 
 interface QueryOptions {
   useCache?: boolean;

@@ -11,7 +11,7 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 
 // Export UI components
-export { StatusBadge } from './ui/StatusBadge';
+// StatusBadge removed - OrderStatus type doesn't exist
 
 // Export notification components - fix import paths
 export { NotificationIndicator } from '../notifications/NotificationIndicator';

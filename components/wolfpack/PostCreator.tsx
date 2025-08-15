@@ -47,7 +47,7 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
   }, [canUploadwolfpack_videos, featureLoading, featureError, camera.errorMessage]);
   
   const setVideoRef = React.useCallback((element: HTMLVideoElement | null) => {
-    videoRef.current = element;
+    (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = element;
     // Use the new updateVideoElement function from the camera hook
     camera.updateVideoElement(element);
   }, [camera]);

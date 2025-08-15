@@ -124,6 +124,7 @@ interface UpdatePostData {
 interface FeedOptions extends PaginationOptions {
   conversationid?: string;
   currentUserId?: string;
+  userId?: string;
 }
 
 interface CursorFeedOptions {
@@ -234,7 +235,7 @@ export class WolfpackFeedService {
    */
   static fetchFeedItems = withErrorHandling(async (
     options: FeedOptions = {},
-  ): Promise<FetchFeedResponse> => {
+  ): Promise<ServiceResponse<FeedItem[]>> => {
     const { page, limit } = validatePagination(options.page, options.limit);
     const offset = (page - 1) * limit;
 
@@ -268,10 +269,7 @@ export class WolfpackFeedService {
     // Ensure data is typed correctly
     const wolfpack_videos = data as WolfpackVideoRow[] | null;
     if (!wolfpack_videos) {
-      return {
-        items: [],
-        totalItems: 0,
-        hasMore: false };
+      return createSuccessResponse([]);
     }
 
     const items: FeedItem[] = wolfpack_videos.map((video) => {
@@ -290,19 +288,10 @@ export class WolfpackFeedService {
       const filteredItems = items.filter((item) =>
         item.user_id === options.userId
       );
-      return {
-        items: filteredItems,
-        totalItems: filteredItems.length,
-        hasMore: false };
+      return createSuccessResponse(filteredItems);
     }
 
-    const totalItems = count || 0;
-    const hasMore = offset + limit < totalItems;
-
-    return {
-      items,
-      totalItems,
-      hasMore };
+    return createSuccessResponse(items);
   }, "WolfpackFeedService.fetchFeedItems");
 
   /**

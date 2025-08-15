@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Search, MessageCircle } from 'lucide-react';
@@ -25,8 +25,8 @@ interface Conversation {
   other_user_avatar?: string;
   other_user_username?: string;
   other_user_is_online?: boolean;
-  other_participants?: any[];
-  last_message_sender?: any;
+  other_participants?: { id: string; name: string; avatar_url?: string }[];
+  last_message_sender?: { id: string; name: string; avatar_url?: string };
   // Legacy format for backward compatibility
   user_id?: string;
   display_name?: string;
@@ -65,24 +65,7 @@ export default function MessagesInboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
 
-  useEffect(() => {
-    if (!currentUser) {
-      router.push('/login');
-      return;
-    }
-
-    loadConversations();
-  }, [currentUser, router]);
-
-  useEffect(() => {
-    if (searchQuery.trim().length > 0 || showAllMembers) {
-      searchForUsers();
-    } else {
-      setSearchUsers([]);
-    }
-  }, [searchQuery, showAllMembers]);
-
-  const loadConversations = async (isRetry = false) => {
+  const loadConversations = useCallback(async (isRetry = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -126,13 +109,13 @@ export default function MessagesInboxPage() {
       setLoading(false);
       setRetrying(false);
     }
-  };
+  }, [currentUser, router]);
 
   const retryLoadConversations = () => {
     loadConversations(true);
   };
 
-  const searchForUsers = async () => {
+  const searchForUsers = useCallback(async () => {
     if (!currentUser) return;
 
     try {
@@ -176,7 +159,24 @@ export default function MessagesInboxPage() {
     } finally {
       setSearchingUsers(false);
     }
-  };
+  }, [currentUser, searchQuery, showAllMembers]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
+
+    loadConversations();
+  }, [currentUser, router, loadConversations]);
+
+  useEffect(() => {
+    if (searchQuery.trim().length > 0 || showAllMembers) {
+      searchForUsers();
+    } else {
+      setSearchUsers([]);
+    }
+  }, [searchQuery, showAllMembers, searchForUsers]);
 
   const getDisplayName = (conversation: Conversation): string => {
     // Skip generic placeholders

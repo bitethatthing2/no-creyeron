@@ -1258,22 +1258,22 @@ export function FoodDrinkCarousel() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   
                   {/* Price badge */}
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-3 right-3 z-15">
                     <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                       {item.price}
                     </span>
                   </div>
                   
-                  {/* Category badge - moved to bottom right */}
-                  <div className="absolute bottom-3 right-3">
-                    <span className="bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
+                  {/* Category badge - moved to top left */}
+                  <div className="absolute top-3 left-3 z-20">
+                    <span className="bg-black/90 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
                       {item.category}
                     </span>
                   </div>
                   
                   {/* Popular badge */}
                   {item.isPopular && (
-                    <div className="absolute top-3 left-1/2 transform -translate-x-1/2">
+                    <div className="absolute top-12 left-3 z-10">
                       <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
                         ⭐ POPULAR
                       </span>

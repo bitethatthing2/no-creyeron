@@ -14,7 +14,7 @@ interface LocationContextType {
 const LocationContext = React.createContext<LocationContextType | undefined>(undefined);
 
 // Provider component
-export function LocationProvider({ children }: { children: ReactNode }) {
+export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [location, setLocationState] = React.useState<LocationValue>('salem');
   const [mounted, setMounted] = React.useState(false);
 

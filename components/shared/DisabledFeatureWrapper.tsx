@@ -64,11 +64,11 @@ export function DisabledFeatureWrapper({
     
     // Non-members need different handling based on feature type
     if (featureType === 'chat' || featureType === 'bartab') {
-      return !wolfpackStatus.isActive; // These require membership
+      return wolfpackStatus !== 'active'; // These require membership
     }
 
     if (featureType === 'cart') {
-      return !(wolfpackStatus.isActive || locationStatus?.isAtLocation); // Cart requires location for non-members
+      return !(wolfpackStatus === 'active' || locationStatus === 'verified'); // Cart requires location for non-members
     }
 
     return false;
@@ -118,7 +118,7 @@ export function DisabledFeatureWrapper({
   };
 
   const getDialogContent = () => {
-    if (!wolfpackStatus.isActive && (featureType === 'chat' || featureType === 'bartab')) {
+    if (wolfpackStatus !== 'active' && (featureType === 'chat' || featureType === 'bartab')) {
       return (
         <>
           <DialogHeader>
@@ -162,7 +162,7 @@ export function DisabledFeatureWrapper({
       );
     }
 
-    if (featureType === 'cart' && !(wolfpackStatus.isActive || locationStatus?.isAtLocation)) {
+    if (featureType === 'cart' && !(wolfpackStatus === 'active' || locationStatus === 'verified')) {
       return (
         <>
           <DialogHeader>
@@ -242,10 +242,10 @@ export function useFeatureAccess(featureType: 'chat' | 'bartab' | 'cart' | 'even
     if (!wolfpackStatus) return false;
     
     // Wolfpack members get full access
-    if (wolfpackStatus.isActive) return true;
+    if (wolfpackStatus === 'active') return true;
     
     // Non-members can access cart if location verified
-    if (featureType === 'cart' && location?.isAtLocation) return true;
+    if (featureType === 'cart' && locationStatus === 'verified') return true;
     
     // Other features require membership
     return false;
@@ -254,7 +254,7 @@ export function useFeatureAccess(featureType: 'chat' | 'bartab' | 'cart' | 'even
   const getFeatureStatus = () => {
     if (!wolfpackStatus) return 'loading';
     if (isFeatureEnabled()) return 'enabled';
-    if (featureType === 'cart' && !location?.isAtLocation) return 'needs-location';
+    if (featureType === 'cart' && locationStatus !== 'verified') return 'needs-location';
     return 'needs-membership';
   };
 

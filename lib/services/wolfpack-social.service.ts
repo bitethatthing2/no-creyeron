@@ -8,7 +8,7 @@ import {
   togglePostLike } from "@/lib/database/likes";
 import {
   createComment as createNewComment,
-  deleteComment as getwolfpack_commentsForPost } from "@/lib/database/comments";
+  getwolfpack_commentsForPost } from "@/lib/database/comments";
 
 export interface WolfpackLike {
   id: string;
@@ -110,6 +110,14 @@ class WolfpackSocialService {
   }
 
   // Comment functionality - Updated to use new typed functions
+  // Alias for backward compatibility
+  async addComment(
+    videoId: string,
+    content: string,
+    parentId?: string): Promise<{ success: boolean; comment?: WolfpackComment }> {
+    return this.createComment(videoId, content, parentId);
+  }
+
   async createComment(
     videoId: string,
     
@@ -144,6 +152,13 @@ class WolfpackSocialService {
       console.error("Error creating comment:", error);
       return { success: false };
     }
+  }
+
+  // Alias for backward compatibility
+  async getCommentsWithLikes(
+    videoId: string,
+    parentId: string | null = null): Promise<WolfpackComment[]> {
+    return this.getwolfpack_comments(videoId, parentId);
   }
 
   async getwolfpack_comments(

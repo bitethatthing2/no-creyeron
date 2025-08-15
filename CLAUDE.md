@@ -129,6 +129,40 @@ WolfpackErrorHandler.handleSupabaseError()
 WolfpackService.handleError()
 ```
 
+## TYPESCRIPT SERVICE RETURN TYPES - CRITICAL FIX 2025-01-15
+
+### ✅ ALL WOLFPACK SERVICES NOW RETURN ServiceResponse<T>
+```typescript
+// Correct pattern - all services return ServiceResponse
+const response = await WolfpackService.feed.fetchFeedItems();
+if (response.success) {
+  const items = response.data; // FeedItem[]
+} else {
+  console.error(response.error);
+}
+```
+
+### ❌ NEVER EXPECT THESE OLD PATTERNS
+```typescript
+// Wrong - old patterns no longer used
+const response = await WolfpackService.feed.fetchFeedItems();
+if (response.items) { /* Wrong - no items property */ }
+if (response.totalItems) { /* Wrong - no totalItems property */ }
+```
+
+### ✅ CORRECT WOLFPACK INTERFACE USAGE
+```typescript
+import type { WolfpackAccess, WolfpackStatusType } from '@/types/features/wolfpack-interfaces';
+
+// Status is a string literal, not an object
+if (wolfpackStatus === 'active') { /* Correct */ }
+if (wolfpackStatus.isActive) { /* Wrong - no .isActive property */ }
+
+// Location status is also a string literal
+if (locationStatus === 'verified') { /* Correct */ }
+if (locationStatus.isAtLocation) { /* Wrong - no .isAtLocation property */ }
+```
+
 ## EMERGENCY CONTACT
 If you're confused about service architecture:
 1. **READ** `SERVICE_MAPPING.md` first

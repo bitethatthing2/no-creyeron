@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
-import WolfpackNotificationService from "@/lib/services/wolfpack-notification.service";
+// TODO: Migrate notification service to consolidated wolfpack service
+// import WolfpackNotificationService from "@/lib/services/wolfpack-notification.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,13 +59,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send notifications to followers asynchronously (don't wait for it)
-    if (data && data.id) {
-      WolfpackNotificationService.notifyFollowersOfNewVideo(
-        data.id,
-        user_id,
-      ).catch(console.error);
-    }
+    // TODO: Send notifications to followers asynchronously when notification service is consolidated
+    // if (data && data.id) {
+    //   WolfpackNotificationService.notifyFollowersOfNewVideo(
+    //     data.id,
+    //     user_id,
+    //   ).catch(console.error);
+    // }
 
     return NextResponse.json({
       success: true,

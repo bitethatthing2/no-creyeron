@@ -56,11 +56,11 @@ export default function UserProfile({ isOpen, onClose,conversationid }: UserProf
 
 
   const userProfile = {
-    first_name: user?.user_metadata?.first_name || 'Mark',
-    last_name: user?.user_metadata?.last_name || 'Kahler',
+    first_name: user?.first_name || 'Mark',
+    last_name: user?.last_name || 'Kahler',
     username: user?.email?.split('@')[0] || 'mkahler599',
     email: user?.email || 'mkahler599@gmail.com',
-    avatar_url: user?.user_metadata?.avatar_url || '/icons/wolf-icon.png',
+    avatar_url: user?.avatar_url || '/icons/wolf-icon.png',
     bio: 'Living the Wolf Pack life in Salem! 🐺 Side Hustle regular & pack leader',
     location: 'Salem, OR',
     joined_date: '2024-01-15',

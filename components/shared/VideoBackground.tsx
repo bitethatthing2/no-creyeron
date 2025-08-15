@@ -146,8 +146,6 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
           transform: 'translateX(-50%) translateY(-50%)',
           objectFit: 'cover',
           WebkitTransform: 'translateX(-50%) translateY(-50%)',
-          // Ensure normal playback speed
-          playbackRate: 1.0,
         }}
       />
       {overlay && (

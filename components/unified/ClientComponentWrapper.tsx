@@ -51,7 +51,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     console.error('Client component error:', error, errorInfo);
   }
 
-  render(): ReactNode {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <div className="p-4 border border-red-300 bg-red-50 rounded-md">
@@ -79,7 +79,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 export function createClientComponent<T extends React.JSX.IntrinsicAttributes>(
   importFunc: () => Promise<{ default: React.ComponentType<T> }>,
   displayName: string,
-  loadingComponent: ReactNode = <div>Loading {displayName}...</div>
+  loadingComponent: React.ReactNode = <div>Loading {displayName}...</div>
 ) {
   const Component = dynamic(importFunc, {
     loading: () => <>{loadingComponent}</>,

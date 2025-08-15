@@ -211,6 +211,7 @@ export class WolfpackFeedServiceEnhanced {
   static async sharePost(
     postId: string,
     conversationid?: string,
+    userId?: string,
   ): Promise<{ success: boolean; shareUrl: string }> {
     try {
       // Increment share count (you might want to add a shares table)

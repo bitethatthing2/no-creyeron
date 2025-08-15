@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';
 import FindFriends from '@/components/wolfpack/FindFriends';
-import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { WolfpackVideoItem } from '@/types/wolfpack-feed';
@@ -44,7 +44,7 @@ export default function TikTokStyleFeed({
   initialVideoId
 }: TikTokStyleFeedProps) {
   const router = useRouter();
-  const { currentUser: loggedInUser, authUser, isAuthenticated } = useAuth()
+  const { currentUser: loggedInUser, user: authUser, isAuthenticated } = useAuth()
   const [currentIndex, setCurrentIndex] = React.useState(() => {
     if (initialVideoId) {
       const index = wolfpack_videos.findIndex(video => video.id === initialVideoId);
@@ -84,7 +84,7 @@ export default function TikTokStyleFeed({
   const [activeCategory, setActiveCategory] = React.useState('For You');
   const [showFriendSearch, setShowFriendSearch] = React.useState(false);
   const [videoErrors, setVideoErrors] = React.useState<Set<string>>(new Set());
-  const [loadedwolfpack_videos, setLoadedwolfpack_videos] = React.useState<VideoItem[]>(wolfpack_videos);
+  const [loadedwolfpack_videos, setLoadedwolfpack_videos] = React.useState<FeedContentItem[]>(wolfpack_videos);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const videoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
@@ -309,7 +309,7 @@ export default function TikTokStyleFeed({
     });
 
     // Update server
-    const result = await wolfpackService.toggleFollow(userId);
+    const result = await WolfpackService.social.toggleFollow(userId);
     
     if (!result.success) {
       // Revert on error

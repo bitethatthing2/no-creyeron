@@ -2,7 +2,7 @@ import * as React from 'react';
 import { supabase } from "@/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
-interface {
+interface RealtimeSyncEvent {
   eventType: "INSERT" | "UPDATE" | "DELETE";
   new: unknown;
   old: unknown;

@@ -5,7 +5,7 @@ import { Search, Plus } from 'lucide-react';
 import Image from 'next/image';
 import GestureHandler from './GestureHandler';
 import UnifiedContentRenderer, { UnifiedContentItem } from './UnifiedContentRenderer';
-import LiveBroadcastIndicator from '../live/LiveBroadcastIndicator';
+// LiveBroadcastIndicator removed - broadcast-status.service doesn't exist
 import LiveEventIndicator from '../live/LiveEventIndicator';
 import PerformanceMonitor from '../../system/PerformanceMonitor';
 import { debounce } from '@/lib/services/performance-optimizer.service';
@@ -264,13 +264,7 @@ export default function VerticalFeed({
         </div>
       </div>
 
-      {/* Live Indicator */}
-      {showLiveIndicator && (
-        <LiveBroadcastIndicator
-          isVisible={showLiveIndicator}
-          onClose={() => setShowLiveIndicator(false)}
-        />
-      )}
+      {/* Live Indicator - removed (broadcast-status.service doesn't exist) */}
 
       {/* Performance Monitor */}
       <PerformanceMonitor

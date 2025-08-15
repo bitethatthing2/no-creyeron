@@ -1,7 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
-import WolfpackNotificationService from "@/lib/services/wolfpack-notification.service";
+// TODO: Migrate notification service to consolidated wolfpack service
+// import WolfpackNotificationService from "@/lib/services/wolfpack-notification.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -103,12 +104,12 @@ async function handleLikeAction(
       .single();
 
     if (video && video.user_id !== userId) {
-      // Send notification asynchronously (don't wait for it)
-      WolfpackNotificationService.notifyVideoLiked(
-        videoId,
-        video.user_id,
-        userId,
-      ).catch(console.error);
+      // TODO: Add notification when notification service is migrated to consolidated service
+      // WolfpackNotificationService.notifyVideoLiked(
+      //   videoId,
+      //   video.user_id,
+      //   userId,
+      // ).catch(console.error);
     }
 
     return NextResponse.json({
@@ -223,32 +224,33 @@ async function handleCommentAction(
       .single();
 
     if (video && video.user_id !== userId) {
-      // Send comment notification asynchronously
-      WolfpackNotificationService.notifyVideoCommented(
-        videoId,
-        video.user_id,
-        userId,
-        content.trim(),
-      ).catch(console.error);
+      // TODO: Add notification when notification service is migrated to consolidated service
+      // WolfpackNotificationService.notifyVideoCommented(
+      //   videoId,
+      //   video.user_id,
+      //   userId,
+      //   content.trim(),
+      // ).catch(console.error);
     }
 
+    // TODO: Add mention notifications when notification service is migrated
     // Check for mentions in the comment
-    const mentions = WolfpackNotificationService.extractMentions(content);
-    if (mentions.length > 0) {
-      // Resolve usernames to user IDs and send mention notifications
-      WolfpackNotificationService.resolveUsernames(mentions)
-        .then((mentionedUserIds) => {
-          if (mentionedUserIds.length > 0) {
-            return WolfpackNotificationService.notifyMentionedUsers(
-              videoId,
-              userId,
-              content.trim(),
-              mentionedUserIds,
-            );
-          }
-        })
-        .catch(console.error);
-    }
+    // const mentions = WolfpackNotificationService.extractMentions(content);
+    // if (mentions.length > 0) {
+    //   // Resolve usernames to user IDs and send mention notifications
+    //   WolfpackNotificationService.resolveUsernames(mentions)
+    //     .then((mentionedUserIds: string[]) => {
+    //       if (mentionedUserIds.length > 0) {
+    //         return WolfpackNotificationService.notifyMentionedUsers(
+    //           videoId,
+    //           userId,
+    //           content.trim(),
+    //           mentionedUserIds,
+    //         );
+    //       }
+    //     })
+    //     .catch(console.error);
+    // }
 
     return NextResponse.json({
       success: true,
@@ -302,11 +304,11 @@ async function handleFollowAction(
 
     if (followError) throw followError;
 
-    // Send follow notification asynchronously
-    WolfpackNotificationService.notifyUserFollowed(
-      targetUserId,
-      followerId,
-    ).catch(console.error);
+    // TODO: Add notification when notification service is migrated to consolidated service
+    // WolfpackNotificationService.notifyUserFollowed(
+    //   targetUserId,
+    //   followerId,
+    // ).catch(console.error);
 
     return NextResponse.json({
       success: true,

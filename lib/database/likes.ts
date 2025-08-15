@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database.types";
 
-type = Database["public"]["Tables"]["wolfpack_post_likes"]["Row"];
+type PostLike = Database["public"]["Tables"]["wolfpack_post_likes"]["Row"];
 type PostLikeInsert =
   Database["public"]["Tables"]["wolfpack_post_likes"]["Insert"];
 

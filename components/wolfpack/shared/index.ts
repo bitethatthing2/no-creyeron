@@ -1,4 +1,4 @@
 export { MessageItem } from './MessageItem';
-export { UserAvatar } from './UserAvatar';
+// UserAvatar removed - file doesn't exist
 export { ChatInput } from './ChatInput';
 export { ReactionButtons } from './ReactionButtons';

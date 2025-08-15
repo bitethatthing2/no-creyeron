@@ -44,12 +44,26 @@ export async function fetchFeedItems(
 ): Promise<FetchFeedResponse> {
   try {
     // Use the optimized WolfpackFeedService
-    return await WolfpackService.feed.fetchFeedItems({
+    const response = await WolfpackService.feed.fetchFeedItems({
       page,
       limit,
       conversationid,
       currentUserId,
     });
+    
+    if (response.success && response.data) {
+      return {
+        items: response.data,
+        totalItems: response.data.length,
+        hasMore: response.data.length === limit,
+      };
+    }
+    
+    return {
+      items: [],
+      totalItems: 0,
+      hasMore: false,
+    };
   } catch (error) {
     console.error("Failed to fetch feed items:", error);
     return {
@@ -67,10 +81,24 @@ export async function fetchFollowingFeed(
 ): Promise<FetchFeedResponse> {
   try {
     // Use the optimized WolfpackFeedService
-    return await WolfpackService.feed.fetchFollowingFeed(currentUserId, {
+    const response = await WolfpackService.feed.fetchFollowingFeed(currentUserId, {
       page,
       limit,
     });
+    
+    if (response.success && response.data) {
+      return {
+        items: response.data,
+        totalItems: response.data.length,
+        hasMore: response.data.length === limit,
+      };
+    }
+    
+    return {
+      items: [],
+      totalItems: 0,
+      hasMore: false,
+    };
   } catch (error) {
     console.error("Failed to fetch following feed:", error);
     return {

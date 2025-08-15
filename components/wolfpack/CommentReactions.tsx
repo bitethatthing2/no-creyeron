@@ -20,23 +20,16 @@ export const CommentReactions = ({ commentId, className = '' }: CommentReactions
 
   const reactionTypes = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 
-  React.useEffect(() => {
-    if (commentId) {
-      loadReactions();
-      checkUserReactions();
-    }
-  }, [loadReactions, checkUserReactions]commentId]);
-
-  const loadReactions = async () => {
+  const loadReactions = React.useCallback(async () => {
     try {
       const data = await reactionService.getCommentReactions(commentId);
       setReactions(data);
     } catch (error) {
       console.error('Error loading reactions:', error);
     }
-  };
+  }, [commentId]);
 
-  const checkUserReactions = async () => {
+  const checkUserReactions = React.useCallback(async () => {
     try {
       const checks = await Promise.all(
         reactionTypes.map(async (type) => ({
@@ -54,7 +47,14 @@ export const CommentReactions = ({ commentId, className = '' }: CommentReactions
     } catch (error) {
       console.error('Error checking user reactions:', error);
     }
-  };
+  }, [commentId, reactionTypes]);
+
+  React.useEffect(() => {
+    if (commentId) {
+      loadReactions();
+      checkUserReactions();
+    }
+  }, [loadReactions, checkUserReactions, commentId]);
 
   const handleReaction = async (reactionType: string) => {
     if (loading[reactionType]) return;

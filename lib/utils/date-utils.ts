@@ -137,3 +137,43 @@ export function formatLastSeen(dateString: string | null | undefined): string {
     return 'Unknown';
   }
 }
+
+/**
+ * Formats message timestamp (for MessageItem component)
+ * Returns format like "2:30 PM" for today, "Yesterday", or date
+ */
+export function formatMessageTime(dateString: string): string {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return '';
+    
+    // Check if today
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    }
+    
+    // Check if yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    
+    // Return date for older messages
+    return date.toLocaleDateString([], { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch {
+    return '';
+  }
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import { supabase } from '@/lib/supabase';
 import TikTokStyleFeed from '@/components/wolfpack/feed/TikTokStyleFeed';
 import { PostCreator } from '@/components/wolfpack/PostCreator';
@@ -60,7 +60,7 @@ export default function OptimizedWolfpackFeedPage() {
       setLoading(true);
       setError(null);
       
-      const response = await wolfpackService.getFeedVideos(15);
+      const response = await WolfpackService.feed.fetchFeedItems();
       
       if (!response.success) {
         setError(response.error || 'Failed to load feed');
@@ -74,19 +74,19 @@ export default function OptimizedWolfpackFeedPage() {
       const transformedVideos = videos.map(video => ({
         id: video.id,
         user_id: video.user_id,
-        username: wolfpackService.getDisplayName(video.users || {} as any),
-        avatar_url: wolfpackService.getAvatarUrl(video.users || {} as any) || undefined,
+        username: video.user?.display_name || video.user?.username || 'Anonymous',
+        avatar_url: video.user?.avatar_url || undefined,
         caption: video.caption || '',
         video_url: video.video_url,
         thumbnail_url: video.thumbnail_url || undefined,
-        likes_count: video.like_count || 0,
-        wolfpack_comments_count: video.comment_count || 0,
+        likes_count: video.likes_count || 0,
+        wolfpack_comments_count: video.wolfpack_comments_count || 0,
         shares_count: 0,
         created_at: video.created_at,
         music_name: 'Original Sound',
         hashtags: [],
         view_count: 0,
-        location_tag: video.location_tag
+        // location_tag property not available in FeedItem
       }));
       
       setwolfpack_videos(transformedVideos);
@@ -97,7 +97,7 @@ export default function OptimizedWolfpackFeedPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, currentUser, authLoading, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
     loadFeed();
@@ -106,18 +106,8 @@ export default function OptimizedWolfpackFeedPage() {
   // Fetch real-time comment counts for visible videos
   useEffect(() => {
     const fetchCommentCounts = async () => {
-      if (wolfpack_videos.length === 0) return;
-      
-      const videoIds = wolfpack_videos.map(v => v.id);
-      const response = await wolfpackService.getBatchCommentCounts(videoIds);
-      
-      if (response.success && response.data) {
-        // Update videos with real comment counts
-        setwolfpack_videos(prev => prev.map(video => ({
-          ...video,
-          wolfpack_comments_count: response.data?.[video.id] || 0
-        })));
-      }
+      // Comment counts are included in feed data, no separate call needed
+      console.log('[FEED] Comment counts already included in feed response');
     };
 
     // Fetch counts initially
@@ -128,7 +118,7 @@ export default function OptimizedWolfpackFeedPage() {
 
     // Set up real-time subscription for comment updates
     const videoIds = wolfpack_videos.map(v => v.id);
-    const channels: any[] = [];
+    const channels: { unsubscribe: () => void }[] = [];
     
     if (videoIds.length > 0) {
       // Subscribe to comment changes for all visible videos
@@ -193,20 +183,15 @@ export default function OptimizedWolfpackFeedPage() {
 
   // Handle like/unlike
   const handleLike = useCallback(async (videoId: string) => {
-    const response = await wolfpackService.toggleLike(videoId);
+    const response = await WolfpackService.social.toggleLike(videoId);
     
-    // If authentication required, redirect smoothly
-    if (!response.success && response.error?.includes('Authentication required')) {
-      router.push('/login');
-      return;
-    }
-    
+    // Note: toggleLike returns { success: boolean; liked: boolean }
     if (response.success) {
       
       // Update local state
       setUserLikes(prev => {
         const newLikes = new Set(prev);
-        if (response.data?.liked) {
+        if (response.liked) {
           newLikes.add(videoId);
         } else {
           newLikes.delete(videoId);
@@ -219,14 +204,14 @@ export default function OptimizedWolfpackFeedPage() {
         video.id === videoId 
           ? { 
               ...video, 
-              likes_count: response.data?.liked 
+              likes_count: response.liked 
                 ? (video.likes_count || 0) + 1
                 : Math.max(0, (video.likes_count || 0) - 1)
             }
           : video
       ));
     }
-  }, [router, userLikes]);
+  }, []);
 
   // Handle comments - open modal instead of navigating
   const handleComment = useCallback((videoId: string) => {
@@ -240,7 +225,7 @@ export default function OptimizedWolfpackFeedPage() {
       return;
     }
 
-    const response = await wolfpackService.deleteVideo(videoId);
+    const response = await WolfpackService.feed.deletePost(videoId);
     
     if (response.success) {
       setwolfpack_videos(prevVideos => prevVideos.filter(v => v.id !== videoId));

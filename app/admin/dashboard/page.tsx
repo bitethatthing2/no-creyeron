@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 // BroadcastArchiveManager removed - DJ system eliminated
-import { NotificationTest } from '@/components/notifications/NotificationTest';
+// NotificationTest removed - test component not needed
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -203,10 +203,7 @@ export default function AdminDashboard() {
       {/* Broadcast Cleanup Management Section */}
       {/* BroadcastCleanupManager removed - DJ system eliminated */}
 
-      {/* Push Notification Test Section */}
-      <div id="notification-test" className="grid gap-4 md:grid-cols-2">
-        <NotificationTest className="md:col-span-1" />
-      </div>
+      {/* Push Notification Test Section - removed test component */}
     </div>
   );
 }

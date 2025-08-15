@@ -26,8 +26,24 @@ export default function ConversationPage() {
   
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
-  const [conversationData, setConversationData] = useState<any>(null);
+  const [conversationData, setConversationData] = useState<{
+    conversation: {
+      id: string;
+      conversation_type: string;
+      name?: string;
+    };
+    participants: { 
+      id: string; 
+      name: string;
+      users?: {
+        id: string;
+        display_name?: string;
+        first_name?: string;
+        last_name?: string;
+        username?: string;
+      };
+    }[];
+  } | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +57,6 @@ export default function ConversationPage() {
       
       // Enhanced subscription with connection monitoring
       const unsubscribe = subscribeToMessages(conversationId);
-      setConnectionStatus('connected');
       
       return () => {
         debugLog.messaging('ConversationPage unmount', { conversationId });

@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 // Removed unused import: getZIndexClass
 import { toast } from '@/components/ui/use-toast';
-import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 
@@ -197,7 +197,7 @@ function VideoComments({
         setLoading(true);
         
         // Use the new method that includes like status
-        const response = await wolfpackService.getCommentsWithLikes(postId);
+        const response = await WolfpackService.social.getCommentsWithLikes(postId);
         
         if (response.success && mountedRef.current) {
           const commentsData = convertUnifiedComments(response.data || []);
@@ -312,7 +312,7 @@ function VideoComments({
     try {
       setSubmitting(true);
 
-      const response = await wolfpackService.addComment(postId, newComment.trim());
+      const response = await WolfpackService.social.addComment(postId, newComment.trim());
 
       if (response.success) {
         setNewComment('');
@@ -359,7 +359,7 @@ function VideoComments({
     try {
       setSubmittingReply(true);
 
-      const response = await wolfpackService.addComment(postId, replyContent.trim(), parentCommentId);
+      const response = await WolfpackService.social.addComment(postId, replyContent.trim(), parentCommentId);
 
       if (response.success) {
         setReplyContent('');
@@ -436,7 +436,7 @@ function VideoComments({
       );
 
       // Call service to toggle like
-      const response = await wolfpackService.toggleCommentLike(commentId) as ServiceResponse<ToggleLikeResponse>;
+      const response = await WolfpackService.social.toggleCommentLike(commentId) as ServiceResponse<ToggleLikeResponse>;
 
       if (response.success && response.data) {
         // Update with actual server response

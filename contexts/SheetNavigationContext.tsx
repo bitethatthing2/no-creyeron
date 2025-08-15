@@ -4,7 +4,7 @@ import * as React from 'react';
 
 type StackItem = {
   title: string
-  component: ReactNode
+  component: React.ReactNode
 }
 
 type SheetNavigationContextType = {
@@ -22,7 +22,7 @@ export function SheetNavigationProvider({
   onStackEmpty,
   initialStack = [],
 }: {
-  children: ReactNode
+  children: React.ReactNode
   onStackEmpty?: () => void
   initialStack?: StackItem[]
 }) {

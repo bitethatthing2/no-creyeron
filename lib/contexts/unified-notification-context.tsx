@@ -41,7 +41,7 @@ const NotificationContext = React.createContext<NotificationContextType | null>(
  * Notification provider props
  */
 interface NotificationProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
   recipientId?: string;
 }
 

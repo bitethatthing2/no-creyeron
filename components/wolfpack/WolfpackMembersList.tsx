@@ -19,7 +19,7 @@ const LOCATION_IDS = {
 export type LocationKey = keyof typeof LOCATION_IDS
 
 // Use correct database types
-type = Database['public']['Tables']['users']['Row']
+type UserRow = Database['public']['Tables']['users']['Row']
 type DjEventRow = Database['public']['Tables']['dj_events']['Row']
 type LocationRow = Database['public']['Tables']['locations']['Row']
 

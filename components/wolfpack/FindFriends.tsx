@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import { toast } from '@/components/ui/use-toast';
 
 interface WolfpackUser {
@@ -42,7 +42,8 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
       try {
         setLoadingSuggestions(true);
         
-        const response = await wolfpackService.getSuggestedUsers(currentUser.id, 10);
+        // TODO: Implement getSuggestedUsers in consolidated service
+        const response = { success: false, error: 'Feature temporarily disabled', data: [] };
         
         if (response.success) {
           setSuggestedUsers(response.data || []);
@@ -76,7 +77,8 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
 
     setLoading(true);
     try {
-      const response = await wolfpackService.searchUsers(query, currentUser.id, 20);
+      // TODO: Implement searchUsers in consolidated service
+      const response = { success: false, error: 'Search temporarily disabled', data: [] };
       
       if (response.success) {
         setSearchResults(response.data || []);
@@ -109,14 +111,14 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
       return;
     }
     
-    const response = await wolfpackService.toggleFollow(userId);
+    const response = await WolfpackService.social.toggleFollow(currentUser.id, userId);
     
     if (response.success) {
-      // Update local state
+      // Update local state - toggleFollow returns { success: boolean; following: boolean }
       const updateFollowStatus = (users: WolfpackUser[]) =>
         users.map(u => 
           u.id === userId 
-            ? { ...u, is_following: response.data?.following }
+            ? { ...u, is_following: response.following }
             : u
         );
       
@@ -124,22 +126,22 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
       setSearchResults(prev => updateFollowStatus(prev));
       
       toast({
-        title: response.data?.following ? 'Following' : 'Unfollowed',
-        description: response.data?.following 
+        title: response.following ? 'Following' : 'Unfollowed',
+        description: response.following 
           ? 'You are now following this user' 
           : 'You have unfollowed this user'
       });
     } else {
       toast({
         title: 'Error',
-        description: response.error || 'Failed to update follow status',
+        description: 'Failed to update follow status',
         variant: 'destructive'
       });
     }
   };
 
   const renderUserCard = (user: WolfpackUser) => {
-    const displayName = wolfpackService.getDisplayName(user);
+    const displayName = user.display_name || user.username || 'Anonymous';
     
     return (
       <div key={user.id} className="bg-gray-800/50 rounded-xl p-4 mb-3 border border-gray-700/50">
@@ -147,7 +149,7 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-700">
               <Image
-                src={wolfpackService.getAvatarUrl(user)}
+                src={user.avatar_url || '/default-avatar.png'}
                 alt={displayName}
                 width={48}
                 height={48}

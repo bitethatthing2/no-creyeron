@@ -22,13 +22,14 @@ export const VideoPlayer = React.forwardRef<HTMLVideoElement, VideoPlayerProps>(
 
     // Merge refs
     const mergedRef = (element: HTMLVideoElement | null) => {
-      if (videoRef) {
-        videoRef.current = element;
-      }
+      // Update internal ref
+      (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = element;
+      
+      // Update forwarded ref
       if (typeof ref === 'function') {
         ref(element);
       } else if (ref) {
-        ref.current = element;
+        (ref as React.MutableRefObject<HTMLVideoElement | null>).current = element;
       }
     };
 
@@ -195,13 +196,14 @@ export const SimpleVideoPlayer = React.forwardRef<HTMLVideoElement, VideoPlayerP
 
     // Merge refs
     const mergedRef = (element: HTMLVideoElement | null) => {
-      if (videoRef) {
-        videoRef.current = element;
-      }
+      // Update internal ref
+      (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = element;
+      
+      // Update forwarded ref
       if (typeof ref === 'function') {
         ref(element);
       } else if (ref) {
-        ref.current = element;
+        (ref as React.MutableRefObject<HTMLVideoElement | null>).current = element;
       }
     };
 

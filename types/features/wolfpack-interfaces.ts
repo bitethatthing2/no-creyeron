@@ -6,6 +6,8 @@ export interface WolfpackAccess {
   reason?: string;
   wolfpackStatus?: WolfpackStatusType;
   locationStatus?: 'verified' | 'unverified' | 'pending';
+  checkLocationPermission?: () => Promise<boolean>;
+  refreshData?: () => Promise<void>;
 }
 
 export interface WolfpackFeatureFlags {

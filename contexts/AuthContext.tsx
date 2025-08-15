@@ -2,7 +2,7 @@
 
 'use client';
 
-import * as React from 'react';
+import React, { useState, useCallback, useEffect, useContext, createContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
@@ -165,14 +165,16 @@ const transformDatabaseUser = (dbUser: DatabaseUser, authUser: User): CurrentUse
   };
 };
 
-const AuthContext = React.createContext<AuthContextType>({
+const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
   currentUser: null,
+  userProfile: null,
   error: null,
   signOut: async () => {},
   refresh: async () => {},
+  refreshSession: async () => {},
   updateProfile: async () => {},
   isAuthenticated: false,
   hasProfile: false,
@@ -182,16 +184,16 @@ const AuthContext = React.createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = React.useState<Session | null>(null);
-  const [currentUser, setCurrentUser] = React.useState<CurrentUser | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<Error | null>(null);
-  const [isReady, setIsReady] = React.useState(false);
-  const [authChecked, setAuthChecked] = React.useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
 
   // Simplified, non-blocking user profile fetch
-  const fetchUserProfile = React.useCallback(async (authUser: User): Promise<CurrentUser | null> => {
+  const fetchUserProfile = useCallback(async (authUser: User): Promise<CurrentUser | null> => {
     if (!authUser?.id) return null;
 
     try {
@@ -290,14 +292,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('user_profile');
       localStorage.removeItem('fcm_token');
       sessionStorage.clear();
-      return { success: true };
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
     }
   };
 
-  const refresh = React.useCallback(async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -324,7 +325,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchUserProfile]);
 
-  const updateProfile = React.useCallback(async (updates: Partial<DatabaseUser>) => {
+  const updateProfile = useCallback(async (updates: Partial<DatabaseUser>) => {
     if (!currentUser) throw new Error('No user logged in');
 
     try {
@@ -345,7 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [currentUser, refresh]);
 
   // Fast, non-blocking auth initialization
-  React.useEffect(() => {
+  useEffect(() => {
     let mounted = true;
 
     const quickAuthCheck = async () => {
@@ -417,7 +418,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUserProfile]);
 
   // Simplified ready state - no complex dependencies
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loading && isReady) {
       console.log('[AUTH] Auth system ready');
     }
@@ -427,14 +428,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user && !!session;
   const hasProfile = !!currentUser;
 
-  const requireAuth = React.useCallback(() => {
+  const requireAuth = useCallback(() => {
     if (!isAuthenticated) {
       throw new Error('User must be authenticated');
     }
     return { user: user!, session: session! };
   }, [isAuthenticated, user, session]);
 
-  const requireProfile = React.useCallback(() => {
+  const requireProfile = useCallback(() => {
     if (!isAuthenticated || !hasProfile) {
       throw new Error('User must be authenticated with a complete profile');
     }
@@ -463,7 +464,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useAuth = () => {
-  const context = React.useContext(AuthContext);
+  const context = useContext(AuthContext);
   if (context === undefined) {
     // ✅ A more descriptive error message
     throw new Error('useAuth must be used within an AuthProvider');

@@ -59,26 +59,7 @@ export function UserProfileModal({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (isOpen &&conversationid) {
-      loadUserProfile();
-    }
-  }, [loadUserProfile]isOpen,conversationid]);
-
-  // Add/remove class to body when modal opens/closes
-  React.useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add('profile-modal-open');
-    } else {
-      document.body.classList.remove('profile-modal-open');
-    }
-
-    return () => {
-      document.body.classList.remove('profile-modal-open');
-    };
-  }, [isOpen]);
-
-  const loadUserProfile = async () => {
+  const loadUserProfile = React.useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -118,7 +99,26 @@ export function UserProfileModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [conversationid]);
+
+  React.useEffect(() => {
+    if (isOpen &&conversationid) {
+      loadUserProfile();
+    }
+  }, [loadUserProfile, isOpen, conversationid]);
+
+  // Add/remove class to body when modal opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('profile-modal-open');
+    } else {
+      document.body.classList.remove('profile-modal-open');
+    }
+
+    return () => {
+      document.body.classList.remove('profile-modal-open');
+    };
+  }, [isOpen]);
 
   const handleStartConversation = () => {
     if (!profile || !currentUser) return;
@@ -163,8 +163,7 @@ export function UserProfileModal({
             <div className="relative">
               <AvatarWithFallback
                 src={avatarUrl}
-                alt={displayName}
-                fallback={displayName}
+                name={displayName}
                 size="xl"
                 className="ring-4 ring-primary/20"
               />
