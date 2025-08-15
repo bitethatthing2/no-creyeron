@@ -1,7 +1,7 @@
 // app/api/wolfpack/leave/route.ts
 import { NextResponse } from 'next/server';
 import { createServerClient } from "@/lib/supabase/server";
-import { getDatabaseUserId } from '@/lib/utils/user-mapping';
+import { getUserId } from '@/lib/services/user-data.service';
 
 export async function DELETE() {
   try {
@@ -16,7 +16,7 @@ export async function DELETE() {
     }
 
     // Get database user ID
-    const databaseUserId = await getDatabaseUserId(user.id);
+    const databaseUserId = await getUserId(user.id);
     if (!databaseUserId) {
       return NextResponse.json(
         { error: 'User not found in database', code: 'USER_NOT_FOUND' },

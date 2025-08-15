@@ -1,7 +1,7 @@
 // app/api/wolfpack/status/route.ts
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { getDatabaseUserId } from "@/lib/utils/user-mapping";
+import { getUserId } from '@/lib/services/user-data.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     // Get database user ID
-    const databaseUserId = await getDatabaseUserId(user.id);
+    const databaseUserId = await getUserId(user.id);
     if (!databaseUserId) {
       return NextResponse.json({
         success: true,
