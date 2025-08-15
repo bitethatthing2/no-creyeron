@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { WolfpackService } from '@/lib/services/wolfpack';
+import { createServerClient } from "@/lib/supabase/server";
+import { WolfpackService, mapSupabaseError } from '@/lib/services/wolfpack';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,63 +18,28 @@ export async function POST(request: NextRequest) {
     const { location_id, latitude, longitude, profile_data } = body;
 
     // Verify user authentication
-    const authResult = await WolfpackService.auth.verifyUser(user);
-    if (!authResult.isVerified) {
+    const verifiedUser = await WolfpackService.auth.verifyUser();
+    if (!verifiedUser) {
       return NextResponse.json(
-        { error: authResult.error || 'User verification failed', code: 'AUTH_ERROR' },
+        { error: 'User verification failed', code: 'AUTH_ERROR' },
         { status: 401 }
       );
     }
 
-    // Location verification for non-VIP and non-permanent members
-    if (!authResult.isVipUser && !authResult.isPermanentPackMember) {
-      if (!latitude || !longitude) {
-        return NextResponse.json(
-          { error: 'Location coordinates required', code: 'LOCATION_ERROR' },
-          { status: 400 }
-        );
-      }
+    // Check if user is VIP or permanent pack member
+    const isVipUser = await WolfpackService.auth.isVipUser();
+    const isPermanentPackMember = verifiedUser.wolfpack_status === 'permanent_member';
 
-      const locationResult = await WolfpackService.location.verifyUserLocation();
-      if (!locationResult.isAtLocation) {
-        return NextResponse.json(
-          {
-            error: 'Not within bar proximity',
-            code: 'LOCATION_ERROR',
-            details: { distance: locationResult.distance }
-          },
-          { status: 403 }
-        );
-      }
-    }
-
-    // Join the pack
-    const joinData = {
-      display_name: profile_data?.display_name || WolfpackService.auth.getUserDisplayName(user),
-      emoji: profile_data?.emoji || '🐺',
-      current_vibe: profile_data?.current_vibe || 'Ready to party!',
-      favorite_drink: profile_data?.favorite_drink,
-      looking_for: profile_data?.looking_for,
-      instagram_handle: profile_data?.instagram_handle,
-      table_location: profile_data?.table_location,
-      latitude,
-      longitude
-    };
-
-    const result = await WolfpackService.membership.joinPack(user, joinData, location_id);
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error || 'Failed to join pack', code: 'JOIN_ERROR' },
-        { status: 400 }
-      );
-    }
-
+    // TODO: Location verification for non-VIP and non-permanent members
+    // The location service is not yet implemented in the consolidated WolfpackService
+    
+    // TODO: Join pack logic - membership service not yet implemented
+    // For now, return a temporary response
     return NextResponse.json({
-      success: true,
-      pack_member_id: result.membershipId,
-      data: result.data
-    });
+      success: false,
+      message: 'Wolfpack join functionality is currently being refactored',
+      code: 'SERVICE_UNAVAILABLE'
+    }, { status: 503 });
 
   } catch (error) {
     console.error('Join wolfpack error:', error);
@@ -84,9 +49,7 @@ export async function POST(request: NextRequest) {
       ? error 
       : new Error(typeof error === 'string' ? error : 'Unknown error occurred');
     
-    const userError = WolfpackErrorHandler.handleSupabaseError(typedError, {
-      operation: 'join_wolfpack'
-    });
+    const userError = mapSupabaseError(typedError);
 
     return NextResponse.json(
       { error: userError.message, code: 'SERVER_ERROR' },

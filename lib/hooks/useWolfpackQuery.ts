@@ -5,22 +5,14 @@
 
 import {
   useInfiniteQuery,
-  UseInfiniteQueryResult,
   useMutation,
-  UseMutationResult,
   useQuery,
-  useQueryClient,
-  UseQueryResult,
-} from "@tanstack/react-query";
+  useQueryClient } from "@tanstack/react-query";
 import { WolfpackFeedService } from "@/lib/services/wolfpack/feed";
 import { WolfpackService } from "@/lib/services/unified-wolfpack.service";
 import {
-  EnrichedVideo,
   FeedItem,
-  FetchFeedResponse,
-  PaginationOptions,
-  ServiceResponse,
-} from "@/lib/services/wolfpack/types";
+  PaginationOptions } from "@/lib/services/wolfpack/types";
 
 // Query Keys - centralized for better cache management
 export const WOLFPACK_QUERY_KEYS = {
@@ -60,8 +52,7 @@ export const WOLFPACK_QUERY_KEYS = {
   ) => ["wolfpack", "liked", videoId, conversationid],
 
   // User queries
-  userProfile: (userId: string) => ["wolfpack", "user", userId],
-} as const;
+  userProfile: (userId: string) => ["wolfpack", "user", userId] } as const;
 
 // ============================================================================
 // FEED QUERIES
@@ -103,14 +94,12 @@ export function useInfiniteFeedWithCursor(
         cursor: pageParam,
         limit,
         currentUserId,
-        followingOnly,
-      }),
+        followingOnly }),
     getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes - keep more pages cached
     refetchOnWindowFocus: false, // Don't refetch on focus for infinite scroll
-    keepPreviousData: true,
-  });
+    keepPreviousData: true });
 }
 
 /**
@@ -127,8 +116,7 @@ export function useFollowingFeed(
     enabled: !!currentUserId, // Only run if we have a user ID
     staleTime: 3 * 60 * 1000, // 3 minutes - following feed can be slightly more stable
     gcTime: 10 * 60 * 1000,
-    keepPreviousData: true,
-  });
+    keepPreviousData: true });
 }
 
 /**
@@ -141,8 +129,7 @@ export function useSearchPosts(query: string, options: PaginationOptions = {}) {
     enabled: query.trim().length > 2, // Only search if query is longer than 2 chars
     staleTime: 5 * 60 * 1000, // 5 minutes - search results can be cached longer
     gcTime: 10 * 60 * 1000,
-    keepPreviousData: true,
-  });
+    keepPreviousData: true });
 }
 
 // ============================================================================
@@ -158,8 +145,7 @@ export function usePost(postId: string) {
     queryFn: () => WolfpackFeedService.getPost(postId),
     enabled: !!postId,
     staleTime: 1 * 60 * 1000, // 1 minute
-    cacheTime: 5 * 60 * 1000,
-  });
+    cacheTime: 5 * 60 * 1000 });
 }
 
 /**
@@ -186,8 +172,7 @@ export function useUserPosts(userId: string, options: PaginationOptions = {}) {
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    keepPreviousData: true,
-  });
+    keepPreviousData: true });
 }
 
 // ============================================================================
@@ -216,8 +201,7 @@ export function useCreatePost() {
     },
     onError: (error) => {
       console.error("Failed to create post:", error);
-    },
-  });
+    } });
 }
 
 /**
@@ -232,8 +216,7 @@ export function useUpdatePost() {
     onMutate: async ({ postId, updates }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: WOLFPACK_QUERY_KEYS.post(postId),
-      });
+        queryKey: WOLFPACK_QUERY_KEYS.post(postId) });
 
       // Snapshot the previous value
       const previousPost = queryClient.getQueryData(
@@ -244,8 +227,7 @@ export function useUpdatePost() {
       if (previousPost) {
         queryClient.setQueryData(WOLFPACK_QUERY_KEYS.post(postId), {
           ...previousPost,
-          ...updates,
-        });
+          ...updates });
       }
 
       return { previousPost };
@@ -262,10 +244,8 @@ export function useUpdatePost() {
     onSettled: (data, error, variables) => {
       // Refetch the post after mutation
       queryClient.invalidateQueries({
-        queryKey: WOLFPACK_QUERY_KEYS.post(variables.postId),
-      });
-    },
-  });
+        queryKey: WOLFPACK_QUERY_KEYS.post(variables.postId) });
+    } });
 }
 
 /**
@@ -288,8 +268,7 @@ export function useDeletePost() {
               ...oldData,
               items: oldData.items.filter((item: FeedItem) =>
                 item.id !== postId
-              ),
-            };
+              ) };
           }
 
           return oldData;
@@ -299,8 +278,7 @@ export function useDeletePost() {
     onSuccess: () => {
       // Invalidate feed queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["wolfpack", "feed"] });
-    },
-  });
+    } });
 }
 
 // ============================================================================
@@ -338,12 +316,10 @@ export function useToggleLike() {
                     likes_count: currentLiked
                       ? (item.likes_count || 0) - 1
                       : (item.likes_count || 0) + 1,
-                    user_liked: !currentLiked,
-                  };
+                    user_liked: !currentLiked };
                 }
                 return item;
-              }),
-            };
+              }) };
           }
 
           return oldData;
@@ -362,8 +338,7 @@ export function useToggleLike() {
             likes_count: currentLiked
               ? (old.likes_count || 0) - 1
               : (old.likes_count || 0) + 1,
-            user_liked: !currentLiked,
-          };
+            user_liked: !currentLiked };
         });
       }
 
@@ -377,10 +352,8 @@ export function useToggleLike() {
     onSettled: (data, error, variables) => {
       // Refetch post stats to ensure accuracy
       queryClient.invalidateQueries({
-        queryKey: WOLFPACK_QUERY_KEYS.postStats(variables.videoId),
-      });
-    },
-  });
+        queryKey: WOLFPACK_QUERY_KEYS.postStats(variables.videoId) });
+    } });
 }
 
 /**
@@ -392,8 +365,7 @@ export function useIncrementViewCount() {
     // Don't show errors to user for view counts
     onError: () => {
       // Silent fail - view counts are not critical
-    },
-  });
+    } });
 }
 
 // ============================================================================
@@ -415,8 +387,7 @@ export function useIsVideoLiked(videoId: string, conversationid: string) {
     },
     enabled: !!(videoId && conversationid),
     staleTime: 1 * 60 * 1000, // 1 minute
-    cacheTime: 5 * 60 * 1000,
-  });
+    cacheTime: 5 * 60 * 1000 });
 }
 
 /**
@@ -433,8 +404,7 @@ export function usePrefetchNextFeedPage(
     queryClient.prefetchQuery({
       queryKey: WOLFPACK_QUERY_KEYS.feedItems(nextPageOptions),
       queryFn: () => WolfpackFeedService.fetchFeedItems(nextPageOptions),
-      staleTime: 2 * 60 * 1000,
-    });
+      staleTime: 2 * 60 * 1000 });
   };
 
   return prefetchNext;

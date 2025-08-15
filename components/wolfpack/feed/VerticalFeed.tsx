@@ -1,16 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Users, Music, Calendar, Store, Sparkles, Activity, Camera } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import Image from 'next/image';
 import GestureHandler from './GestureHandler';
 import UnifiedContentRenderer, { UnifiedContentItem } from './UnifiedContentRenderer';
-import DJOverlay from '../live/DJOverlay';
-import LiveDJOverlaySystem from '../live/LiveDJOverlaySystem';
+import LiveBroadcastIndicator from '../live/LiveBroadcastIndicator';
+import LiveEventIndicator from '../live/LiveEventIndicator';
 import PerformanceMonitor from '../../system/PerformanceMonitor';
-import { createOptimizedSubscription, unsubscribe, debounce } from '@/lib/services/performance-optimizer.service';
+import { debounce } from '@/lib/services/performance-optimizer.service';
 
-interface ContentItem {
+interface FeedContentItem {
   id: string;
   type: 'social' | 'dj_live' | 'event' | 'business' | 'ai_content';
   user_id: string;
@@ -74,11 +74,9 @@ export default function VerticalFeed({
 }: VerticalFeedProps) {
   const [feedMode, setFeedMode] = React.useState<FeedMode>('all');
   const [currentIndex, setCurrentIndex] = React.useState(0);
-  const [isScrolling, setIsScrolling] = React.useState(false);
+  // const [isScrolling, setIsScrolling] = React.useState(false);
   const [showReactions, setShowReactions] = React.useState<string | null>(null);
-  const [showDJOverlay, setShowDJOverlay] = React.useState(true);
-  const [isDJOverlayExpanded, setIsDJOverlayExpanded] = React.useState(false);
-  const [showLiveDJOverlay, setShowLiveDJOverlay] = React.useState(false);
+  const [showLiveIndicator, setShowLiveIndicator] = React.useState(true);
   const [showPerformanceMonitor, setShowPerformanceMonitor] = React.useState(false);
   
   const feedContainerRef = React.useRef<HTMLDivElement>(null);
@@ -152,14 +150,9 @@ export default function VerticalFeed({
   }, [currentIndex, filteredContent, onLike]);
 
   const handleLongPress = React.useCallback(() => {
-    // Check if current item is DJ live content
-    if (filteredContent[currentIndex] && filteredContent[currentIndex].type === 'dj_live') {
-      setShowLiveDJOverlay(true);
-    } else {
-      // Toggle reactions for current item
-      const currentItemId = filteredContent[currentIndex].id;
-      setShowReactions(showReactions === currentItemId ? null : currentItemId);
-    }
+    // Toggle reactions for current item
+    const currentItemId = filteredContent[currentIndex].id;
+    setShowReactions(showReactions === currentItemId ? null : currentItemId);
   }, [currentIndex, filteredContent, showReactions]);
 
   // Simple scroll tracking without auto-snap
@@ -271,21 +264,13 @@ export default function VerticalFeed({
         </div>
       </div>
 
-      {/* DJ Live Overlay */}
-      {showDJOverlay && (
-        <DJOverlay
-          onClose={() => setShowDJOverlay(false)}
-          isExpanded={isDJOverlayExpanded}
-          onToggleExpanded={() => setIsDJOverlayExpanded(!isDJOverlayExpanded)}
+      {/* Live Indicator */}
+      {showLiveIndicator && (
+        <LiveBroadcastIndicator
+          isVisible={showLiveIndicator}
+          onClose={() => setShowLiveIndicator(false)}
         />
       )}
-
-      {/* Advanced Live DJ Overlay System */}
-      <LiveDJOverlaySystem
-        isVisible={showLiveDJOverlay}
-        onClose={() => setShowLiveDJOverlay(false)}
-        currentUser={currentUser}
-      />
 
       {/* Performance Monitor */}
       <PerformanceMonitor

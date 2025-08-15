@@ -10,7 +10,6 @@ import {
   Vote, 
   Crown, 
   Zap,
-  Activity,
   Star,
   Target,
   Award

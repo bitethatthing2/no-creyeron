@@ -28,7 +28,7 @@ export default function BlogPage() {
               </h1>
             </div>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Salem's Premier Entertainment Destination - Artist Spotlights, Event Coverage & Music Scene Updates
+              Salem&apos;s Premier Entertainment Destination - Artist Spotlights, Event Coverage & Music Scene Updates
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
@@ -67,8 +67,8 @@ export default function BlogPage() {
                 Complete Artist Roster at Side Hustle Bar
               </CardTitle>
               <p className="text-gray-300 text-lg leading-relaxed">
-                Side Hustle Bar has established itself as Salem's premier hip-hop and R&B venue since opening in late 2023, 
-                bringing major touring artists and local talent to Oregon's capital city.
+                Side Hustle Bar has established itself as Salem&apos;s premier hip-hop and R&B venue since opening in late 2023, 
+                bringing major touring artists and local talent to Oregon&apos;s capital city.
               </p>
             </CardHeader>
             <CardContent className="prose prose-invert max-w-none">
@@ -107,7 +107,7 @@ export default function BlogPage() {
                       <div className="border-l-4 border-red-500 pl-4">
                         <h4 className="font-bold text-white">LUNIZ</h4>
                         <p className="text-gray-400 text-sm">December 6, 2024 • 9 PM - 2 AM</p>
-                        <p className="text-gray-300 text-sm">Ugly Christmas Sweater Party • "I Got 5 on It"</p>
+                        <p className="text-gray-300 text-sm">Ugly Christmas Sweater Party • &ldquo;I Got 5 on It&rdquo;</p>
                       </div>
                       
                       <div className="border-l-4 border-red-500 pl-4">
@@ -177,7 +177,7 @@ export default function BlogPage() {
                       <strong className="text-white">IX Construction (@ixconstruction_)</strong>, 
                       <strong className="text-white">MC Spectrum LLC (@m_c_spectrumllc)</strong>, and 
                       <strong className="text-white">Nebula9 Vodka (@nebula9vodka)</strong>. 
-                      Hosted by DJ Denver PDX (@djdenverpdx) with "Back to the Rayo" theming.
+                      Hosted by DJ Denver PDX (@djdenverpdx) with &ldquo;Back to the Rayo&rdquo; theming.
                     </p>
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export default function BlogPage() {
                       
                       <div className="bg-zinc-700/50 rounded-lg p-4">
                         <h4 className="font-bold text-red-400">Kaniel The One & Finxx Live</h4>
-                        <p className="text-gray-300 text-sm">Portland's HOTTEST DJs</p>
+                        <p className="text-gray-300 text-sm">Portland&apos;s HOTTEST DJs</p>
                         <p className="text-gray-400 text-xs mt-2">RnB, Love series • 90s/2000s nostalgia</p>
                       </div>
                       
@@ -222,7 +222,7 @@ export default function BlogPage() {
                       <div className="flex items-center justify-between p-3 rounded bg-zinc-700/30">
                         <div>
                           <span className="font-semibold text-white">DJ Infamous</span>
-                          <span className="text-gray-400 text-sm ml-2">(Ludacris's tour DJ)</span>
+                          <span className="text-gray-400 text-sm ml-2">(Ludacris&apos;s tour DJ)</span>
                         </div>
                         <span className="text-red-400 text-sm">Aug 29, 2024 • Oregon State Fair afterparty</span>
                       </div>
@@ -265,15 +265,15 @@ export default function BlogPage() {
                         <div className="border border-red-600/30 rounded-lg p-4 bg-red-600/5">
                           <h4 className="font-bold text-red-400">Live Music Events</h4>
                           <p className="text-gray-300 text-sm mt-2">
-                            Founded March 2023 by DJ Inferno and Miguel Canchola. Mission: "infuse the Pacific Northwest with West Coast hip-hop vibes" 
+                            Founded March 2023 by DJ Inferno and Miguel Canchola. Mission: &ldquo;infuse the Pacific Northwest with West Coast hip-hop vibes&rdquo; 
                             while emphasizing minority community empowerment.
                           </p>
                         </div>
                         
                         <div className="border border-red-600/30 rounded-lg p-4 bg-red-600/5">
-                          <h4 className="font-bold text-red-400">"RnB, Love" Series</h4>
+                          <h4 className="font-bold text-red-400">&ldquo;RnB, Love&rdquo; Series</h4>
                           <p className="text-gray-300 text-sm mt-2">
-                            "Salem's Biggest RnB & Hip-Hop Party" • Regular events 10 PM - 2 AM
+                            &ldquo;Salem&apos;s Biggest RnB & Hip-Hop Party&rdquo; • Regular events 10 PM - 2 AM
                           </p>
                         </div>
                       </div>
@@ -293,7 +293,7 @@ export default function BlogPage() {
                         <div className="border border-green-600/30 rounded-lg p-4 bg-green-600/5">
                           <h4 className="font-bold text-green-400">Game Night Live</h4>
                           <p className="text-gray-300 text-sm mt-2">
-                            Weekly trivia and R0CK'N Bingo • Music spanning hip-hop, country, and rock
+                            Weekly trivia and R0CK&apos;N Bingo • Music spanning hip-hop, country, and rock
                           </p>
                         </div>
                       </div>
@@ -345,7 +345,7 @@ export default function BlogPage() {
                         <div className="p-3 bg-red-600/10 rounded border border-red-600/20">
                           <p className="text-gray-300 text-sm">
                             <strong className="text-red-400">Executive Chef Rebecca Sanchez</strong> leads our culinary program at this 
-                            "High Energy Sports Bar, UFC House, Lounge, Nightclub" destination.
+                            &ldquo;High Energy Sports Bar, UFC House, Lounge, Nightclub&rdquo; destination.
                           </p>
                         </div>
                       </div>
@@ -375,7 +375,7 @@ export default function BlogPage() {
                         
                         <div className="p-3 bg-blue-600/10 rounded border border-blue-600/20">
                           <p className="text-gray-300 text-sm">
-                            This expansion positions Side Hustle Bar to tap into Portland's larger market while maintaining Salem roots.
+                            This expansion positions Side Hustle Bar to tap into Portland&apos;s larger market while maintaining Salem roots.
                           </p>
                         </div>
                       </div>
@@ -387,7 +387,7 @@ export default function BlogPage() {
                     <p className="text-gray-300 text-sm">
                       Ticketing through POSH platform for major concerts, Eventbrite for special events, and Fourth Wall Tickets for hip-hop showcases. 
                       <strong className="text-white"> Salem Main Street Association</strong> provides community integration and event promotion, 
-                      establishing Side Hustle Bar as a legitimate cultural hub bringing major hip-hop acts to Oregon's capital region.
+                      establishing Side Hustle Bar as a legitimate cultural hub bringing major hip-hop acts to Oregon&apos;s capital region.
                     </p>
                   </div>
                 </div>
@@ -429,7 +429,7 @@ export default function BlogPage() {
             "@context": "https://schema.org",
             "@type": "Blog",
             "name": "Side Hustle Blog",
-            "description": "Salem's premier hip-hop and R&B venue blog featuring artist spotlights, event coverage, and music scene updates",
+            "description": "Salem&apos;s premier hip-hop and R&B venue blog featuring artist spotlights, event coverage, and music scene updates",
             "url": "https://sidehustlelounge.com/blog",
             "publisher": {
               "@type": "Organization",

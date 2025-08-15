@@ -5,8 +5,7 @@
 
 import {
   createNotification,
-  NotificationCreators,
-} from "@/lib/notifications/create-notification";
+  NotificationCreators } from "@/lib/notifications/create-notification";
 import { supabase } from "@/lib/supabase";
 
 interface WolfpackUser {
@@ -17,7 +16,7 @@ interface WolfpackUser {
   username?: string;
 }
 
-interface WolfpackVideo {
+interface WolfpackData {
   id: string;
   user_id: string;
   title?: string;
@@ -64,12 +63,10 @@ export class WolfpackNotificationService {
           type: "wolfpack_like",
           videoId,
           likerId,
-          link: notificationData.link,
-        },
+          link: notificationData.link },
         icon: "/icons/android-big-icon.png",
         badge: "/icons/android-lil-icon-white.png",
-        requireInteraction: false,
-      });
+        requireInteraction: false });
     } catch (error) {
       console.error("Error sending like notification:", error);
     }
@@ -120,12 +117,10 @@ export class WolfpackNotificationService {
           type: "wolfpack_comment",
           videoId,
           commenterId,
-          link: notificationData.link,
-        },
+          link: notificationData.link },
         icon: "/icons/android-big-icon.png",
         badge: "/icons/android-lil-icon-white.png",
-        requireInteraction: true,
-      });
+        requireInteraction: true });
     } catch (error) {
       console.error("Error sending comment notification:", error);
     }
@@ -168,12 +163,10 @@ export class WolfpackNotificationService {
         data: {
           type: "wolfpack_follow",
           followerId,
-          link: notificationData.link,
-        },
+          link: notificationData.link },
         icon: "/icons/android-big-icon.png",
         badge: "/icons/android-lil-icon-white.png",
-        requireInteraction: false,
-      });
+        requireInteraction: false });
     } catch (error) {
       console.error("Error sending follow notification:", error);
     }
@@ -225,12 +218,10 @@ export class WolfpackNotificationService {
             type: "wolfpack_new_video",
             videoId,
             posterId,
-            link: notificationData.link,
-          },
+            link: notificationData.link },
           icon: "/icons/android-big-icon.png",
           badge: "/icons/android-lil-icon-white.png",
-          requireInteraction: false,
-        });
+          requireInteraction: false });
       }
     } catch (error) {
       console.error("Error sending new video notifications:", error);
@@ -284,12 +275,10 @@ export class WolfpackNotificationService {
             type: "wolfpack_mention",
             videoId,
             commenterId,
-            link: notificationData.link,
-          },
+            link: notificationData.link },
           icon: "/icons/android-big-icon.png",
           badge: "/icons/android-lil-icon-white.png",
-          requireInteraction: true,
-        });
+          requireInteraction: true });
       }
     } catch (error) {
       console.error("Error sending mention notifications:", error);
@@ -348,8 +337,7 @@ export class WolfpackNotificationService {
       const response = await fetch("/api/send-notification", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationid,
           title: notificationPayload.title,
@@ -357,9 +345,7 @@ export class WolfpackNotificationService {
           data: notificationPayload.data,
           icon: notificationPayload.icon,
           badge: notificationPayload.badge,
-          requireInteraction: notificationPayload.requireInteraction,
-        }),
-      });
+          requireInteraction: notificationPayload.requireInteraction }) });
 
       if (!response.ok) {
         throw new Error(`Push notification failed: ${response.status}`);
@@ -442,8 +428,7 @@ export class WolfpackNotificationService {
         await this.sendPushNotification(userId, {
           title: notification.title,
           body: notification.body,
-          data: notification.data,
-        });
+          data: notification.data });
 
         // Small delay to avoid overwhelming the notification service
         await new Promise((resolve) => setTimeout(resolve, 100));

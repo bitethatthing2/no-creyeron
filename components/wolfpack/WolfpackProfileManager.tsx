@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AvatarWithFallback } from '@/components/shared/ImageWithFallback';
+import {} from '@/components/shared/ImageWithFallback';
 import { ProfileImageUploaderWithHistory } from '@/components/shared/ImageHistoryViewer';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -271,7 +271,7 @@ export function WolfpackProfileManager() {
     if (!userLoading) {
       loadProfile();
     }
-  }, [userLoading]);
+  }, [loadProfile, userLoading]);
 
   // Save profile with proper typing
   const saveProfile = async (data: FormData = formData, showToast = true) => {

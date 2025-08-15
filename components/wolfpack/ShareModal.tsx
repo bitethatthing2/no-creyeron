@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { X, Link, Facebook, Twitter, MessageCircle, Mail, Download } from 'lucide-react';
+import { X, Link, Facebook, Twitter, MessageCircle, Mail } from 'lucide-react';
 import { getZIndexClass } from '@/lib/constants/z-index';
 import { toast } from '@/components/ui/use-toast';
 import { wolfpackService } from '@/lib/services/unified-wolfpack.service';

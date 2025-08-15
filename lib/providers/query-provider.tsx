@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import React, { useState } from 'react';
+import React, { } from 'react';
 
 // Optimized query client configuration for Wolfpack Feed
 function makeQueryClient() {
@@ -23,16 +23,12 @@ function makeQueryClient() {
         // Background refetch every 10 minutes for active queries
         refetchInterval: 10 * 60 * 1000,
         // Only background refetch when window is focused
-        refetchIntervalInBackground: false,
-      },
+        refetchIntervalInBackground: false },
       mutations: {
         // Retry mutations once
         retry: 1,
         // Shorter retry delay for mutations (user actions)
-        retryDelay: 1000,
-      },
-    },
-  });
+        retryDelay: 1000 } } });
 }
 
 let browserQueryClient: QueryClient | undefined = undefined;

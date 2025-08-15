@@ -8,22 +8,19 @@ import { supabase } from "@/lib/supabase";
 const errorService = {
   logError: (error: Error, context: string) => {
     console.error(`[${context}] ${error.message}`, error);
-  },
-};
+  } };
 
-enum ErrorSeverity {
+enum {
   LOW = "low",
   MEDIUM = "medium",
   HIGH = "high",
-  CRITICAL = "critical",
-}
+  CRITICAL = "critical" }
 
-enum ErrorCategory {
+enum {
   DATABASE = "database",
   NETWORK = "network",
   VALIDATION = "validation",
-  AUTH = "auth",
-}
+  AUTH = "auth" }
 
 interface QueryOptions {
   useCache?: boolean;
@@ -58,8 +55,7 @@ class DataService {
       cacheKey,
       cacheTTL = this.defaultCacheTTL,
       timeout = this.defaultTimeout,
-      retries = 2,
-    } = options;
+      retries = 2 } = options;
 
     // Check cache first
     if (useCache && cacheKey) {
@@ -116,7 +112,7 @@ class DataService {
   async getWolfpackMembers(location?: string): Promise<any[]> {
     return this.executeQuery(
       async () => {
-        let query = this.supabase
+        const query = this.supabase
           .from("users")
           .select(`
             id, display_name, wolf_emoji, vibe_status,
@@ -211,8 +207,7 @@ class DataService {
             is_read: false,
             is_deleted: false,
             flagged: false,
-            created_at: new Date().toISOString(),
-          })
+            created_at: new Date().toISOString() })
           .select()
           .single(),
       "sendPrivateMessage",
@@ -232,7 +227,7 @@ class DataService {
   async getMenuItems(categoryId?: string, location?: string): Promise<any[]> {
     return this.executeQuery(
       async () => {
-        let query = this.supabase
+        const query = this.supabase
           .from("food_drink_items")
           .select(`
             *, 
@@ -265,7 +260,7 @@ class DataService {
   async getMenuCategories(location?: string): Promise<any[]> {
     return this.executeQuery(
       async () => {
-        let query = this.supabase
+        const query = this.supabase
           .from("food_drink_categories")
           .select("*")
           .eq("is_active", true)
@@ -293,7 +288,7 @@ class DataService {
   async getDJEvents(location?: string, status?: string): Promise<any[]> {
     return this.executeQuery(
       async () => {
-        let query = this.supabase
+        const query = this.supabase
           .from("dj_events")
           .select(`
             *,
@@ -435,8 +430,7 @@ class DataService {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl,
-    });
+      ttl });
 
     // Clean up old cache entries periodically
     if (this.cache.size > 1000) {

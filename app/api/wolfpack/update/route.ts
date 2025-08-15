@@ -1,6 +1,6 @@
 // app/api/wolfpack/update/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from "@/lib/supabase/server";
 import { getDatabaseUserId } from '@/lib/utils/user-mapping';
 import { sanitizeMessage, sanitizeDisplayName } from '@/lib/utils/input-sanitization';
 

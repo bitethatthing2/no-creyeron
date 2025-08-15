@@ -4,16 +4,13 @@ import {
   FeedItem,
   FetchFeedResponse,
   PaginationOptions,
-  ServiceResponse,
-  WOLFPACK_TABLES,
-} from "./types";
+  ServiceResponse } from "./types";
 import {
   createErrorResponse,
   createSuccessResponse,
   validatePagination,
   validateUUID,
-  withErrorHandling,
-} from "./errors";
+  withErrorHandling } from "./errors";
 import { WolfpackAuthService } from "./auth";
 
 // =============================================================================
@@ -176,12 +173,10 @@ export class WolfpackFeedService {
         last_name: row.last_name || undefined,
         avatar_url: row.avatar_url || undefined,
         profile_image_url: row.profile_image_url || undefined,
-        wolf_emoji: row.wolf_emoji || undefined,
-      },
+        wolf_emoji: row.wolf_emoji || undefined },
       // Add these at the root level, not inside user
       user_liked: row.user_liked || false,
-      user_following: row.user_following || false,
-    };
+      user_following: row.user_following || false };
   }
 
   /**
@@ -198,8 +193,7 @@ export class WolfpackFeedService {
       last_name: null,
       avatar_url: null,
       profile_image_url: null,
-      wolf_emoji: null,
-    };
+      wolf_emoji: null };
 
     const displayName = user.display_name ||
       user.username ||
@@ -229,12 +223,10 @@ export class WolfpackFeedService {
         last_name: user.last_name || undefined,
         avatar_url: user.avatar_url || undefined,
         profile_image_url: user.profile_image_url || undefined,
-        wolf_emoji: user.wolf_emoji || undefined,
-      },
+        wolf_emoji: user.wolf_emoji || undefined },
       // Add these at the root level, not inside user
       user_liked: video.user_liked || false,
-      user_following: video.user_following || false,
-    };
+      user_following: video.user_following || false };
   }
 
   /**
@@ -279,8 +271,7 @@ export class WolfpackFeedService {
       return {
         items: [],
         totalItems: 0,
-        hasMore: false,
-      };
+        hasMore: false };
     }
 
     const items: FeedItem[] = wolfpack_videos.map((video) => {
@@ -291,8 +282,7 @@ export class WolfpackFeedService {
       // Add interaction data as extended properties
       return {
         ...feedItem,
-        ...((user_liked || user_following) && { user_liked, user_following }),
-      } as FeedItem;
+        ...((user_liked || user_following) && { user_liked, user_following }) } as FeedItem;
     });
 
     // For user-specific feeds, filter after fetching if needed
@@ -303,8 +293,7 @@ export class WolfpackFeedService {
       return {
         items: filteredItems,
         totalItems: filteredItems.length,
-        hasMore: false,
-      };
+        hasMore: false };
     }
 
     const totalItems = count || 0;
@@ -313,8 +302,7 @@ export class WolfpackFeedService {
     return {
       items,
       totalItems,
-      hasMore,
-    };
+      hasMore };
   }, "WolfpackFeedService.fetchFeedItems");
 
   /**
@@ -333,8 +321,7 @@ export class WolfpackFeedService {
       .rpc("get_video_feed", {
         p_user_id: currentUserId,
         p_limit: limit,
-        p_offset: offset,
-      });
+        p_offset: offset });
 
     if (error) throw error;
 
@@ -343,8 +330,7 @@ export class WolfpackFeedService {
       return {
         items: [],
         totalItems: 0,
-        hasMore: false,
-      };
+        hasMore: false };
     }
 
     const items: FeedItem[] = rows.map((row) => {
@@ -372,8 +358,7 @@ export class WolfpackFeedService {
           avatar_url: video.user?.avatar_url || undefined,
           profile_image_url: undefined, // Not returned by the function
           wolf_emoji: undefined, // Not returned by the function
-        },
-      };
+        } };
 
       // Add user interaction data as additional properties
       const extendedItem = feedItem as FeedItemWithInteraction;
@@ -386,8 +371,7 @@ export class WolfpackFeedService {
     return {
       items,
       totalItems: items.length,
-      hasMore: items.length === limit,
-    };
+      hasMore: items.length === limit };
   }, "WolfpackFeedService.fetchFollowingFeed");
 
   /**
@@ -425,8 +409,7 @@ export class WolfpackFeedService {
           ? new Date(cursorTimestamp).toISOString()
           : undefined,
         p_cursor_id: cursorId || undefined,
-        p_following_only: followingOnly,
-      });
+        p_following_only: followingOnly });
 
     if (error) throw error;
 
@@ -437,8 +420,7 @@ export class WolfpackFeedService {
       return {
         items: [],
         totalItems: 0,
-        hasMore: false,
-      };
+        hasMore: false };
     }
 
     const items: FeedItem[] = rows.map((row) => {
@@ -467,8 +449,7 @@ export class WolfpackFeedService {
       items,
       totalItems: items.length,
       hasMore,
-      nextCursor,
-    };
+      nextCursor };
   }, "WolfpackFeedService.fetchFeedWithCursor");
 
   /**
@@ -507,8 +488,7 @@ export class WolfpackFeedService {
       } = {
         ...video,
         user_liked: data.user_liked || false,
-        user_following: data.user_following || false,
-      };
+        user_following: data.user_following || false };
 
       return enrichedVideo;
     },
@@ -535,8 +515,7 @@ export class WolfpackFeedService {
         duration: postData.duration || null,
         is_active: true,
         view_count: 0,
-        like_count: 0,
-      };
+        like_count: 0 };
 
       const { data, error } = await supabase
         .from("wolfpack_videos")
@@ -574,8 +553,7 @@ export class WolfpackFeedService {
 
       const updateData = {
         ...updates,
-        updated_at: new Date().toISOString(),
-      };
+        updated_at: new Date().toISOString() };
 
       const { data, error } = await supabase
         .from("wolfpack_videos")
@@ -615,8 +593,7 @@ export class WolfpackFeedService {
           .from("wolfpack_videos")
           .update({
             is_active: false,
-            updated_at: new Date().toISOString(),
-          })
+            updated_at: new Date().toISOString() })
           .eq("id", postId)
           .eq("user_id", user.id);
 
@@ -639,8 +616,7 @@ export class WolfpackFeedService {
 
       // Use the record_video_view RPC function
       const { error } = await supabase.rpc("record_video_view", {
-        p_post_id: postId,
-      });
+        p_post_id: postId });
 
       if (error) {
         // Don't throw error for view count failures as it's not critical
@@ -682,8 +658,7 @@ export class WolfpackFeedService {
     return {
       views: post?.view_count || 0,
       likes: post?.like_count || 0,
-      wolfpack_comments: commentCount || 0,
-    };
+      wolfpack_comments: commentCount || 0 };
   }, "WolfpackFeedService.getPostStats");
 
   /**
@@ -712,8 +687,7 @@ export class WolfpackFeedService {
       return {
         items: [],
         totalItems: 0,
-        hasMore: false,
-      };
+        hasMore: false };
     }
 
     const { data, error, count } = await supabase
@@ -748,8 +722,7 @@ export class WolfpackFeedService {
       return {
         items: [],
         totalItems: 0,
-        hasMore: false,
-      };
+        hasMore: false };
     }
 
     const items: FeedItem[] = wolfpack_videos.map((video) => {
@@ -768,7 +741,6 @@ export class WolfpackFeedService {
     return {
       items,
       totalItems: count || 0,
-      hasMore: offset + limit < (count || 0),
-    };
+      hasMore: offset + limit < (count || 0) };
   }, "WolfpackFeedService.searchPosts");
 }

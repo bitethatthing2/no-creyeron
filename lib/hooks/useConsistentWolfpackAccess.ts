@@ -136,7 +136,7 @@ export function useConsistentWolfpackAccess(): ConsistentWolfpackAccess {
 
       // Get location information
       let locationName: string | null = null;
-      let hasLocationPermission = Boolean(
+      const hasLocationPermission = Boolean(
         userProfile.location_permissions_granted,
       );
 

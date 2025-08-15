@@ -72,7 +72,7 @@ export function sanitizeLocationId(locationId: string | null | undefined): strin
  * @returns Promise with member data
  */
 export async function loadWolfpackMembers(
-  supabase: ReturnType<typeof import('@/lib/supabase/client').getSupabaseBrowserClient>,
+  supabase: ReturnType<typeof import('@/lib/supabase').getSupabaseBrowserClient>,
   locationId: string | null | undefined,
   includeProfiles: boolean = true
 ) {
@@ -148,7 +148,7 @@ export async function loadWolfpackMembers(
  * @returns Promise with count
  */
 export async function countWolfpackMembers(
-  supabase: ReturnType<typeof import('@/lib/supabase/client').getSupabaseBrowserClient>,
+  supabase: ReturnType<typeof import('@/lib/supabase').getSupabaseBrowserClient>,
   locationId: string | null | undefined,
   activeOnly: boolean = false
 ) {
@@ -195,7 +195,7 @@ export function debugLocationQuery(functionName: string, locationId: string | nu
   console.log('  Query strategy:', sanitized === null ? 'Using .is("location_id", null)' : `Using .eq("location_id", "${sanitized}")`);
 }
 
-export default {
+const supabaseHelpers = {
   applyLocationFilter,
   sanitizeLocationId,
   loadWolfpackMembers,

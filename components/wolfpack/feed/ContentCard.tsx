@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, Calendar, Clock, MapPin, Users, Ticket, ExternalLink, Phone, Globe, Star, DollarSign, Zap } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, Calendar, Clock, MapPin, Users, Ticket, ExternalLink, DollarSign } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,19 +10,18 @@ import OptimizedMedia from './OptimizedMedia';
 interface ContentCardProps {
   id: string;
   type: 'social' | 'dj_live' | 'event' | 'business' | 'ai_content';
-  user_id: string;
   display_name: string;
   avatar_url?: string;
   content: string;
   media_url?: string;
-  media_type?: 'image' | 'video' | 'audio';
+  media_type?: 'image' | 'video';
   is_live?: boolean;
   isActive: boolean;
   likes_count: number;
   wolfpack_comments_count: number;
   shares_count: number;
   user_liked?: boolean;
-  onLike: () => void;
+  onLike: (contentId: string) => void;
   onComment: () => void;
   onShare: () => void;
   onUserProfile: () => void;
@@ -52,7 +51,6 @@ interface ContentCardProps {
 export default function ContentCard({
   id,
   type,
-  user_id,
   display_name,
   avatar_url,
   content,

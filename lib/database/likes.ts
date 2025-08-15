@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
-import { Database } from "@/types/database.types";
+import type { Database } from "@/types/database.types";
 
-type PostLike = Database["public"]["Tables"]["wolfpack_post_likes"]["Row"];
+type = Database["public"]["Tables"]["wolfpack_post_likes"]["Row"];
 type PostLikeInsert =
   Database["public"]["Tables"]["wolfpack_post_likes"]["Insert"];
 
@@ -13,8 +13,7 @@ export async function togglePostLike(
   console.log("Auth check:", {
     user: !!user,
     conversationid: user?.id,
-    authError,
-  });
+    authError });
 
   if (!user) {
     throw new Error("User not authenticated");
@@ -58,8 +57,7 @@ export async function togglePostLike(
     // Like - add new like with proper error handling for 409 Conflict
     const likeData: PostLikeInsert = {
       video_id: postId,
-      user_id: user.id,
-    };
+      user_id: user.id };
 
     console.log("Inserting new like:", likeData);
     const { data: insertData, error: insertError } = await supabase
@@ -230,6 +228,5 @@ export async function getLikeStats(postId: string): Promise<{
   return {
     count,
     userLiked,
-    recentLikers,
-  };
+    recentLikers };
 }

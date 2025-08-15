@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { Database } from "@/types/database.types";
 
-type PostLike = Database["public"]["Tables"]["wolfpack_post_likes"]["Row"];
-type PostLikeInsert =
+type = Database["public"]["Tables"]["wolfpack_post_likes"]["Row"];
+type =
   Database["public"]["Tables"]["wolfpack_post_likes"]["Insert"];
 
 /**
@@ -47,12 +47,10 @@ export async function togglePostLikeUpsert(
       .upsert(
         {
           video_id: postId,
-          user_id: user.id,
-        },
+          user_id: user.id },
         {
           onConflict: "video_id,user_id",
-          ignoreDuplicates: false,
-        },
+          ignoreDuplicates: false },
       );
 
     if (error) {
@@ -87,8 +85,7 @@ export async function togglePostLikeRPC(
     const { data, error } = await supabase
       .rpc("toggle_post_like", {
         p_video_id: postId,
-        p_user_id: user.id,
-      });
+        p_user_id: user.id });
 
     if (error) {
       throw new Error(`Failed to toggle like: ${error.message}`);
@@ -96,8 +93,7 @@ export async function togglePostLikeRPC(
 
     return {
       liked: data.liked,
-      likeCount: data.like_count,
-    };
+      likeCount: data.like_count };
   } catch (error) {
     // Fallback to manual approach if RPC doesn't exist
     console.warn(

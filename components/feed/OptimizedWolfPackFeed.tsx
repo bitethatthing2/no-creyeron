@@ -56,7 +56,6 @@ export function OptimizedWolfPackFeed({
         <div className="relative">
           <VirtualizedFeed
             onwolfpack_videoselect={handlewolfpack_videoselect}
-            onShare={handlewolfpack_videoshare}
             showDebugInfo={showDebugInfo}
             className="h-[calc(100vh-80px)]" // Account for header height
           />

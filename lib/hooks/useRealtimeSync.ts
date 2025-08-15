@@ -2,18 +2,18 @@ import * as React from 'react';
 import { supabase } from "@/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
-interface RealtimeEvent {
+interface {
   eventType: "INSERT" | "UPDATE" | "DELETE";
-  new: any;
-  old: any;
+  new: unknown;
+  old: unknown;
 }
 
 interface UseRealtimeSyncOptions {
   table: string;
   filter?: string;
-  onInsert?: (record: any) => void;
-  onUpdate?: (record: any, oldRecord: any) => void;
-  onDelete?: (oldRecord: any) => void;
+  onInsert?: (record: unknown) => void;
+  onUpdate?: (record: unknown, oldRecord: unknown) => void;
+  onDelete?: (oldRecord: unknown) => void;
   enabled?: boolean;
 }
 
@@ -23,8 +23,7 @@ export function useRealtimeSync({
   onInsert,
   onUpdate,
   onDelete,
-  enabled = true,
-}: UseRealtimeSyncOptions) {
+  enabled = true }: UseRealtimeSyncOptions) {
   const channelRef = React.useRef<RealtimeChannel | null>(null);
 
   const cleanup = React.useCallback(() => {
@@ -50,8 +49,7 @@ export function useRealtimeSync({
           event: "INSERT",
           schema: "public",
           table: table,
-          filter: filter,
-        },
+          filter: filter },
         (payload) => {
           if (onInsert) {
             onInsert(payload.new);
@@ -64,8 +62,7 @@ export function useRealtimeSync({
           event: "UPDATE",
           schema: "public",
           table: table,
-          filter: filter,
-        },
+          filter: filter },
         (payload) => {
           if (onUpdate) {
             onUpdate(payload.new, payload.old);
@@ -78,8 +75,7 @@ export function useRealtimeSync({
           event: "DELETE",
           schema: "public",
           table: table,
-          filter: filter,
-        },
+          filter: filter },
         (payload) => {
           if (onDelete) {
             onDelete(payload.old);
@@ -102,15 +98,14 @@ export function useRealtimeSync({
   }, [cleanup]);
 
   return {
-    cleanup,
-  };
+    cleanup };
 }
 
 // Specialized hook for wolfpack_comments realtime sync
 export function useRealtimewolfpack_comments(
   postId: string,
-  onNewComment: (comment: any) => void,
-  onCommentUpdate?: (comment: any) => void,
+  onNewComment: (comment: unknown) => void,
+  onCommentUpdate?: (comment: unknown) => void,
   onCommentDelete?: (commentId: string) => void,
 ) {
   return useRealtimeSync({
@@ -142,8 +137,7 @@ export function useRealtimewolfpack_comments(
       if (onCommentDelete) {
         onCommentDelete(oldComment.id);
       }
-    },
-  });
+    } });
 }
 
 // Specialized hook for likes realtime sync
@@ -171,14 +165,13 @@ export function useRealtimeLikes(
         .eq("video_id", postId);
 
       onLikeChange(false, count || 0);
-    },
-  });
+    } });
 }
 
 // Specialized hook for wolfpack_posts realtime sync
 export function useRealtimewolfpack_posts(
-  onNewPost: (post: any) => void,
-  onPostUpdate?: (post: any) => void,
+  onNewPost: (post: unknown) => void,
+  onPostUpdate?: (post: unknown) => void,
   onPostDelete?: (postId: string) => void,
 ) {
   return useRealtimeSync({
@@ -209,6 +202,5 @@ export function useRealtimewolfpack_posts(
       if (onPostDelete) {
         onPostDelete(oldPost.id);
       }
-    },
-  });
+    } });
 }

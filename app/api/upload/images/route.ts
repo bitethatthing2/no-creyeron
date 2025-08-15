@@ -278,7 +278,7 @@ export async function GET(request: NextRequest) {
     const imageType = searchParams.get("imageType");
     const itemId = searchParams.get("itemId");
 
-    const supabaseClient = await createClient();
+    const supabaseClient = await createServerClient();
 
     let query = supabaseClient
       .from("images")

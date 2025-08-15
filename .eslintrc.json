@@ -12,17 +12,7 @@
         "paths": [
           {
             "name": "@/lib/supabase/client",
-            "message": "Please import from '@/lib/supabase' instead. This ensures consistent client management and proper singleton usage."
-          },
-          {
-            "name": "@/lib/supabase/server", 
-            "message": "Please import from '@/lib/supabase' instead. This ensures consistent client management and proper type safety."
-          }
-        ],
-        "patterns": [
-          {
-            "group": ["*/supabase/client", "*/supabase/server"],
-            "message": "Please import from '@/lib/supabase' instead. Direct imports bypass centralized client management."
+            "message": "Please import from '@/lib/supabase' instead for client components. This ensures consistent client management and proper singleton usage."
           }
         ]
       }

@@ -131,9 +131,10 @@ export function VirtualizedFeed({
   // Handle video interactions
   const handleLike = React.useCallback(async (videoId: string, isLiked: boolean) => {
     // Optimistic update
+    const video = wolfpack_videos.find(v => v.id === videoId);
     updatewolfpack_videostats(videoId, {
       is_liked: isLiked,
-      likes_count: wolfpack_videos.find(v => v.id === videoId)?.likes_count + (isLiked ? 1 : -1) || 0
+      likes_count: (video?.likes_count || 0) + (isLiked ? 1 : -1)
     });
 
     // TODO: Make API call to actually like/unlike

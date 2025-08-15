@@ -1,9 +1,7 @@
-import { WolfpackAuthService } from "./wolfpack-auth.service";
+import {} from "./wolfpack-auth.service";
 import {
   type LocationKey,
-  SIDE_HUSTLE_LOCATIONS,
-  WolfpackLocationService,
-} from "./wolfpack-location.service";
+  SIDE_HUSTLE_LOCATIONS } from "./wolfpack-location.service";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -89,8 +87,7 @@ export class WolfpackMembershipService {
           locationKey: null,
           joinedAt: null,
           tableLocation: null,
-          status: null,
-        };
+          status: null };
       }
 
       const locationKey = data.location_id
@@ -104,8 +101,7 @@ export class WolfpackMembershipService {
         locationKey,
         joinedAt: data.wolfpack_joined_at || data.created_at,
         tableLocation: null,
-        status: (data.wolfpack_status || "active") as "active",
-      };
+        status: (data.wolfpack_status || "active") as "active" };
     } catch (error) {
       console.error("Error checking membership:", error);
       return {
@@ -118,8 +114,7 @@ export class WolfpackMembershipService {
         status: null,
         error: error instanceof Error
           ? error.message
-          : "Failed to check membership",
-      };
+          : "Failed to check membership" };
     }
   }
 
@@ -137,8 +132,7 @@ export class WolfpackMembershipService {
       if (!authResult.isVerified) {
         return {
           success: false,
-          error: authResult.error || "User verification failed",
-        };
+          error: authResult.error || "User verification failed" };
       }
 
       // Determine location if not provided
@@ -155,8 +149,7 @@ export class WolfpackMembershipService {
           if (!locationResult.isAtLocation || !locationResult.locationId) {
             return {
               success: false,
-              error: "You must be at Side Hustle Bar to join the Wolf Pack",
-            };
+              error: "You must be at Side Hustle Bar to join the Wolf Pack" };
           }
           targetLocationId = locationResult.locationId;
         }
@@ -171,16 +164,14 @@ export class WolfpackMembershipService {
         return {
           success: true,
           membershipId: existingMembership.membershipId,
-          data: existingMembership,
-        };
+          data: existingMembership };
       }
 
       // Ensure we have a valid location ID
       if (!targetLocationId) {
         return {
           success: false,
-          error: "Unable to determine location",
-        };
+          error: "Unable to determine location" };
       }
 
       // Use RPC function for joining (maintains existing backend logic)
@@ -189,8 +180,7 @@ export class WolfpackMembershipService {
           p_location_id: targetLocationId,
           p_latitude: data.latitude ?? undefined,
           p_longitude: data.longitude ?? undefined,
-          p_table_location: data.table_location ?? undefined,
-        });
+          p_table_location: data.table_location ?? undefined });
 
       if (rpcError) throw rpcError;
 
@@ -213,8 +203,7 @@ export class WolfpackMembershipService {
           vibe_status: data.current_vibe,
           favorite_drink: data.favorite_drink,
           looking_for: data.looking_for,
-          instagram_handle: data.instagram_handle,
-        });
+          instagram_handle: data.instagram_handle });
       }
 
       // Get the new membership
@@ -226,21 +215,18 @@ export class WolfpackMembershipService {
       if (!newMembership.membershipId) {
         return {
           success: false,
-          error: "Failed to create membership",
-        };
+          error: "Failed to create membership" };
       }
 
       return {
         success: true,
         membershipId: newMembership.membershipId,
-        data: newMembership,
-      };
+        data: newMembership };
     } catch (error) {
       console.error("Error joining wolfpack:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to join pack",
-      };
+        error: error instanceof Error ? error.message : "Failed to join pack" };
     }
   }
 
@@ -254,8 +240,7 @@ export class WolfpackMembershipService {
         .update({
           wolfpack_status: "inactive",
           is_wolfpack_member: false,
-          last_activity: new Date().toISOString(),
-        })
+          last_activity: new Date().toISOString() })
         .eq("id", membershipId);
 
       if (error) throw error;
@@ -283,8 +268,7 @@ export class WolfpackMembershipService {
           favorite_drink: profileData.favorite_drink,
           looking_for: profileData.looking_for,
           instagram_handle: profileData.instagram_handle,
-          last_activity: new Date().toISOString(),
-        })
+          last_activity: new Date().toISOString() })
         .eq("id", userId)
         .eq("is_wolfpack_member", true);
 
@@ -325,8 +309,7 @@ export class WolfpackMembershipService {
           bio: memberData.bio || null,
           profile_image_url: memberData.profile_image_url || null,
           is_profile_visible: memberData.is_profile_visible ?? true,
-          allow_messages: memberData.allow_messages ?? true,
-        }
+          allow_messages: memberData.allow_messages ?? true }
         : null;
     } catch (error) {
       console.error("Error fetching member profile:", error);
@@ -389,8 +372,7 @@ export class WolfpackMembershipService {
           if (minutesSinceActivity < 5) {
             return {
               canJoin: false,
-              reason: "Please wait a few minutes before rejoining the pack",
-            };
+              reason: "Please wait a few minutes before rejoining the pack" };
           }
         } catch (dateError) {
           console.error("Error parsing last_activity date:", dateError);
@@ -429,8 +411,7 @@ export class WolfpackMembershipService {
           const joinedAt = new Date(m.wolfpack_joined_at);
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
           return joinedAt > oneDayAgo;
-        }).length || 0,
-      };
+        }).length || 0 };
 
       return stats;
     } catch (error) {
@@ -438,8 +419,7 @@ export class WolfpackMembershipService {
       return {
         totalMembers: 0,
         activeMembers: 0,
-        recentJoins: 0,
-      };
+        recentJoins: 0 };
     }
   }
 }

@@ -1,6 +1,6 @@
 // app/api/wolfpack/leave/route.ts
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from "@/lib/supabase/server";
 import { getDatabaseUserId } from '@/lib/utils/user-mapping';
 
 export async function DELETE() {

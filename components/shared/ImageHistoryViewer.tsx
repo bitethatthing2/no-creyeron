@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AvatarWithFallback } from './ImageWithFallback';
-import { useImageReplacement } from '@/lib/services/image-replacement.service';
 import { toast } from 'sonner';
 import { 
   History, 
@@ -47,13 +46,15 @@ export function ImageHistoryViewer({
   const [loading, setLoading] = React.useState(true);
   const [reverting, setReverting] = React.useState<string | null>(null);
   
-  const { getImageHistory, revertImage } = useImageReplacement();
+  // Temporarily disabled - useImageReplacement hook not available
+  const getImageHistory = async (userId: string, type: string) => [];
+  const revertImage = async (userId: string, item: ImageHistoryItem) => ({ success: false, error: 'Feature temporarily disabled' });
 
   // Load image history
   const loadHistory = async () => {
     setLoading(true);
     try {
-      const items = await getImageHistory(userId, imageType);
+      const items = await getImageHistory(conversationid, imageType);
       setHistory(items);
     } catch (error) {
       console.error('Failed to load image history:', error);
@@ -65,14 +66,14 @@ export function ImageHistoryViewer({
 
   React.useEffect(() => {
     loadHistory();
-  }, [userId, imageType]);
+  }, [conversationid, imageType]);
 
   // Handle image revert
   const handleRevert = async (historyItem: ImageHistoryItem) => {
     setReverting(historyItem.id);
     
     try {
-      const result = await revertImage(userId, historyItem);
+      const result = await revertImage(conversationid, historyItem);
       
       if (result.success) {
         toast.success('Image reverted successfully!');
@@ -284,12 +285,11 @@ export function ProfileImageUploaderWithHistory({
   className 
 }: ProfileImageUploaderProps) {
   const [showHistory, setShowHistory] = React.useState(false);
-  const { 
-    uploading, 
-    error, 
-    replaceProfileImage,
-    clearError 
-  } = useImageReplacement();
+  // Temporarily disabled - useImageReplacement hook not available
+  const uploading = false;
+  const error = null as string | null;
+  const replaceProfileImage = async (userId: string, file: File) => ({ success: false, error: 'Feature temporarily disabled' });
+  const clearError = () => {};
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

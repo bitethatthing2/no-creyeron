@@ -34,7 +34,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Check if user needs migration
-  if (user && !userProfile?.auth_id) {
+  if (user && !userProfile?.authId) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <UserMigration email={user.email!} />

@@ -206,10 +206,10 @@ export function NotificationTest({ className }: NotificationTestProps) {
 
           {/* Action Buttons */}
           <div className="space-y-2">
-            {permission !== 'granted' && (
+            {permission !== 'granted' && registerToken && (
               <Button
                 onClick={registerToken}
-                disabled={loading || !registerToken}
+                disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 variant="default"
               >

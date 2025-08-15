@@ -25,7 +25,7 @@ export const CommentReactions = ({ commentId, className = '' }: CommentReactions
       loadReactions();
       checkUserReactions();
     }
-  }, [commentId]);
+  }, [loadReactions, checkUserReactions]commentId]);
 
   const loadReactions = async () => {
     try {

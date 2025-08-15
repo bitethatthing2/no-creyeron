@@ -15,11 +15,8 @@ import {
   Coffee, 
   Music, 
   Instagram, 
-  Sparkles,
   User,
-  Calendar,
-  MapPin
-} from 'lucide-react';
+  Calendar } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -66,7 +63,7 @@ export function UserProfileModal({
     if (isOpen &&conversationid) {
       loadUserProfile();
     }
-  }, [isOpen,conversationid]);
+  }, [loadUserProfile]isOpen,conversationid]);
 
   // Add/remove class to body when modal opens/closes
   React.useEffect(() => {

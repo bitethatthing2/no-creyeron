@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { WOLFPACK_TABLES, WolfpackErrorHandler } from '@/lib/services/wolfpack';
+import { createServerClient } from "@/lib/supabase/server";
+import { WOLFPACK_TABLES, mapSupabaseError } from '@/lib/services/wolfpack';
 
 // Types for better type safety
 interface ResetOperation {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Mark old chat sessions as deleted (since is_archived doesn't exist)
     const { data: chatData, error: chatError } = await supabase
-      .from(WOLFPACK_TABLES.WOLF_CHAT)
+      .from('wolf_chat' /* TODO: Add WOLF_CHAT to WOLFPACK_TABLES */)
       .update({ 
         is_deleted: true,
         edited_at: resetTimestamp
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     // End active DJ events
     const { data: eventsData, error: eventsError } = await supabase
-      .from(WOLFPACK_TABLES.EVENTS)
+      .from(WOLFPACK_TABLES.DJ_EVENTS)
       .update({ 
         status: 'ended',
         updated_at: resetTimestamp
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       locationsToReset = [{ id: location_id }];
     } else {
       const { data: locationsData } = await supabase
-        .from(WOLFPACK_TABLES.LOCATIONS)
+        .from('wolfpack_locations' /* TODO: Add LOCATIONS to WOLFPACK_TABLES */)
         .select('id')
         .eq('is_active', true);
       locationsToReset = (locationsData as Location[]) || [];
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     // Send reset announcements to each location
     for (const location of locationsToReset) {
       const { error: insertError } = await supabase
-        .from(WOLFPACK_TABLES.WOLF_CHAT)
+        .from('wolf_chat' /* TODO: Add WOLF_CHAT to WOLFPACK_TABLES */)
         .insert({
           session_id: `location_${location.id}`,
           user_id: '00000000-0000-0000-0000-000000000000', // System user
@@ -198,9 +198,7 @@ export async function POST(request: NextRequest) {
       ? error 
       : new Error(typeof error === 'string' ? error : 'Unknown error occurred');
     
-    const userError = WolfpackErrorHandler.handleSupabaseError(typedError, {
-      operation: 'daily_reset'
-    });
+    const userError = mapSupabaseError(typedError);
 
     return NextResponse.json(
       { error: userError.message, code: 'SERVER_ERROR' },
@@ -224,7 +222,7 @@ export async function GET() {
     // Get last reset info from system messages
     const supabase = await createServerClient();
     const { data: lastResetMessage } = await supabase
-      .from(WOLFPACK_TABLES.WOLF_CHAT) // Using the correct property name
+      .from('wolf_chat' /* TODO: Add WOLF_CHAT to WOLFPACK_TABLES */) // Using the correct property name
       .select('created_at, content')
       .eq('user_id', '00000000-0000-0000-0000-000000000000') // System user
       .eq('message_type', 'dj_broadcast')

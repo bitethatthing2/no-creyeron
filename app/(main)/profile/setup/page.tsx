@@ -72,7 +72,7 @@ export default function ProfileSetupPage() {
       <div className="w-full max-w-md">
         <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800">
           <h1 className="text-2xl font-bold text-white mb-2">Complete Your Profile</h1>
-          <p className="text-zinc-400 mb-6">Let's get you set up in the Wolf Pack</p>
+          <p className="text-zinc-400 mb-6">Let&apos;s get you set up in the Wolf Pack</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

@@ -4,7 +4,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import {} from "sonner";
 
 // Enhanced user profile type for Wolfpack functionality
 export interface WolfpackProfile {
@@ -129,8 +129,7 @@ export class UserProfileService {
         .from("users")
         .update({
           ...cleanedUpdates,
-          updated_at: new Date().toISOString(),
-        })
+          updated_at: new Date().toISOString() })
         .eq(isAuthId ? "auth_id" : "id", conversationid)
         .select(`
           id, email, first_name, last_name, display_name, bio,
@@ -263,8 +262,7 @@ export class UserProfileService {
       const updates: UserProfileUpdate = {
         is_wolfpack_member: isWolfpackMember,
         ...(isWolfpackMember &&
-          { wolfpack_join_date: new Date().toISOString() }),
-      };
+          { wolfpack_join_date: new Date().toISOString() }) };
 
       return await this.updateUserProfile(conversationid, updates);
     } catch (error) {

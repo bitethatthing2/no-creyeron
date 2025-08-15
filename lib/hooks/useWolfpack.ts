@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 
 export function useWolfpackSession(user: any, locationName: string) {
   const [sessionId, setSessionId] = React.useState<string | null>(null);
-  const [locationId, setLocationId] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [isActive, setIsActive] = React.useState(false);
 
   React.useEffect(() => {
@@ -48,10 +48,10 @@ export function useWolfpackSession(user: any, locationName: string) {
     initSession();
   }, [user, locationName]);
 
-  return { sessionId, locationId, isActive };
+  return { sessionId, isLoading, isActive };
 }
 
-export function useWolfpack(sessionId: string, locationId: string, options: any) {
+export function useWolfpackChat(sessionId: string | null) {
   const [state, setState] = React.useState({
     members: [],
     messages: [],
@@ -123,7 +123,7 @@ export function useWolfpack(sessionId: string, locationId: string, options: any)
 }
 
 export function useTypingIndicators(sessionId: string) {
-  const [typingUsers, setTypingUsers] = React.useState<string[]>([]);
+  const [typingUsers] = React.useState<string[]>([]);
 
   const sendTyping = (userId: string, userName: string, isTyping: boolean) => {
     // This would typically use Supabase realtime to broadcast typing status

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Shield, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface AuthStatus {
   authenticated: boolean;
@@ -29,7 +29,6 @@ const AuthDebugDashboard = () => {
   const [userInfo, setUserInfo] = React.useState<UserInfo | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const supabase = createClient();
 
   const checkAuthStatus = async () => {
     setLoading(true);

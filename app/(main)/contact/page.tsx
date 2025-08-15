@@ -55,7 +55,7 @@ export default function ContactPage() {
                 </h1>
               </div>
               <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed px-4">
-                Questions about events, reservations, or private parties? We're here to help make your Side Hustle experience unforgettable.
+                Questions about events, reservations, or private parties? We&apos;re here to help make your Side Hustle experience unforgettable.
               </p>
               <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
                 <Badge variant="secondary" className="bg-orange-600/20 text-orange-300 border-orange-600/30">
@@ -85,7 +85,7 @@ export default function ContactPage() {
             <div className="mb-6 sm:mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Send Us a Message</h2>
               <p className="text-gray-300 text-sm sm:text-base">
-                Whether you're planning a private event, have questions about our menu, or want to book our venue for your celebration, we'd love to hear from you.
+                Whether you&apos;re planning a private event, have questions about our menu, or want to book our venue for your celebration, we&apos;d love to hear from you.
               </p>
             </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, ArrowLeft, Users, UserPlus } from 'lucide-react';
+import { Search, ArrowLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';

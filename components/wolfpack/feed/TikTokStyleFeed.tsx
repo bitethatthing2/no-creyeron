@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Share2, Music, Play, Volume2, VolumeX, Search, Plus, UserPlus, Users, Home, ShoppingBag, Mail, User, MoreHorizontal, Trash2, Loader2, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Music, Play, Volume2, VolumeX, Search, Plus, Home, ShoppingBag, User, Trash2, Loader2, Send } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';

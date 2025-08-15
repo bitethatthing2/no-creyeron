@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Get the current user's database record first
     const { data: currentUserRecord, error: userError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, display_name')
       .eq('auth_id', user.id)
       .maybeSingle();
 

@@ -34,3 +34,106 @@ Both files have their own `videoMap`/`videoMapping` objects that must contain th
 - MenuItemCard.tsx: `'BIRRIA RAMEN BOWL': '/food-menu-images/birria-soup-watch-it-made.mp4'`
 
 See `/MENU_VIDEO_MAPPING.md` for full documentation.
+
+# CRITICAL SERVICE ARCHITECTURE RULES - ADDED 2025-01-15
+
+## WOLFPACK SERVICES - FOLLOW THESE RULES OR BREAK EVERYTHING
+
+### ⚠️ CRITICAL: DO NOT CREATE "FIXED" VERSIONS
+- **NEVER** create `fixed-something.service.ts` files
+- **NEVER** create `something-v2.service.ts` files  
+- **FIX THE ORIGINAL** or create a proper replacement with migration plan
+- Pattern of "fixed" versions created this mess of 11 duplicate services
+
+### ✅ USE ONLY THE CONSOLIDATED SERVICE
+**ALWAYS import from**: `/lib/services/wolfpack/`
+```typescript
+// ✅ CORRECT - Use this pattern
+import { WolfpackService } from '@/lib/services/wolfpack';
+
+// ❌ WRONG - Never use these
+import { wolfpackService } from '@/lib/services/unified-wolfpack.service';
+import WolfpackNotificationService from '@/lib/services/wolfpack-notification.service';
+import { WolfpackBackendService } from '@/lib/services/wolfpack-backend.service';
+```
+
+### 🚨 BEFORE REMOVING ANY SERVICE FILE
+1. **CHECK** `SERVICE_MAPPING.md` for dependencies
+2. **GREP** the entire codebase for imports:
+   ```bash
+   grep -r "from.*service-name" --include="*.ts" --include="*.tsx" .
+   ```
+3. **MIGRATE** components to consolidated service first
+4. **TEST** that everything still works
+5. **ONLY THEN** remove the old service file
+
+### 📊 REQUIRED DOCUMENTATION UPDATES
+When making service changes, **ALWAYS** update:
+- `SERVICE_MAPPING.md` - What services exist and what uses them
+- `TECHNICAL_DEBT.md` - Remove resolved issues, add new ones found
+- `PROJECT_STATUS.md` - Update current state
+- `CLEANUP_PLAN.md` - Mark completed tasks
+
+### 🔍 BEFORE ANY REFACTORING
+1. **READ** `PROJECT_STATUS.md` to understand current state
+2. **CHECK** `TECHNICAL_DEBT.md` for known issues
+3. **FOLLOW** `CLEANUP_PLAN.md` for approved changes
+4. **UPDATE** all documentation when done
+
+### ⛔ ABSOLUTELY FORBIDDEN
+- Creating new "wolfpack-*" service files without architectural justification
+- Removing service files without dependency analysis
+- Making service changes without updating documentation
+- Creating "temporary" or "quick fix" services
+- Copying service logic instead of consolidating
+
+### 🎯 THE GOAL
+- **ONE** Wolfpack service: `/lib/services/wolfpack/`
+- **CLEAR** service boundaries (auth, feed, social, messaging)
+- **NO** confusion about which service to import
+- **DOCUMENTED** architecture decisions
+
+## SUPABASE CLIENT RULES
+
+### ✅ CORRECT IMPORT PATTERNS
+```typescript
+// Server components and API routes
+import { createServerClient } from '@/lib/supabase/server';
+
+// Client components  
+import { supabase } from '@/lib/supabase';
+
+// Types
+import type { Database } from '@/types/database.types';
+```
+
+### ❌ NEVER IMPORT THESE
+```typescript
+// Wrong - will cause build errors
+import { createServerClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
+```
+
+## ERROR HANDLING RULES
+
+### ✅ USE CONSOLIDATED ERROR HANDLING
+```typescript
+import { mapSupabaseError } from '@/lib/services/wolfpack';
+const userError = mapSupabaseError(error);
+```
+
+### ❌ NEVER USE THESE OLD PATTERNS
+```typescript
+// Wrong - these don't exist
+WolfpackErrorHandler.handleSupabaseError()
+WolfpackService.handleError()
+```
+
+## EMERGENCY CONTACT
+If you're confused about service architecture:
+1. **READ** `SERVICE_MAPPING.md` first
+2. **CHECK** `TECHNICAL_DEBT.md` for known issues
+3. **FOLLOW** `CLEANUP_PLAN.md` for guidance
+4. **DOCUMENT** any new issues found
+
+Remember: This project got into this mess because people didn't follow documentation rules. **DON'T MAKE IT WORSE.**

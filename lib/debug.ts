@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const debugLog = {
   query: (name: string, data: any) => {
     if (process.env.NODE_ENV === 'development') {

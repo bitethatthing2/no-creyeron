@@ -1,7 +1,7 @@
 // lib/utils/wolfpack-utils.ts
 // Consolidated utility functions for wolfpack operations
 
-import { createClient, supabase } from "@/lib/supabase/client";
+import { createClient, supabase } from "@/lib/supabase";
 import type { User as AuthUser } from "@supabase/supabase-js";
 
 interface SupabaseError {
@@ -10,7 +10,7 @@ interface SupabaseError {
   details?: string;
 }
 
-interface WolfpackMembership {
+interface WolfpackMember {
   id: string;
   user_id: string;
   location_id: string;
@@ -65,11 +65,9 @@ export async function ensureUserExists(
         email: authUser.email || "",
         auth_id: authUser.id,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, {
+        updated_at: new Date().toISOString() }, {
         onConflict: "auth_id",
-        ignoreDuplicates: true,
-      });
+        ignoreDuplicates: true });
 
     if (createError) {
       // If it's a duplicate key error, that's actually fine
@@ -158,9 +156,7 @@ export const debugWolfPackMembership = async (
         authError: authError as SupabaseError | undefined,
         tableError: tableError as SupabaseError | undefined,
         countError: countError as SupabaseError | undefined,
-        userError: userError as SupabaseError | undefined,
-      },
-    };
+        userError: userError as SupabaseError | undefined } };
   } catch (error) {
     console.error("🚨 Debug function failed:", error);
     return { error };
@@ -215,8 +211,7 @@ export const joinWolfPackFromLocation = async (
       gender: null,
       pronouns: null,
       profile_pic_url: null,
-      custom_avatar_id: null,
-    };
+      custom_avatar_id: null };
 
     console.log("Step 2: Profile data prepared for users table");
 
@@ -252,8 +247,7 @@ export const joinWolfPackFromLocation = async (
         is_wolfpack_member: true,
         wolfpack_status: "active",
         location_id: locationId,
-        location_permissions_granted: true,
-      };
+        location_permissions_granted: true };
 
       const { data: memberEntry, error: memberError } = await supabase
         .from("users")
@@ -276,8 +270,7 @@ export const joinWolfPackFromLocation = async (
           wolfpack_status: "active",
           is_wolfpack_member: true,
           location_id: locationId,
-          location_permissions_granted: true,
-        })
+          location_permissions_granted: true })
         .eq("id", user.id);
 
       if (updateError) {
@@ -329,15 +322,13 @@ export async function checkWolfPackStatus(userId: string) {
       isWolfpackMember: userData?.wolfpack_status === "active" ||
         (memberData && memberData.length > 0),
       memberData: memberData || [],
-      userStatus: userData?.wolfpack_status,
-    };
+      userStatus: userData?.wolfpack_status };
   } catch (error) {
     console.error("Error in checkWolfPackStatus:", error);
     return {
       isWolfpackMember: false,
       memberData: [],
-      userStatus: null,
-    };
+      userStatus: null };
   }
 }
 
@@ -374,8 +365,7 @@ export async function getWolfPackLocations(userId: string) {
       location_id: userData.location_id,
       status: userData.wolfpack_status,
       joined_at: userData.wolfpack_joined_at,
-      locations: locationData,
-    }];
+      locations: locationData }];
   } catch (error) {
     console.error("Error in getWolfPackLocations:", error);
     return [];

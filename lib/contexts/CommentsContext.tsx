@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { ReactNode } from 'react';
 
 interface wolfpack_commentsContextType {
   iswolfpack_commentsOpen: boolean;
@@ -9,7 +10,7 @@ interface wolfpack_commentsContextType {
 
 const wolfpack_commentsContext = React.createContext<wolfpack_commentsContextType | undefined>(undefined);
 
-export function wolfpack_commentsProvider({ children }: { children: ReactNode }) {
+export function WolfpackCommentsProvider({ children }: { children: ReactNode }) {
   const [iswolfpack_commentsOpen, setIswolfpack_commentsOpen] = React.useState(false);
 
   return (
@@ -19,10 +20,10 @@ export function wolfpack_commentsProvider({ children }: { children: ReactNode })
   );
 }
 
-export function usewolfpack_comments() {
+export function useWolfpackComments() {
   const context = React.useContext(wolfpack_commentsContext);
   if (context === undefined) {
-    throw new Error('usewolfpack_comments must be used within a wolfpack_commentsProvider');
+    throw new Error('useWolfpackComments must be used within a WolfpackCommentsProvider');
   }
   return context;
 }

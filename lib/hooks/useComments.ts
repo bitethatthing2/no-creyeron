@@ -31,7 +31,7 @@ interface Usewolfpack_commentsReturn {
   commentCount: number;
 }
 
-export function usewolfpack_comments(
+export function useWolfpackComments(
   postId: string,
 ): Usewolfpack_commentsReturn {
   const [wolfpack_comments, setwolfpack_comments] = React.useState<Comment[]>([]);

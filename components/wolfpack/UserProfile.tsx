@@ -14,14 +14,10 @@ import {
   Share,
   Star,
   Users,
-  Trophy,
-  Zap,
   Camera,
   Settings,
-  Shield,
   Crown,
-  User,
-} from 'lucide-react';
+  User } from 'lucide-react';
 import Image from 'next/image';
 import { useConsistentAuth } from '@/lib/hooks/useConsistentAuth';
 
@@ -42,7 +38,7 @@ interface UserProfileProps {
 
 export default function UserProfile({ isOpen, onClose,conversationid }: UserProfileProps) {
   const { user } = useConsistentAuth();
-  const [stats, setStats] = React.useState<UserStats>({
+  const [stats] = React.useState<UserStats>({
     followers: 1234,
     following: 567,
     wolfpack_posts: 89,

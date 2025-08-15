@@ -9,9 +9,9 @@ import { supabase } from '@/lib/supabase';
  */
 export async function safeRpcCall<T = any>(
   functionName: string,
-  params: any = {},
+  params: unknown = {},
   fallbackValue: T = null as T
-): Promise<{ data: T; error: any }> {
+): Promise<{ data: T; error: unknown }> {
   try {
     const { data, error } = await supabase.rpc(functionName, params);
     
@@ -43,9 +43,9 @@ export async function safeRpcCall<T = any>(
  */
 export async function safeTableQuery<T = any>(
   tableName: string,
-  query: (table: any) => any,
+  query: (table: unknown) => any,
   fallbackValue: T = [] as T
-): Promise<{ data: T; error: any }> {
+): Promise<{ data: T; error: unknown }> {
   try {
     const result = await query(supabase.from(tableName));
     

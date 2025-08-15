@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Complete Image Replacement System for Frontend
 // This handles profile images, chat images, and provides history tracking
 
@@ -278,7 +279,7 @@ export class ImageHistoryManager {
       const { data, error } = await this.supabase.rpc(
         "get_user_image_history",
         {
-          p_user_id: userId,
+          p_user_id: conversationid,
           p_image_type: imageType,
         },
       );

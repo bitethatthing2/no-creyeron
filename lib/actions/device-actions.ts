@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from "@/lib/supabase";
 import type { Database } from "@/types/database.types";
 
 type DeviceRegistrationInsert = Database['public']['Tables']['device_registrations']['Insert'];

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeFirebaseAdmin, getAdminMessaging, isFirebaseAdminInitialized } from '@/lib/firebase/admin';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient } from "@/lib/supabase/server";
 
 // Define the structure for the expected request body
 interface SubscribeRequestBody {

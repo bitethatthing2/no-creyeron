@@ -7,8 +7,7 @@ import {
   getPendingSyncItems,
   queueForSync,
   registerBackgroundSync,
-  removeSyncItem,
-} from "./offlineManager";
+  removeSyncItem } from "./offlineManager";
 
 // Wolfpack-specific action types
 export interface WolfpackOfflineAction {
@@ -54,8 +53,7 @@ export class WolfpackOfflineManager {
       }`,
       timestamp: Date.now(),
       retryCount: 0,
-      maxRetries: 3,
-    };
+      maxRetries: 3 };
 
     try {
       // Use the general offline manager but with Wolfpack-specific data
@@ -100,8 +98,7 @@ export class WolfpackOfflineManager {
         registration.active?.postMessage(
           {
             type: "QUEUE_WOLFPACK_ACTION",
-            data: action,
-          },
+            data: action },
           [messageChannel.port2],
         );
 
@@ -172,13 +169,11 @@ export class WolfpackOfflineManager {
         return {
           success: true,
           queued: true,
-          data: { actionId, message: "Action queued for sync when online" },
-        };
+          data: { actionId, message: "Action queued for sync when online" } };
       } catch (error) {
         return {
           success: false,
-          data: { error: "Failed to queue action for offline sync" },
-        };
+          data: { error: "Failed to queue action for offline sync" } };
       }
     } else {
       // Execute immediately
@@ -186,17 +181,14 @@ export class WolfpackOfflineManager {
         const response = await fetch("/api/wolfpack/actions", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-          },
+            "Content-Type": "application/json" },
           body: JSON.stringify({
             action: action.type.replace("wolfpack_", ""), // Remove prefix for API
             videoId: action.videoId,
             conversationid: action.userId,
             targetUserId: action.targetUserId,
             content: action.content,
-            parentId: action.parentId,
-          }),
-        });
+            parentId: action.parentId }) });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -209,9 +201,7 @@ export class WolfpackOfflineManager {
               queued: true,
               data: {
                 actionId,
-                message: "Network error - action queued for sync",
-              },
-            };
+                message: "Network error - action queued for sync" } };
           }
 
           throw new Error(errorData.error || "Action failed");
@@ -229,25 +219,19 @@ export class WolfpackOfflineManager {
               queued: true,
               data: {
                 actionId,
-                message: "Network error - action queued for sync",
-              },
-            };
+                message: "Network error - action queued for sync" } };
           } catch (queueError) {
             return {
               success: false,
               data: {
-                error: "Failed to execute action and queue for offline sync",
-              },
-            };
+                error: "Failed to execute action and queue for offline sync" } };
           }
         }
 
         return {
           success: false,
           data: {
-            error: error instanceof Error ? error.message : "Unknown error",
-          },
-        };
+            error: error instanceof Error ? error.message : "Unknown error" } };
       }
     }
   }
@@ -260,17 +244,14 @@ export class WolfpackOfflineManager {
       const response = await fetch("/api/wolfpack/actions", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json" },
         body: JSON.stringify({
           action: action.type.replace("wolfpack_", ""),
           videoId: action.videoId,
           conversationid: action.userId,
           targetUserId: action.targetUserId,
           content: action.content,
-          parentId: action.parentId,
-        }),
-      });
+          parentId: action.parentId }) });
 
       if (response.ok) {
         await this.removeSyncedAction(action.id);
@@ -304,8 +285,7 @@ export class WolfpackOfflineManager {
     return {
       pendingCount: pendingActions.length,
       lastSyncAttempt: lastSyncAttempt ? parseInt(lastSyncAttempt, 10) : null,
-      isOnline: navigator.onLine,
-    };
+      isOnline: navigator.onLine };
   }
 
   /**
@@ -341,8 +321,7 @@ export class WolfpackOfflineManager {
       // Dispatch event for UI updates
       window.dispatchEvent(
         new CustomEvent("wolfpack-sync-status-changed", {
-          detail: await this.getSyncStatus(),
-        }),
+          detail: await this.getSyncStatus() }),
       );
     } catch (error) {
       console.error("Error handling online event:", error);
@@ -361,9 +340,7 @@ export class WolfpackOfflineManager {
         detail: {
           pendingCount: 0, // Will be updated by getPendingWolfpackActions
           lastSyncAttempt: null,
-          isOnline: false,
-        },
-      }),
+          isOnline: false } }),
     );
   }
 
@@ -379,8 +356,7 @@ export class WolfpackOfflineManager {
         // Update UI to reflect sync completion
         window.dispatchEvent(
           new CustomEvent("wolfpack-sync-completed", {
-            detail: data,
-          }),
+            detail: data }),
         );
         break;
 
@@ -388,8 +364,7 @@ export class WolfpackOfflineManager {
         console.warn("[Wolfpack Offline] Sync failed:", data);
         window.dispatchEvent(
           new CustomEvent("wolfpack-sync-failed", {
-            detail: data,
-          }),
+            detail: data }),
         );
         break;
     }
@@ -424,8 +399,7 @@ export class WolfpackOfflineManager {
     // Dispatch event for UI updates
     window.dispatchEvent(
       new CustomEvent("wolfpack-sync-status-changed", {
-        detail: await this.getSyncStatus(),
-      }),
+        detail: await this.getSyncStatus() }),
     );
 
     return { success: failed === 0, synced, failed };

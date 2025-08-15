@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function UserMigration({ email }: { email: string }) {

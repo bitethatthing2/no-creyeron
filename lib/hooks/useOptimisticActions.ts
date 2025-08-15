@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import { supabase } from "@/lib/supabase";
+import {} from "@/lib/";
 import { toast } from "@/components/ui/use-toast";
 import WolfpackOfflineManager from "@/lib/utils/wolfpack-offline-manager";
 
@@ -27,16 +27,14 @@ interface UseOptimisticActionsProps {
 
 export function useOptimisticActions({
   conversationid,
-  onUpdatewolfpack_videostats,
-}: UseOptimisticActionsProps = {}) {
+  onUpdatewolfpack_videostats }: UseOptimisticActionsProps = {}) {
   const [optimisticState, setOptimisticState] = React.useState<OptimisticState>({
     likes: {},
     follows: {},
     localLikeCounts: {},
     localCommentCounts: {},
     pendingActions: {},
-    offlineActions: {},
-  });
+    offlineActions: {} });
 
   // Listen for offline sync events
   React.useEffect(() => {
@@ -56,8 +54,7 @@ export function useOptimisticActions({
         return {
           ...prev,
           pendingActions: newPendingActions,
-          offlineActions: newOfflineActions,
-        };
+          offlineActions: newOfflineActions };
       });
     };
 
@@ -68,24 +65,23 @@ export function useOptimisticActions({
           title: "Some actions failed to sync",
           description:
             `${event.detail.failedActions.length} actions couldn't be synced. They'll be retried later.`,
-          variant: "destructive",
-        });
+          variant: "destructive" });
       }
     };
 
     window.addEventListener(
-      "wolfpack-sync-completed" as any,
+      "wolfpack-sync-completed" as unknown,
       handleSyncCompleted,
     );
-    window.addEventListener("wolfpack-sync-failed" as any, handleSyncFailed);
+    window.addEventListener("wolfpack-sync-failed" as unknown, handleSyncFailed);
 
     return () => {
       window.removeEventListener(
-        "wolfpack-sync-completed" as any,
+        "wolfpack-sync-completed" as unknown,
         handleSyncCompleted,
       );
       window.removeEventListener(
-        "wolfpack-sync-failed" as any,
+        "wolfpack-sync-failed" as unknown,
         handleSyncFailed,
       );
     };
@@ -103,8 +99,7 @@ export function useOptimisticActions({
           title: "Account linking required",
           description:
             "Please link your account to like posts. Check the signup form below.",
-          variant: "destructive",
-        });
+          variant: "destructive" });
         return;
       }
 
@@ -116,8 +111,7 @@ export function useOptimisticActions({
       setOptimisticState((prev) => ({
         ...prev,
         likes: { ...prev.likes, [videoId]: newIsLiked },
-        localLikeCounts: { ...prev.localLikeCounts, [videoId]: countChange },
-      }));
+        localLikeCounts: { ...prev.localLikeCounts, [videoId]: countChange } }));
 
       // Update parent component immediately
       onUpdatewolfpack_videostats?.(videoId, { likes_count: newCount });
@@ -130,8 +124,7 @@ export function useOptimisticActions({
         const result = await WolfpackOfflineManager.executeAction({
           type: newIsLiked ? "wolfpack_like" : "wolfpack_unlike",
           videoId,
-          conversationid: userDbId,
-        });
+          conversationid: userDbId });
 
         if (!result.success) {
           throw new Error(result.data?.error || "Failed to update like");
@@ -148,10 +141,7 @@ export function useOptimisticActions({
                 ...prev.offlineActions,
                 [actionId]: {
                   type: newIsLiked ? "like" : "unlike",
-                  timestamp: Date.now(),
-                },
-              },
-            }));
+                  timestamp: Date.now() } } }));
           }
 
           toast({
@@ -159,8 +149,7 @@ export function useOptimisticActions({
             description: `Your ${
               newIsLiked ? "like" : "unlike"
             } will sync when you're back online.`,
-            variant: "default",
-          });
+            variant: "default" });
         }
 
         console.log(
@@ -175,19 +164,16 @@ export function useOptimisticActions({
         setOptimisticState((prev) => ({
           ...prev,
           likes: { ...prev.likes, [videoId]: isCurrentlyLiked },
-          localLikeCounts: { ...prev.localLikeCounts, [videoId]: 0 },
-        }));
+          localLikeCounts: { ...prev.localLikeCounts, [videoId]: 0 } }));
 
         // Revert parent component
         onUpdatewolfpack_videostats?.(videoId, {
-          likes_count: currentLikeCount,
-        });
+          likes_count: currentLikeCount });
 
         toast({
           title: "Action failed",
           description: "Failed to update like. Please try again.",
-          variant: "destructive",
-        });
+          variant: "destructive" });
       }
     },
     [userId, onUpdatewolfpack_videostats],
@@ -201,8 +187,7 @@ export function useOptimisticActions({
           title: "Account linking required",
           description:
             "Please link your account to follow users. Check the signup form below.",
-          variant: "destructive",
-        });
+          variant: "destructive" });
         return;
       }
 
@@ -211,8 +196,7 @@ export function useOptimisticActions({
       // Optimistic update
       setOptimisticState((prev) => ({
         ...prev,
-        follows: { ...prev.follows, [targetUserId]: newIsFollowed },
-      }));
+        follows: { ...prev.follows, [targetUserId]: newIsFollowed } }));
 
       try {
         //conversationid should already be the database user ID (public user ID)
@@ -222,8 +206,7 @@ export function useOptimisticActions({
         const result = await WolfpackOfflineManager.executeAction({
           type: newIsFollowed ? "wolfpack_follow" : "wolfpack_unfollow",
           conversationid: userDbId,
-          targetUserId,
-        });
+          targetUserId });
 
         if (!result.success) {
           throw new Error(
@@ -242,10 +225,7 @@ export function useOptimisticActions({
                 ...prev.offlineActions,
                 [actionId]: {
                   type: newIsFollowed ? "follow" : "unfollow",
-                  timestamp: Date.now(),
-                },
-              },
-            }));
+                  timestamp: Date.now() } } }));
           }
 
           toast({
@@ -253,15 +233,13 @@ export function useOptimisticActions({
             description: `Your ${
               newIsFollowed ? "follow" : "unfollow"
             } will sync when you're back online.`,
-            variant: "default",
-          });
+            variant: "default" });
         } else {
           toast({
             title: newIsFollowed ? "Following" : "Unfollowed",
             description: newIsFollowed
               ? "You are now following this user"
-              : "You unfollowed this user",
-          });
+              : "You unfollowed this user" });
         }
       } catch (error) {
         console.error("Error handling follow:", error);
@@ -269,14 +247,12 @@ export function useOptimisticActions({
         // Revert optimistic update
         setOptimisticState((prev) => ({
           ...prev,
-          follows: { ...prev.follows, [targetUserId]: isCurrentlyFollowed },
-        }));
+          follows: { ...prev.follows, [targetUserId]: isCurrentlyFollowed } }));
 
         toast({
           title: "Action failed",
           description: "Failed to update follow status. Please try again.",
-          variant: "destructive",
-        });
+          variant: "destructive" });
       }
     },
     [userId],
@@ -294,8 +270,7 @@ export function useOptimisticActions({
         title: "Account linking required",
         description:
           "Please link your account to comment. Check the signup form below.",
-        variant: "destructive",
-      });
+        variant: "destructive" });
       return null;
     }
 
@@ -305,14 +280,11 @@ export function useOptimisticActions({
       ...prev,
       localCommentCounts: {
         ...prev.localCommentCounts,
-        [videoId]: (prev.localCommentCounts[videoId] || 0) + 1,
-      },
-    }));
+        [videoId]: (prev.localCommentCounts[videoId] || 0) + 1 } }));
 
     // Update parent component immediately
     onUpdatewolfpack_videostats?.(videoId, {
-      wolfpack_comments_count: newCount,
-    });
+      wolfpack_comments_count: newCount });
 
     try {
       //conversationid should already be the database user ID (public user ID)
@@ -324,8 +296,7 @@ export function useOptimisticActions({
         videoId,
         conversationid: userDbId,
         content: content.trim(),
-        parentId: parentId || undefined,
-      });
+        parentId: parentId || undefined });
 
       if (!result.success) {
         throw new Error(result.data?.error || "Failed to add comment");
@@ -342,17 +313,13 @@ export function useOptimisticActions({
               ...prev.offlineActions,
               [actionId]: {
                 type: "comment",
-                timestamp: Date.now(),
-              },
-            },
-          }));
+                timestamp: Date.now() } } }));
         }
 
         toast({
           title: "Comment queued",
           description: "Your comment will be posted when you're back online.",
-          variant: "default",
-        });
+          variant: "default" });
 
         // Return a temporary comment object for offline display
         return {
@@ -363,10 +330,8 @@ export function useOptimisticActions({
             first_name: "You",
             last_name: "",
             display_name: "You (offline)",
-            avatar_url: null,
-          },
-          pending: true,
-        };
+            avatar_url: null },
+          pending: true };
       }
 
       return result.data?.data || result.data;
@@ -378,20 +343,16 @@ export function useOptimisticActions({
         ...prev,
         localCommentCounts: {
           ...prev.localCommentCounts,
-          [videoId]: (prev.localCommentCounts[videoId] || 1) - 1,
-        },
-      }));
+          [videoId]: (prev.localCommentCounts[videoId] || 1) - 1 } }));
 
       // Revert parent component
       onUpdatewolfpack_videostats?.(videoId, {
-        wolfpack_comments_count: currentCommentCount,
-      });
+        wolfpack_comments_count: currentCommentCount });
 
       toast({
         title: "Comment failed",
         description: "Failed to post comment. Please try again.",
-        variant: "destructive",
-      });
+        variant: "destructive" });
 
       return null;
     }
@@ -414,8 +375,7 @@ export function useOptimisticActions({
         wolfpack_comments_count: Math.max(
           0,
           originalCommentCount + commentAdjustment,
-        ),
-      };
+        ) };
     },
     [optimisticState],
   );
@@ -433,8 +393,7 @@ export function useOptimisticActions({
       localLikeCounts: {},
       localCommentCounts: {},
       pendingActions: {},
-      offlineActions: {},
-    });
+      offlineActions: {} });
   }, []);
 
   // Get offline action status
@@ -444,15 +403,13 @@ export function useOptimisticActions({
       [id, action],
     ) => ({
       id,
-      ...action,
-    }));
+      ...action }));
 
     return {
       hasPendingActions: pendingCount > 0,
       pendingCount,
       actions,
-      isOnline: navigator.onLine,
-    };
+      isOnline: navigator.onLine };
   }, [optimisticState.pendingActions, optimisticState.offlineActions]);
 
   // Force sync pending actions
@@ -464,15 +421,13 @@ export function useOptimisticActions({
         toast({
           title: "Sync completed",
           description: `Synced ${result.synced} actions successfully.`,
-          variant: "default",
-        });
+          variant: "default" });
       } else if (result.failed > 0) {
         toast({
           title: "Sync partially failed",
           description:
             `Synced ${result.synced} actions, ${result.failed} failed.`,
-          variant: "destructive",
-        });
+          variant: "destructive" });
       }
 
       return result;
@@ -482,8 +437,7 @@ export function useOptimisticActions({
         title: "Sync failed",
         description:
           "Failed to sync pending actions. Will retry automatically.",
-        variant: "destructive",
-      });
+        variant: "destructive" });
 
       return { success: false, synced: 0, failed: 0 };
     }
@@ -497,6 +451,5 @@ export function useOptimisticActions({
     getOptimisticFollowState,
     clearOptimisticState,
     getOfflineStatus,
-    forceSyncActions,
-  };
+    forceSyncActions };
 }

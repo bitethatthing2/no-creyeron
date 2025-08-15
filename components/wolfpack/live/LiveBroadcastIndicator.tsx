@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { 
   MessageSquare, 
   AlertTriangle, 
-  Info, 
   Megaphone, 
   Users, 
   Eye,

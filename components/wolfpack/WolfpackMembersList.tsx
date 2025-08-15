@@ -3,10 +3,10 @@
 import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext'
 import type { Database } from '@/types/database.types'
-import { errorService, ErrorSeverity, ErrorCategory } from '@/lib/services/error-service'
+import { errorService } from '@/lib/services/error-service'
 import { dataService } from '@/lib/services/data-service'
 import { authService, Permission } from '@/lib/services/auth-service'
-import { AvatarWithFallback } from '@/components/shared/ImageWithFallback'
+import {} from '@/components/shared/ImageWithFallback'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 
@@ -19,7 +19,7 @@ const LOCATION_IDS = {
 export type LocationKey = keyof typeof LOCATION_IDS
 
 // Use correct database types
-type UserRow = Database['public']['Tables']['users']['Row']
+type = Database['public']['Tables']['users']['Row']
 type DjEventRow = Database['public']['Tables']['dj_events']['Row']
 type LocationRow = Database['public']['Tables']['locations']['Row']
 
@@ -106,7 +106,7 @@ function useDebouncedCallback<T extends (...args: any[]) => any>(
 export function useWolfPack(locationKey: LocationKey | null): UseWolfPackReturn {
   const { user } = useAuth()
   const [packMembers, setPackMembers] = React.useState<WolfPackMember[]>([])
-  const [activeEvents, setActiveEvents] = React.useState<WolfPackEvent[]>([])
+  const [activeEvents] = React.useState<WolfPackEvent[]>([])
   const [membership, setMembership] = React.useState<WolfpackMembership | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)

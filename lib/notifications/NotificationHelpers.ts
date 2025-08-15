@@ -1,4 +1,4 @@
-import { createClient, supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 // utils/notifications/NotificationHelpers.ts
 // Use actual database types based on your schema
 type NotificationType =
@@ -51,8 +51,7 @@ export class NotificationHelpers {
     message,
     type = "info",
     link,
-    metadata = {},
-  }: CreateNotificationParams): Promise<string | null> {
+    metadata = {} }: CreateNotificationParams): Promise<string | null> {
     try {
       const supabase = this.getSupabaseClient();
 
@@ -61,8 +60,7 @@ export class NotificationHelpers {
         p_message: message,
         p_type: type,
         p_link: link || undefined,
-        p_metadata: metadata as any,
-      });
+        p_metadata: metadata as any });
 
       if (error) {
         console.error("Error creating notification:", error);
@@ -85,8 +83,7 @@ export class NotificationHelpers {
     message,
     type = "info",
     link,
-    metadata = {},
-  }: BulkNotificationParams): Promise<string[]> {
+    metadata = {} }: BulkNotificationParams): Promise<string[]> {
     try {
       const supabase = this.getSupabaseClient();
       const notificationIds: string[] = [];
@@ -98,8 +95,7 @@ export class NotificationHelpers {
           p_message: message,
           p_type: type,
           p_link: link || undefined,
-          p_metadata: metadata as any,
-        });
+          p_metadata: metadata as any });
 
         if (error) {
           console.error(
@@ -143,9 +139,7 @@ export class NotificationHelpers {
         order_id: orderDetails.orderId,
         location: orderDetails.location,
         items: orderDetails.items,
-        timestamp: new Date().toISOString(),
-      },
-    });
+        timestamp: new Date().toISOString() } });
   }
 
   /**
@@ -170,9 +164,7 @@ export class NotificationHelpers {
         customer_name: orderDetails.customerName,
         items: orderDetails.items,
         total: orderDetails.total,
-        timestamp: new Date().toISOString(),
-      },
-    });
+        timestamp: new Date().toISOString() } });
   }
 
   /**
@@ -192,9 +184,7 @@ export class NotificationHelpers {
       metadata: {
         activity_type: activity.type,
         from_user: activity.fromUser,
-        timestamp: new Date().toISOString(),
-      },
-    });
+        timestamp: new Date().toISOString() } });
   }
 
   /**
@@ -221,9 +211,7 @@ export class NotificationHelpers {
       metadata: {
         announcement_type: "system",
         title: announcement.title,
-        timestamp: new Date().toISOString(),
-      },
-    });
+        timestamp: new Date().toISOString() } });
   }
 
   /**
@@ -278,8 +266,7 @@ export class NotificationHelpers {
       const supabase = this.getSupabaseClient();
 
       const { data, error } = await supabase.rpc("mark_notification_read", {
-        p_notification_id: notificationId,
-      });
+        p_notification_id: notificationId });
 
       if (error) {
         console.error("Error marking notification as read:", error);
@@ -306,8 +293,7 @@ export class NotificationHelpers {
       const { data, error } = await supabase.rpc("fetch_notifications", {
         p_user_id: userId || undefined,
         p_limit: limit,
-        p_offset: 0,
-      });
+        p_offset: 0 });
 
       if (error) {
         console.error("Error fetching notifications:", error);
@@ -329,8 +315,7 @@ export const notificationExamples = {
     await NotificationHelpers.notifyOrderReady(userId, {
       orderId,
       location: "Main Bar",
-      items: ["Beer", "Wings"],
-    });
+      items: ["Beer", "Wings"] });
   },
 
   // When a new order comes in
@@ -339,8 +324,7 @@ export const notificationExamples = {
     await NotificationHelpers.notifyNewOrder(bartenderIds, {
       orderId,
       customerName,
-      items,
-    });
+      items });
   },
 
   // When someone sends a wink
@@ -349,8 +333,7 @@ export const notificationExamples = {
       type: "wink",
       fromUser: senderName,
       message: `${senderName} sent you a wink! 😉`,
-      link: "/wolfpack/messages",
-    });
+      link: "/wolfpack/messages" });
   },
 
   // System maintenance announcement
@@ -359,7 +342,5 @@ export const notificationExamples = {
     await NotificationHelpers.createSystemAnnouncement(allUserIds, {
       title: "Scheduled Maintenance",
       message: "The app will be down for maintenance from 2-4 AM EST.",
-      priority: "warning",
-    });
-  },
-};
+      priority: "warning" });
+  } };

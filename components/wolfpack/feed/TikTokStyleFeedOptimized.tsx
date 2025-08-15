@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Share2, Music, Play, Volume2, VolumeX, Search, Plus, UserPlus, Users, Home, ShoppingBag, Mail, User, MoreHorizontal, Trash2, Loader2, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Music, Play, Volume2, VolumeX, User, Trash2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';
-import FindFriends from '@/components/wolfpack/FindFriends';
+import VideoCommentsOptimized from '@/components/wolfpack/VideoCommentsOptimized';
+import ShareModal from '@/components/wolfpack/ShareModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 // Import media optimization utilities
 import {
@@ -80,7 +80,7 @@ function OptimizedVideoItem({
 }) {
   const [muted, setMuted] = React.useState(true);
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const [showComments, setShowComments] = React.useState(false);
+  // const [showComments, setShowComments] = React.useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -359,7 +359,7 @@ export default function OptimizedTikTokStyleFeed({
 }: OptimizedTikTokStyleFeedProps) {
   const [currentVideoIndex, setCurrentVideoIndex] = React.useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [isUserScrolling, setIsUserScrolling] = React.useState(false);
+  // const [isUserScrolling, setIsUserScrolling] = React.useState(false);
 
   // Handle scroll with intersection observer for better performance
   React.useEffect(() => {

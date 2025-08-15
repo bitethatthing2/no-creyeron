@@ -5,7 +5,7 @@
  */
 
 import * as React from 'react';
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface OptimizedVideoItem {
@@ -143,7 +143,7 @@ export function useOptimizedFeed({
   pageSize = 20,
   cacheTimeout = 5 * 60 * 1000, // 5 minutes
   prefetchPages = 2,
-  enableVirtualization = true,
+  // enableVirtualization = true,
 }: UseOptimizedFeedProps = {}): UseOptimizedFeedReturn {
   const [wolfpack_videos, setwolfpack_videos] = React.useState<OptimizedVideoItem[]>(
     [],

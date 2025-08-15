@@ -40,7 +40,7 @@ export interface ErrorContext {
   endpoint?: string;
   // Validation specific fields
   field?: string;
-  value?: any;
+  value?: unknown;
   rule?: string;
   reason?: string;
   // Service specific fields
@@ -177,7 +177,7 @@ class ErrorService {
    */
   handleValidationError(
     field: string,
-    value: any,
+    value: unknown,
     rule: string,
     context: ErrorContext = {},
   ): AppError {

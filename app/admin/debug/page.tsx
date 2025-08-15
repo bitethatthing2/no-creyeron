@@ -4,7 +4,7 @@ import * as React from 'react';
 import AuthDebugDashboard from '@/components/admin/AuthDebugDashboard';
 import SuperAdminDashboardSwitcher from '@/components/admin/SuperAdminDashboardSwitcher';
 import { createBrowserClient } from '@supabase/ssr';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,7 +13,6 @@ import { CheckCircle, AlertTriangle } from 'lucide-react';
 export default function AdminDebugPage() {
   const [migrationStatus, setMigrationStatus] = React.useState<string | null>(null);
   const [isApplying, setIsApplying] = React.useState(false);
-  const supabase = createClient();
 
   const applySupremeAdminAccess = async () => {
     setIsApplying(true);
