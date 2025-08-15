@@ -10,13 +10,10 @@ interface SupabaseError {
   details?: string;
 }
 
-interface WolfpackMember {
-  id: string;
-  user_id: string;
-  location_id: string;
-  status: string;
-  tier: string;
-  created_at: string;
+// Extended user metadata type
+interface ExtendedUserMetadata {
+  first_name?: string;
+  [key: string]: unknown;
 }
 
 interface DebugResult {
@@ -30,7 +27,7 @@ interface DebugResult {
     countError?: SupabaseError;
     userError?: SupabaseError;
   };
-  error?: any;
+  error?: Error | unknown;
 }
 
 // Special VIP users who should always be wolfpack members
@@ -65,9 +62,11 @@ export async function ensureUserExists(
         email: authUser.email || "",
         auth_id: authUser.id,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString() }, {
+        updated_at: new Date().toISOString(),
+      }, {
         onConflict: "auth_id",
-        ignoreDuplicates: true });
+        ignoreDuplicates: true,
+      });
 
     if (createError) {
       // If it's a duplicate key error, that's actually fine
@@ -156,7 +155,9 @@ export const debugWolfPackMembership = async (
         authError: authError as SupabaseError | undefined,
         tableError: tableError as SupabaseError | undefined,
         countError: countError as SupabaseError | undefined,
-        userError: userError as SupabaseError | undefined } };
+        userError: userError as SupabaseError | undefined,
+      },
+    };
   } catch (error) {
     console.error("🚨 Debug function failed:", error);
     return { error };
@@ -187,7 +188,7 @@ export const joinWolfPackFromLocation = async (
 
     const { data: existingUser, error: checkError } = await supabase
       .from("users")
-      .select("id, display_name, wolf_emoji, vibe_status")
+      .select("id, display_name, wolf_emoji, vibe_status, first_name")
       .eq("id", user.id)
       .single();
 
@@ -196,10 +197,16 @@ export const joinWolfPackFromLocation = async (
       throw new Error(`Failed to check user: ${checkError.message}`);
     }
 
+    // Get first name from either the database or user metadata
+    const userMetadata = user.user_metadata as ExtendedUserMetadata;
+    const firstName = existingUser.first_name ||
+      userMetadata?.first_name ||
+      user.email?.split("@")[0] ||
+      "Wolf";
+
     // Step 2: Prepare profile data for users table
     const profileData = {
-      display_name: existingUser.display_name || user.first_name ||
-        user.email?.split("@")[0] || "Wolf",
+      display_name: existingUser.display_name || firstName,
       wolf_emoji: existingUser.wolf_emoji || "🐺",
       vibe_status: existingUser.vibe_status || "Ready to party! 🎉",
       is_profile_visible: true,
@@ -211,7 +218,8 @@ export const joinWolfPackFromLocation = async (
       gender: null,
       pronouns: null,
       profile_pic_url: null,
-      custom_avatar_id: null };
+      custom_avatar_id: null,
+    };
 
     console.log("Step 2: Profile data prepared for users table");
 
@@ -247,7 +255,8 @@ export const joinWolfPackFromLocation = async (
         is_wolfpack_member: true,
         wolfpack_status: "active",
         location_id: locationId,
-        location_permissions_granted: true };
+        location_permissions_granted: true,
+      };
 
       const { data: memberEntry, error: memberError } = await supabase
         .from("users")
@@ -270,7 +279,8 @@ export const joinWolfPackFromLocation = async (
           wolfpack_status: "active",
           is_wolfpack_member: true,
           location_id: locationId,
-          location_permissions_granted: true })
+          location_permissions_granted: true,
+        })
         .eq("id", user.id);
 
       if (updateError) {
@@ -322,13 +332,15 @@ export async function checkWolfPackStatus(userId: string) {
       isWolfpackMember: userData?.wolfpack_status === "active" ||
         (memberData && memberData.length > 0),
       memberData: memberData || [],
-      userStatus: userData?.wolfpack_status };
+      userStatus: userData?.wolfpack_status,
+    };
   } catch (error) {
     console.error("Error in checkWolfPackStatus:", error);
     return {
       isWolfpackMember: false,
       memberData: [],
-      userStatus: null };
+      userStatus: null,
+    };
   }
 }
 
@@ -365,7 +377,8 @@ export async function getWolfPackLocations(userId: string) {
       location_id: userData.location_id,
       status: userData.wolfpack_status,
       joined_at: userData.wolfpack_joined_at,
-      locations: locationData }];
+      locations: locationData,
+    }];
   } catch (error) {
     console.error("Error in getWolfPackLocations:", error);
     return [];

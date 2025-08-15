@@ -71,7 +71,7 @@ export async function getDatabaseUser(
       .maybeSingle();
 
     if (!authError && userByAuth) {
-      return userByAuth;
+      return userByAuth as DatabaseUser;
     }
 
     // Fallback: try to find by id directly
@@ -82,7 +82,7 @@ export async function getDatabaseUser(
       .maybeSingle();
 
     if (!idError && userById) {
-      return userById;
+      return userById as DatabaseUser;
     }
 
     return null;
@@ -108,7 +108,7 @@ export async function ensureUserExists(
       return existingId;
     }
 
-    // Create new user record
+    // Create new user record with required fields
     const { data: newUser, error } = await supabase
       .from("users")
       .insert({
@@ -116,11 +116,36 @@ export async function ensureUserExists(
         email: authUser.email || `${authUser.id}@temp.user`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        // Set default values for other fields
+        role: "user",
+        wolfpack_status: "pending",
+        is_approved: false,
+        status: "active",
       })
       .select("id")
       .single();
 
     if (error) {
+      // Check if it's a duplicate email error
+      if (error.code === "23505" && error.message?.includes("email")) {
+        // Try to find the existing user by email
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("id")
+          .eq("email", authUser.email!)
+          .single();
+
+        if (existingUser) {
+          // Update the auth_id for this user
+          await supabase
+            .from("users")
+            .update({ auth_id: authUser.id })
+            .eq("id", existingUser.id);
+
+          return existingUser.id;
+        }
+      }
+
       console.error("Error creating user:", error);
       return null;
     }
@@ -134,10 +159,11 @@ export async function ensureUserExists(
 
 /**
  * Middleware function to get database user ID in API routes
+ * Returns the database user ID, not the auth user ID
  */
 export async function getAuthenticatedDatabaseUserId(): Promise<{
   success: boolean;
-  conversationid?: string;
+  userId?: string;
   error?: string;
 }> {
   const supabase = await createServerClient();
@@ -152,12 +178,46 @@ export async function getAuthenticatedDatabaseUserId(): Promise<{
     const databaseUserId = await getDatabaseUserId(user.id);
 
     if (!databaseUserId) {
-      return { success: false, error: "User not found in database" };
+      // Try to create the user if they don't exist
+      const newUserId = await ensureUserExists({
+        id: user.id,
+        email: user.email,
+      });
+
+      if (!newUserId) {
+        return { success: false, error: "User not found in database" };
+      }
+
+      return { success: true, userId: newUserId };
     }
 
-    return { success: true, conversationid: databaseUserId };
+    return { success: true, userId: databaseUserId };
   } catch (error) {
     console.error("Error in getAuthenticatedDatabaseUserId:", error);
     return { success: false, error: "Authentication error" };
+  }
+}
+
+/**
+ * Update user's auth_id if missing
+ * Useful for migrating existing users
+ */
+export async function linkAuthToUser(
+  email: string,
+  authId: string,
+): Promise<boolean> {
+  const supabase = await createServerClient();
+
+  try {
+    const { error } = await supabase
+      .from("users")
+      .update({ auth_id: authId })
+      .eq("email", email)
+      .is("auth_id", null); // Only update if auth_id is not set
+
+    return !error;
+  } catch (error) {
+    console.error("Error linking auth to user:", error);
+    return false;
   }
 }
