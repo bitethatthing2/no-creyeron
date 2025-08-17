@@ -262,7 +262,7 @@ export class WolfpackFeedService {
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) throw error;
 

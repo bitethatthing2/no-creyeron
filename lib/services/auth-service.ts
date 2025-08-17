@@ -560,7 +560,8 @@ class AuthService {
               role: UserRole.MEMBER,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            }),
+            })
+            .select(),
         "createMissingUserProfile",
       );
     } catch (error) {
@@ -582,7 +583,8 @@ class AuthService {
               last_login: new Date().toISOString(),
               // login_count field not available in schema
             })
-            .eq("id", userId),
+            .eq("id", userId)
+            .select(),
         "updateLoginMetadata",
       );
     } catch (error) {

@@ -147,17 +147,17 @@ export class UserProfileService {
       }
 
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating user profile:", error);
 
       // Handle specific error types
-      if (error.code === "23505") {
+      if (error && typeof error === 'object' && 'code' in error && error.code === "23505") {
         throw new Error("That display name is already taken");
-      } else if (error.code === "42501") {
+      } else if (error && typeof error === 'object' && 'code' in error && error.code === "42501") {
         throw new Error("You do not have permission to update this profile");
-      } else if (error.code === "23503") {
+      } else if (error && typeof error === 'object' && 'code' in error && error.code === "23503") {
         throw new Error("Invalid reference - please check your input");
-      } else if (error.code === "22P02") {
+      } else if (error && typeof error === 'object' && 'code' in error && error.code === "22P02") {
         throw new Error("Invalid input format - please check your data");
       }
 

@@ -68,7 +68,7 @@ export interface WolfpackComment {
   user_liked?: boolean; // Whether current user has liked this comment
 }
 
-export interface ServiceResponse<T = any> {
+export interface ServiceResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;

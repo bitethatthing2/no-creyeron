@@ -240,7 +240,7 @@ export class WolfpackFeedServiceEnhanced {
   /**
    * Get user's feed preferences (for authenticated users)
    */
-  static async getUserFeedPreferences(userId: string): Promise<{
+  static async getUserFeedPreferences(/* userId: string */): Promise<{
     showFollowingOnly: boolean;
     contentFilters: string[];
   }> {

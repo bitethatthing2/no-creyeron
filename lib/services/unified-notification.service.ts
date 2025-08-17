@@ -9,7 +9,7 @@ interface WolfpackNotification {
   message: string;
   link: string | null;
   status: "unread" | "read" | "dismissed";
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   notification_type?: string;
   related_video_id?: string;
   related_user_id?: string;
@@ -22,7 +22,7 @@ interface NotificationPayload {
   body: string;
   type: string;
   link?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   conversationid?: string;
   sendPush?: boolean;
   showToast?: boolean;
@@ -30,7 +30,7 @@ interface NotificationPayload {
 
 class UnifiedNotificationService {
   private fcmToken: string | null = null;
-  private messaging: any = null;
+  private messaging: unknown = null;
   private isInitialized = false;
 
   /**
@@ -42,7 +42,7 @@ class UnifiedNotificationService {
     try {
       // Import Firebase dynamically (PWA-friendly)
       const { initializeApp, getApps } = await import("firebase/app");
-      const { getMessaging, getToken, onMessage } = await import(
+      const { getMessaging, onMessage } = await import(
         "firebase/messaging"
       );
 
@@ -262,7 +262,7 @@ class UnifiedNotificationService {
       };
 
       // Use the upsert function to store the token (handles duplicates automatically)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .rpc("upsert_fcm_token", {
           p_user_id: profile.id,
           p_token: token,
@@ -289,7 +289,7 @@ class UnifiedNotificationService {
   /**
    * Handle foreground messages (show toast notifications)
    */
-  private handleForegroundMessage(payload: any) {
+  private handleForegroundMessage(payload: Record<string, unknown>) {
     const title = payload.notification?.title || "Wolfpack Notification";
     const body = payload.notification?.body || "You have a new notification";
 

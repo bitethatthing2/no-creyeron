@@ -1,10 +1,57 @@
 /**
  * WOLFPACK REAL-TIME SERVICE
  * Real-time subscriptions for live social features
+ *
+ * ANALYSIS:
+ * - Tables found in your database: wolfpack_videos, wolfpack_post_likes, wolfpack_comments
+ * - Tables NOT found: dj_broadcasts, wolfpack_direct_messages
+ * - You're using newer unified tables for messaging (wolfpack_messages, wolfpack_conversations)
  */
 
 import { supabase } from "@/lib/supabase";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
+
+// Type aliases for better readability
+type Tables = Database["public"]["Tables"];
+type VideoRow = Tables["wolfpack_videos"]["Row"];
+type CommentRow = Tables["wolfpack_comments"]["Row"];
+type PostLikeRow = Tables["wolfpack_post_likes"]["Row"];
+type UserRow = Tables["users"]["Row"];
+
+// Define MessageRow based on actual database structure
+interface MessageRow {
+  id: string;
+  conversation_id: string | null;
+  sender_id: string;
+  content: string | null;
+  message_type: string | null;
+  created_at: string | null;
+  edited_at: string | null;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  is_deleted: boolean | null;
+  parent_message_id: string | null;
+  metadata: Record<string, unknown> | null;
+  reactions_count: Record<string, unknown> | null;
+  reply_count: number | null;
+  media_url: string | null;
+  media_type: string | null;
+  media_thumbnail_url: string | null;
+  media_size: number | null;
+  media_duration: number | null;
+  media_metadata: Record<string, unknown> | null;
+  attachments: Record<string, unknown> | null;
+  is_read: boolean | null;
+  read_at: string | null;
+  delivered_at: string | null;
+  status: string | null;
+  is_edited: boolean | null;
+  reply_to_id: string | null;
+}
 
 export interface RealtimeSubscription {
   channel: RealtimeChannel;
@@ -24,11 +71,25 @@ export interface CommentUpdate {
   user_id: string;
   content: string;
   created_at: string;
-  user?: {
-    display_name: string;
-    username: string;
-    avatar_url: string;
-  };
+  user?: Pick<UserRow, "display_name" | "username" | "avatar_url">;
+}
+
+export interface VideoUpdate extends VideoRow {
+  users?: Pick<
+    UserRow,
+    | "id"
+    | "display_name"
+    | "username"
+    | "first_name"
+    | "last_name"
+    | "avatar_url"
+    | "location"
+    | "wolfpack_status"
+  >;
+}
+
+export interface DirectMessageUpdate extends MessageRow {
+  sender?: Pick<UserRow, "display_name" | "username" | "avatar_url">;
 }
 
 class WolfpackRealtimeService {
@@ -56,7 +117,7 @@ class WolfpackRealtimeService {
 
     const channel = supabase
       .channel(channelName)
-      .on(
+      .on<PostLikeRow>(
         "postgres_changes",
         {
           event: "*",
@@ -64,7 +125,7 @@ class WolfpackRealtimeService {
           table: "wolfpack_post_likes",
           filter: `video_id=eq.${videoId}`,
         },
-        async (payload) => {
+        async (payload: RealtimePostgresChangesPayload<PostLikeRow>) => {
           // Get updated like count
           const { data: video } = await supabase
             .from("wolfpack_videos")
@@ -72,12 +133,18 @@ class WolfpackRealtimeService {
             .eq("id", videoId)
             .single();
 
-          onLikeUpdate({
-            video_id: videoId,
-            user_id: payload.new?.user_id || payload.old?.user_id,
-            liked: payload.eventType === "INSERT",
-            new_like_count: video?.like_count || 0,
-          });
+          // Type guard to ensure we have the data we need
+          const likeData = payload.new as PostLikeRow | undefined ||
+            payload.old as PostLikeRow | undefined;
+
+          if (likeData && "user_id" in likeData && likeData.user_id) {
+            onLikeUpdate({
+              video_id: videoId,
+              user_id: likeData.user_id,
+              liked: payload.eventType === "INSERT",
+              new_like_count: video?.like_count || 0,
+            });
+          }
         },
       )
       .subscribe();
@@ -107,7 +174,7 @@ class WolfpackRealtimeService {
 
     const channel = supabase
       .channel(channelName)
-      .on(
+      .on<CommentRow>(
         "postgres_changes",
         {
           event: "*",
@@ -115,14 +182,21 @@ class WolfpackRealtimeService {
           table: "wolfpack_comments",
           filter: `video_id=eq.${videoId}`,
         },
-        async (payload) => {
+        async (payload: RealtimePostgresChangesPayload<CommentRow>) => {
           const eventType = payload.eventType as "INSERT" | "UPDATE" | "DELETE";
-          const commentData = payload.new || payload.old;
 
-          if (!commentData) return;
+          // Type guard to ensure we have proper CommentRow data
+          const commentData = (payload.new || payload.old) as
+            | CommentRow
+            | undefined;
+
+          if (!commentData || !("id" in commentData)) return;
 
           // For new comments, fetch user info
-          let userInfo = null;
+          let userInfo:
+            | Pick<UserRow, "display_name" | "username" | "avatar_url">
+            | null = null;
+
           if (eventType === "INSERT" && commentData.user_id) {
             const { data: user } = await supabase
               .from("users")
@@ -138,8 +212,8 @@ class WolfpackRealtimeService {
             video_id: commentData.video_id,
             user_id: commentData.user_id,
             content: commentData.content,
-            created_at: commentData.created_at,
-            user: userInfo,
+            created_at: commentData.created_at || new Date().toISOString(),
+            user: userInfo || undefined,
           }, eventType);
         },
       )
@@ -157,8 +231,8 @@ class WolfpackRealtimeService {
    * Subscribe to new videos in the feed
    */
   subscribeToFeedUpdates(
-    onNewVideo: (video: any) => void,
-    onVideoUpdate: (video: any) => void,
+    onNewVideo: (video: VideoUpdate) => void,
+    onVideoUpdate: (video: VideoRow) => void,
     onVideoDelete: (videoId: string) => void,
   ): RealtimeSubscription {
     const channelName = "feed-updates";
@@ -168,7 +242,7 @@ class WolfpackRealtimeService {
 
     const channel = supabase
       .channel(channelName)
-      .on(
+      .on<VideoRow>(
         "postgres_changes",
         {
           event: "*",
@@ -176,41 +250,47 @@ class WolfpackRealtimeService {
           table: "wolfpack_videos",
           filter: "is_active=eq.true",
         },
-        async (payload) => {
+        async (payload: RealtimePostgresChangesPayload<VideoRow>) => {
           const eventType = payload.eventType;
 
           switch (eventType) {
             case "INSERT":
-              // Fetch full video data with user info
-              const { data: newVideo } = await supabase
-                .from("wolfpack_videos")
-                .select(`
-                  *,
-                  users!user_id (
-                    id,
-                    display_name,
-                    username,
-                    first_name,
-                    last_name,
-                    avatar_url,
-                    location,
-                    wolfpack_status
-                  )
-                `)
-                .eq("id", payload.new.id)
-                .single();
+              if (payload.new && "id" in payload.new) {
+                // Fetch full video data with user info
+                const { data: newVideo } = await supabase
+                  .from("wolfpack_videos")
+                  .select(`
+                    *,
+                    users!user_id (
+                      id,
+                      display_name,
+                      username,
+                      first_name,
+                      last_name,
+                      avatar_url,
+                      location,
+                      wolfpack_status
+                    )
+                  `)
+                  .eq("id", payload.new.id)
+                  .single();
 
-              if (newVideo) {
-                onNewVideo(newVideo);
+                if (newVideo) {
+                  onNewVideo(newVideo as VideoUpdate);
+                }
               }
               break;
 
             case "UPDATE":
-              onVideoUpdate(payload.new);
+              if (payload.new && "id" in payload.new) {
+                onVideoUpdate(payload.new as VideoRow);
+              }
               break;
 
             case "DELETE":
-              onVideoDelete(payload.old.id);
+              if (payload.old && "id" in payload.old && payload.old.id) {
+                onVideoDelete(payload.old.id);
+              }
               break;
           }
         },
@@ -226,29 +306,49 @@ class WolfpackRealtimeService {
   }
 
   /**
-   * Subscribe to DJ broadcasts
+   * Subscribe to conversation messages (replacement for direct messages)
+   * Using the wolfpack_messages table instead of non-existent wolfpack_direct_messages
    */
-  subscribeToDJBroadcasts(
-    locationId: string,
-    onBroadcast: (broadcast: any) => void,
+  subscribeToConversationMessages(
+    conversationId: string,
+    onMessage: (message: DirectMessageUpdate) => void,
   ): RealtimeSubscription {
-    const channelName = `dj-broadcasts-${locationId}`;
+    const channelName = `conversation-${conversationId}`;
 
     // Clean up existing subscription
     this.unsubscribe(channelName);
 
     const channel = supabase
       .channel(channelName)
-      .on(
+      .on<MessageRow>(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "dj_broadcasts",
-          filter: `location_id=eq.${locationId}`,
+          table: "wolfpack_messages",
+          filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
-          onBroadcast(payload.new);
+        async (payload: RealtimePostgresChangesPayload<MessageRow>) => {
+          // Type guard to ensure we have MessageRow data
+          const messageData = payload.new as MessageRow | undefined;
+
+          if (
+            !messageData || !("id" in messageData) || !messageData.sender_id
+          ) return;
+
+          // Fetch sender info
+          const { data: sender } = await supabase
+            .from("users")
+            .select("display_name, username, avatar_url")
+            .eq("id", messageData.sender_id)
+            .single();
+
+          const messageUpdate: DirectMessageUpdate = {
+            ...messageData,
+            sender: sender || undefined,
+          };
+
+          onMessage(messageUpdate);
         },
       )
       .subscribe();
@@ -262,39 +362,70 @@ class WolfpackRealtimeService {
   }
 
   /**
-   * Subscribe to direct messages
+   * Subscribe to messages for a specific user (all their conversations)
    */
-  subscribeToDirectMessages(
-    conversationid: string,
-    onMessage: (message: any) => void,
+  subscribeToUserMessages(
+    userId: string,
+    onMessage: (
+      message: DirectMessageUpdate & { conversation_id: string },
+    ) => void,
   ): RealtimeSubscription {
-    const channelName = `dm-${userId}`;
+    const channelName = `user-messages-${userId}`;
 
     // Clean up existing subscription
     this.unsubscribe(channelName);
 
     const channel = supabase
       .channel(channelName)
-      .on(
+      .on<MessageRow>(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "wolfpack_direct_messages",
-          filter: `recipient_id=eq.${userId}`,
+          table: "wolfpack_messages",
         },
-        async (payload) => {
-          // Fetch sender info
-          const { data: sender } = await supabase
-            .from("users")
-            .select("display_name, username, avatar_url")
-            .eq("id", payload.new.conversation_id)
+        async (payload: RealtimePostgresChangesPayload<MessageRow>) => {
+          // Type guard to ensure we have MessageRow data
+          const messageData = payload.new as MessageRow | undefined;
+
+          if (
+            !messageData || !("conversation_id" in messageData) ||
+            !messageData.conversation_id
+          ) return;
+
+          // Check if user is part of the conversation
+          const { data: conversation } = await supabase
+            .from("wolfpack_dm_conversations")
+            .select("user1_id, user2_id")
+            .eq("id", messageData.conversation_id)
             .single();
 
-          onMessage({
-            ...payload.new,
-            sender,
-          });
+          if (
+            conversation &&
+            (conversation.user1_id === userId ||
+              conversation.user2_id === userId)
+          ) {
+            // Fetch sender info
+            let sender = null;
+            if (messageData.sender_id) {
+              const { data: senderData } = await supabase
+                .from("users")
+                .select("display_name, username, avatar_url")
+                .eq("id", messageData.sender_id)
+                .single();
+              sender = senderData;
+            }
+
+            const messageUpdate: DirectMessageUpdate & {
+              conversation_id: string;
+            } = {
+              ...messageData,
+              conversation_id: messageData.conversation_id, // We know this is not null from the check above
+              sender: sender || undefined,
+            };
+
+            onMessage(messageUpdate);
+          }
         },
       )
       .subscribe();
@@ -322,9 +453,9 @@ class WolfpackRealtimeService {
    * Unsubscribe from all channels
    */
   unsubscribeAll(): void {
-    for (const [channelName, channel] of this.subscriptions) {
+    this.subscriptions.forEach((channel) => {
       channel.unsubscribe();
-    }
+    });
     this.subscriptions.clear();
   }
 

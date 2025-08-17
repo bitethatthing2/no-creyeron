@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleLikeAction(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
   videoId: string,
   userId: string,
 ) {
@@ -126,7 +126,7 @@ async function handleLikeAction(
 }
 
 async function handleUnlikeAction(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
   videoId: string,
   userId: string,
 ) {
@@ -164,7 +164,7 @@ async function handleUnlikeAction(
 }
 
 async function handleCommentAction(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
   videoId: string,
   userId: string,
   content: string,
@@ -267,7 +267,7 @@ async function handleCommentAction(
 }
 
 async function handleFollowAction(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
   followerId: string,
   targetUserId: string,
 ) {
@@ -324,7 +324,7 @@ async function handleFollowAction(
 }
 
 async function handleUnfollowAction(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
   followerId: string,
   targetUserId: string,
 ) {

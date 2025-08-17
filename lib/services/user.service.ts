@@ -8,7 +8,7 @@ type PublicUser = Database['public']['Tables']['users']['Row'];
 type AuthUser = User;
 
 export class UserService {
-  constructor(private supabase: any) {}
+  constructor(private supabase: unknown) {}
 
   /**
    * Get the current user with both auth and public profiles

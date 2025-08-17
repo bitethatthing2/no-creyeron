@@ -16,12 +16,12 @@ interface WolfpackUser {
   username?: string;
 }
 
-interface WolfpackData {
-  id: string;
-  user_id: string;
-  title?: string;
-  description?: string;
-}
+// interface WolfpackData {
+//   id: string;
+//   user_id: string;
+//   title?: string;
+//   description?: string;
+// }
 
 export class WolfpackNotificationService {
   /**

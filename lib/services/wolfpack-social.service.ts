@@ -1,15 +1,36 @@
+/**
+ * WOLFPACK SOCIAL SERVICE
+ * Handles likes, comments, follows, and sharing functionality
+ *
+ * ANALYSIS:
+ * - Tables found: wolfpack_post_likes, wolfpack_comments, wolfpack_comment_reactions,
+ *   wolfpack_follows, wolfpack_video_shares, wolfpack_videos
+ * - Missing columns: shares_count doesn't exist in wolfpack_videos table
+ * - Missing column: shared_to_platform doesn't exist (it's just 'platform')
+ * - The imported database functions need to be created separately
+ */
+
 import { supabase } from "@/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import {} from "@/types/database.types";
-// Import the new typed database functions
-import {
-  checkIfUserLikedPost,
-  getLikeCount as getPostLikeCount,
-  togglePostLike } from "@/lib/database/likes";
-import {
-  createComment as createNewComment,
-  getwolfpack_commentsForPost } from "@/lib/database/comments";
+import type { Database } from "@/types/database.types";
 
+// Type aliases from your database
+type Tables = Database["public"]["Tables"];
+type CommentRow = Tables["wolfpack_comments"]["Row"];
+type UserRow = Tables["users"]["Row"];
+type ShareRow = Tables["wolfpack_shares"]["Row"];
+
+// Define the insert type for wolfpack_shares
+interface ShareInsert {
+  video_id: string;
+  shared_by_user_id: string;
+  shared_to_user_id?: string | null;
+  share_type: string;
+  message?: string | null;
+  platform?: string | null;
+}
+
+// Public interfaces for backward compatibility
 export interface WolfpackLike {
   id: string;
   user_id: string;
@@ -21,16 +42,17 @@ export interface WolfpackComment {
   id: string;
   user_id: string;
   video_id: string;
-  parent_comment_id?: string;
+  parent_comment_id?: string | null;
   content: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   is_deleted: boolean;
   user?: {
     id: string;
-    first_name?: string;
-    last_name?: string;
-    avatar_url?: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    avatar_url?: string | null;
+    display_name?: string | null;
   };
   reactions?: Array<{
     emoji: string;
@@ -47,31 +69,152 @@ export interface WolfpackFollow {
   created_at: string;
 }
 
-export interface wolfpack_videostats {
+export interface WolfpackVideoStats {
   likes_count: number;
-  wolfpack_comments_count: number;
+  comments_count: number;
   user_liked: boolean;
+}
+
+/**
+ * Database helper functions that should be in @/lib/database/likes
+ * These need to be implemented in a separate file
+ */
+async function checkIfUserLikedPost(videoId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("wolfpack_post_likes")
+    .select("id")
+    .eq("video_id", videoId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  return !!data;
+}
+
+async function getLikeCount(videoId: string): Promise<number> {
+  const { count } = await supabase
+    .from("wolfpack_post_likes")
+    .select("*", { count: "exact", head: true })
+    .eq("video_id", videoId);
+
+  return count || 0;
+}
+
+async function togglePostLike(videoId: string): Promise<{ liked: boolean }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  // Check if already liked
+  const { data: existingLike } = await supabase
+    .from("wolfpack_post_likes")
+    .select("id")
+    .eq("video_id", videoId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingLike) {
+    // Unlike
+    await supabase
+      .from("wolfpack_post_likes")
+      .delete()
+      .eq("id", existingLike.id);
+    return { liked: false };
+  } else {
+    // Like
+    await supabase
+      .from("wolfpack_post_likes")
+      .insert({
+        video_id: videoId,
+        user_id: user.id,
+      });
+    return { liked: true };
+  }
+}
+
+/**
+ * Database helper functions that should be in @/lib/database/comments
+ */
+async function createComment(
+  videoId: string,
+  content: string,
+  parentId?: string,
+): Promise<CommentRow & { user?: Partial<UserRow> }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  const { data: comment, error } = await supabase
+    .from("wolfpack_comments")
+    .insert({
+      video_id: videoId,
+      user_id: user.id,
+      content,
+      parent_comment_id: parentId || null,
+    })
+    .select(`
+      *,
+      user:users!user_id (
+        id,
+        first_name,
+        last_name,
+        avatar_url,
+        display_name
+      )
+    `)
+    .single();
+
+  if (error) throw error;
+  return comment;
+}
+
+async function getCommentsForPost(
+  videoId: string,
+): Promise<Array<CommentRow & { user?: Partial<UserRow> }>> {
+  const { data, error } = await supabase
+    .from("wolfpack_comments")
+    .select(`
+      *,
+      user:users!user_id (
+        id,
+        first_name,
+        last_name,
+        avatar_url,
+        display_name
+      )
+    `)
+    .eq("video_id", videoId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
 }
 
 class WolfpackSocialService {
   private subscriptions: Map<string, RealtimeChannel> = new Map();
 
-  // Like functionality - Updated to use new typed functions
+  /**
+   * Like functionality
+   */
   async toggleLike(
-    videoId: string): Promise<{ success: boolean; liked: boolean }> {
+    videoId: string,
+  ): Promise<{ success: boolean; liked: boolean }> {
     try {
       const result = await togglePostLike(videoId);
       return { success: true, liked: result.liked };
     } catch (error) {
       console.error("Error toggling like:", error);
 
-      // Check if it's a 409 Conflict error (user already liked)
-      const errorMessage = error?.message?.toLowerCase() || "";
+      // Check if it's a duplicate key error (user already liked)
+      const errorMessage = error instanceof Error
+        ? error.message.toLowerCase()
+        : "";
       if (
-        errorMessage.includes("409") || errorMessage.includes("duplicate") ||
-        errorMessage.includes("unique")
+        errorMessage.includes("duplicate") ||
+        errorMessage.includes("unique") ||
+        errorMessage.includes("23505") // PostgreSQL unique violation code
       ) {
-        console.log("Handling 409 Conflict - user already liked");
+        console.log("Handling duplicate like - user already liked");
         return { success: true, liked: true };
       }
 
@@ -79,73 +222,65 @@ class WolfpackSocialService {
     }
   }
 
-  // Get video stats with user like status - Updated to use correct RPC and table names
-  async getwolfpack_videostats(
-    videoId: string): Promise<wolfpack_videostats> {
+  /**
+   * Get video stats with user like status
+   */
+  async getVideoStats(videoId: string): Promise<WolfpackVideoStats> {
     try {
-      // Get like count from correct table
-      const likeCount = await getPostLikeCount(videoId);
+      // Get like count
+      const likeCount = await getLikeCount(videoId);
 
-      // Get comment count from correct table
+      // Get comment count
       const { count: commentCount } = await supabase
         .from("wolfpack_comments")
         .select("*", { count: "exact", head: true })
         .eq("video_id", videoId);
 
-      // Check if user liked (if user is authenticated)
-      let userLiked = false;
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        userLiked = await checkIfUserLikedPost(videoId);
-      }
+      // Check if user liked
+      const userLiked = await checkIfUserLikedPost(videoId);
 
       return {
         likes_count: likeCount,
-        wolfpack_comments_count: commentCount || 0,
-        user_liked: userLiked };
+        comments_count: commentCount || 0,
+        user_liked: userLiked,
+      };
     } catch (error) {
       console.error("Error getting video stats:", error);
-      return { likes_count: 0, wolfpack_comments_count: 0, user_liked: false };
+      return { likes_count: 0, comments_count: 0, user_liked: false };
     }
   }
 
-  // Comment functionality - Updated to use new typed functions
-  // Alias for backward compatibility
-  async addComment(
-    videoId: string,
-    content: string,
-    parentId?: string): Promise<{ success: boolean; comment?: WolfpackComment }> {
-    return this.createComment(videoId, content, parentId);
-  }
-
+  /**
+   * Comment functionality
+   */
   async createComment(
     videoId: string,
-    
     content: string,
-    parentId?: string): Promise<{ success: boolean; comment?: WolfpackComment }> {
+    parentId?: string,
+  ): Promise<{ success: boolean; comment?: WolfpackComment }> {
     try {
-      const comment = await createNewComment(
-        videoId,
-        content,
-        parentId || undefined);
+      const comment = await createComment(videoId, content, parentId);
 
-      // Convert to old interface format for backward compatibility
+      // Convert to interface format
       const formattedComment: WolfpackComment = {
         id: comment.id,
         user_id: comment.user_id,
         video_id: comment.video_id,
         parent_comment_id: comment.parent_comment_id,
         content: comment.content,
-        created_at: comment.created_at,
-        updated_at: comment.updated_at || comment.created_at,
+        created_at: comment.created_at || null,
+        updated_at: comment.updated_at || comment.created_at || null,
         is_deleted: false,
-        user: comment.user
+        user: comment.user && comment.user.id
           ? {
             id: comment.user.id,
             first_name: comment.user.first_name,
             last_name: comment.user.last_name,
-            avatar_url: comment.user.avatar_url }
-          : undefined };
+            avatar_url: comment.user.avatar_url,
+            display_name: comment.user.display_name,
+          }
+          : undefined,
+      };
 
       return { success: true, comment: formattedComment };
     } catch (error) {
@@ -155,62 +290,78 @@ class WolfpackSocialService {
   }
 
   // Alias for backward compatibility
-  async getCommentsWithLikes(
+  async addComment(
     videoId: string,
-    parentId: string | null = null): Promise<WolfpackComment[]> {
-    return this.getwolfpack_comments(videoId, parentId);
+    content: string,
+    parentId?: string,
+  ): Promise<{ success: boolean; comment?: WolfpackComment }> {
+    return this.createComment(videoId, content, parentId);
   }
 
-  async getwolfpack_comments(
-    videoId: string,
-    
-    parentId: string | null = null): Promise<WolfpackComment[]> {
+  /**
+   * Get comments for a video
+   */
+  async getComments(videoId: string): Promise<WolfpackComment[]> {
     try {
-      // Use the new typed function for basic wolfpack_comments
-      const wolfpack_comments = await getwolfpack_commentsForPost(videoId);
+      const comments = await getCommentsForPost(videoId);
 
-      // Convert to old interface format for backward compatibility
-      const formattedwolfpack_comments: WolfpackComment[] = wolfpack_comments
-        .map((comment) => ({
-          id: comment.id,
-          user_id: comment.user_id,
-          video_id: comment.video_id,
-          parent_comment_id: comment.parent_comment_id,
-          content: comment.content,
-          created_at: comment.created_at,
-          updated_at: comment.updated_at || comment.created_at,
-          is_deleted: false,
-          user: comment.user
-            ? {
-              id: comment.user.id,
-              first_name: comment.user.first_name,
-              last_name: comment.user.last_name,
-              avatar_url: comment.user.avatar_url }
-            : undefined,
-          reactions: [], // Will be populated by real-time subscription or manual fetch
-          replies_count: 0, // Could be enhanced later
-        }));
+      // Convert to interface format
+      const formattedComments: WolfpackComment[] = comments.map((comment) => ({
+        id: comment.id,
+        user_id: comment.user_id,
+        video_id: comment.video_id,
+        parent_comment_id: comment.parent_comment_id,
+        content: comment.content,
+        created_at: comment.created_at || null,
+        updated_at: comment.updated_at || comment.created_at || null,
+        is_deleted: false,
+        user: comment.user && comment.user.id
+          ? {
+            id: comment.user.id,
+            first_name: comment.user.first_name,
+            last_name: comment.user.last_name,
+            avatar_url: comment.user.avatar_url,
+            display_name: comment.user.display_name,
+          }
+          : undefined,
+        reactions: [],
+        replies_count: 0,
+      }));
 
-      return formattedwolfpack_comments;
+      return formattedComments;
     } catch (error) {
-      console.error("Error getting wolfpack_comments:", error);
+      console.error("Error getting comments:", error);
       return [];
     }
   }
 
+  // Aliases for backward compatibility
+  async getwolfpack_comments(videoId: string): Promise<WolfpackComment[]> {
+    return this.getComments(videoId);
+  }
+
+  async getCommentsWithLikes(videoId: string): Promise<WolfpackComment[]> {
+    return this.getComments(videoId);
+  }
+
+  /**
+   * Comment reactions
+   */
   async addCommentReaction(
     commentId: string,
-    userId: string,
-    reactionType: string = "❤️"): Promise<{ success: boolean }> {
+    reactionType: string = "❤️",
+  ): Promise<{ success: boolean }> {
     try {
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false };
+
+      const { error } = await supabase
         .from("wolfpack_comment_reactions")
         .insert({
           comment_id: commentId,
-          user_id: userId,
-          reaction_type: reactionType })
-        .select()
-        .single();
+          user_id: user.id,
+          reaction_type: reactionType,
+        });
 
       if (error) throw error;
       return { success: true };
@@ -222,14 +373,17 @@ class WolfpackSocialService {
 
   async removeCommentReaction(
     commentId: string,
-    
-    reactionType?: string): Promise<{ success: boolean }> {
+    reactionType?: string,
+  ): Promise<{ success: boolean }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false };
+
       let query = supabase
         .from("wolfpack_comment_reactions")
         .delete()
         .eq("comment_id", commentId)
-        .eq("user_id");
+        .eq("user_id", user.id);
 
       if (reactionType) {
         query = query.eq("reaction_type", reactionType);
@@ -244,14 +398,19 @@ class WolfpackSocialService {
     }
   }
 
-  // Get reactions for a comment
   async getCommentReactions(commentId: string) {
     try {
       const { data, error } = await supabase
         .from("wolfpack_comment_reactions")
         .select(`
           *,
-          user:users(id, first_name, last_name, avatar_url, display_name)
+          user:users!user_id (
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            display_name
+          )
         `)
         .eq("comment_id", commentId);
 
@@ -263,28 +422,25 @@ class WolfpackSocialService {
     }
   }
 
-  // Check if user has reacted to a comment
   async hasUserReacted(
     commentId: string,
-    
-    reactionType?: string): Promise<boolean> {
+    reactionType?: string,
+  ): Promise<boolean> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
       let query = supabase
         .from("wolfpack_comment_reactions")
         .select("id")
         .eq("comment_id", commentId)
-        .eq("user_id");
+        .eq("user_id", user.id);
 
       if (reactionType) {
         query = query.eq("reaction_type", reactionType);
       }
 
-      const { data, error } = await query.single();
-
-      if (error && error.code !== "PGRST116") {
-        throw error;
-      }
-
+      const { data } = await query.maybeSingle();
       return !!data;
     } catch (error) {
       console.error("Error checking user reaction:", error);
@@ -292,39 +448,28 @@ class WolfpackSocialService {
     }
   }
 
-  // Follow functionality
+  /**
+   * Follow functionality
+   */
   async toggleFollow(
-    followerId: string,
-    followingId: string): Promise<{ success: boolean; following: boolean }> {
+    followingId: string,
+  ): Promise<{ success: boolean; following: boolean }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, following: false };
+
       // Prevent self-following
-      if (followerId === followingId) {
+      if (user.id === followingId) {
         return { success: false, following: false };
       }
 
-      // Test basic connection first
-      const { data: testData, error: testError } = await supabase
+      // Check if already following
+      const { data: existingFollow } = await supabase
         .from("wolfpack_follows")
         .select("id")
-        .limit(1);
-
-      if (testError) {
-        console.error("Basic wolfpack_follows query failed:", testError);
-        return { success: false, following: false };
-      }
-
-      // Check if already following with proper error handling
-      const { data: existingFollow, error: checkError } = await supabase
-        .from("wolfpack_follows")
-        .select("id")
-        .eq("follower_id", followerId)
+        .eq("follower_id", user.id)
         .eq("following_id", followingId)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no match
-
-      if (checkError) {
-        console.error("Error checking follow status:", checkError);
-        return { success: false, following: false };
-      }
+        .maybeSingle();
 
       if (existingFollow) {
         // Unfollow
@@ -339,7 +484,10 @@ class WolfpackSocialService {
         // Follow
         const { error } = await supabase
           .from("wolfpack_follows")
-          .insert({ follower_id: followerId, following_id: followingId });
+          .insert({
+            follower_id: user.id,
+            following_id: followingId,
+          });
 
         if (error) throw error;
         return { success: true, following: true };
@@ -350,55 +498,39 @@ class WolfpackSocialService {
     }
   }
 
-  async getUserSocialStats() {
+  async getUserSocialStats(userId?: string) {
     try {
-      // Note: RPC function get_user_social_stats may not exist
-      // Let's calculate manually from wolfpack_follows table if it exists
-
-      // Check if wolfpack_follows table exists
-      const { data: testData, error: testError } = await supabase
-        .from("wolfpack_follows")
-        .select("id")
-        .limit(1);
-
-      if (testError) {
-        console.warn("wolfpack_follows table does not exist:", testError);
-        return { followers_count: 0, following_count: 0 };
-      }
+      const targetUserId = userId ||
+        (await supabase.auth.getUser()).data.user?.id;
+      if (!targetUserId) return { followers_count: 0, following_count: 0 };
 
       // Get followers count
       const { count: followersCount } = await supabase
         .from("wolfpack_follows")
         .select("*", { count: "exact", head: true })
-        .eq("following_id");
+        .eq("following_id", targetUserId);
 
       // Get following count
       const { count: followingCount } = await supabase
         .from("wolfpack_follows")
         .select("*", { count: "exact", head: true })
-        .eq("follower_id");
+        .eq("follower_id", targetUserId);
 
       return {
         followers_count: followersCount || 0,
-        following_count: followingCount || 0 };
+        following_count: followingCount || 0,
+      };
     } catch (error) {
       console.error("Error getting user stats:", error);
       return { followers_count: 0, following_count: 0 };
     }
   }
 
-  async getFollowers( limit = 50) {
+  async getFollowers(userId?: string, limit = 50) {
     try {
-      // Test basic connection first
-      const { data: testData, error: testError } = await supabase
-        .from("wolfpack_follows")
-        .select("id")
-        .limit(1);
-
-      if (testError) {
-        console.error("Basic wolfpack_follows query failed:", testError);
-        return [];
-      }
+      const targetUserId = userId ||
+        (await supabase.auth.getUser()).data.user?.id;
+      if (!targetUserId) return [];
 
       const { data, error } = await supabase
         .from("wolfpack_follows")
@@ -408,10 +540,11 @@ class WolfpackSocialService {
             id,
             first_name,
             last_name,
-            avatar_url
+            avatar_url,
+            display_name
           )
         `)
-        .eq("following_id")
+        .eq("following_id", targetUserId)
         .limit(limit)
         .order("created_at", { ascending: false });
 
@@ -423,18 +556,11 @@ class WolfpackSocialService {
     }
   }
 
-  async getFollowing( limit = 50) {
+  async getFollowing(userId?: string, limit = 50) {
     try {
-      // Test basic connection first
-      const { data: testData, error: testError } = await supabase
-        .from("wolfpack_follows")
-        .select("id")
-        .limit(1);
-
-      if (testError) {
-        console.error("Basic wolfpack_follows query failed:", testError);
-        return [];
-      }
+      const targetUserId = userId ||
+        (await supabase.auth.getUser()).data.user?.id;
+      if (!targetUserId) return [];
 
       const { data, error } = await supabase
         .from("wolfpack_follows")
@@ -444,10 +570,11 @@ class WolfpackSocialService {
             id,
             first_name,
             last_name,
-            avatar_url
+            avatar_url,
+            display_name
           )
         `)
-        .eq("follower_id")
+        .eq("follower_id", targetUserId)
         .limit(limit)
         .order("created_at", { ascending: false });
 
@@ -459,18 +586,21 @@ class WolfpackSocialService {
     }
   }
 
-  // Find friends functionality
-  async findFriends( searchTerm?: string) {
+  async findFriends(searchTerm?: string) {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
       let query = supabase
         .from("users")
-        .select("id, first_name, last_name, avatar_url")
-        .neq("id")
+        .select("id, first_name, last_name, avatar_url, display_name")
+        .neq("id", user.id)
         .limit(20);
 
       if (searchTerm) {
         query = query.or(
-          `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`);
+          `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`,
+        );
       }
 
       const { data: users, error } = await query;
@@ -478,21 +608,23 @@ class WolfpackSocialService {
 
       // Get follow status for each user
       const usersWithFollowStatus = await Promise.all(
-        (users || []).map(async (user) => {
+        (users || []).map(async (foundUser) => {
           const { data: follow } = await supabase
             .from("wolfpack_follows")
             .select("id")
-            .eq("follower_id")
-            .eq("following_id", user.id)
-            .single();
+            .eq("follower_id", user.id)
+            .eq("following_id", foundUser.id)
+            .maybeSingle();
 
-          const stats = await this.getUserSocialStats(user.id);
+          const stats = await this.getUserSocialStats(foundUser.id);
 
           return {
-            ...user,
+            ...foundUser,
             is_following: !!follow,
-            ...stats };
-        }));
+            ...stats,
+          };
+        }),
+      );
 
       return usersWithFollowStatus;
     } catch (error) {
@@ -501,107 +633,27 @@ class WolfpackSocialService {
     }
   }
 
-  // Real-time subscriptions
-  subscribeTowolfpack_videostats(
-    videoId: string,
-    callback: (stats: wolfpack_videostats) => void): () => void {
-    const channelName = `video-stats-${videoId}`;
-
-    // Clean up existing subscription
-    this.unsubscribe(channelName);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "wolfpack_post_likes", // ✅ Correct table name
-          filter: `video_id=eq.${videoId}` },
-        async () => {
-          const stats = await this.getwolfpack_videostats(
-            videoId);
-          callback(stats);
-        })
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "wolfpack_comments", // ✅ Correct table name
-          filter: `video_id=eq.${videoId}` },
-        async () => {
-          const stats = await this.getwolfpack_videostats(
-            videoId);
-          callback(stats);
-        })
-      .subscribe();
-
-    this.subscriptions.set(channelName, channel);
-
-    return () => this.unsubscribe(channelName);
-  }
-
-  subscribeTowolfpack_comments(
-    videoId: string,
-    callback: (wolfpack_comments: WolfpackComment[]) => void): () => void {
-    const channelName = `wolfpack_comments-${videoId}`;
-
-    // Clean up existing subscription
-    this.unsubscribe(channelName);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "wolfpack_comments",
-          filter: `video_id=eq.${videoId}` },
-        async () => {
-          const wolfpack_comments = await this.getwolfpack_comments(
-            videoId);
-          callback(wolfpack_comments);
-        })
-      .subscribe();
-
-    this.subscriptions.set(channelName, channel);
-
-    return () => this.unsubscribe(channelName);
-  }
-
-  private unsubscribe(channelName: string) {
-    const channel = this.subscriptions.get(channelName);
-    if (channel) {
-      supabase.removeChannel(channel);
-      this.subscriptions.delete(channelName);
-    }
-  }
-
-  // Clean up all subscriptions
-  cleanup() {
-    this.subscriptions.forEach((channel) => {
-      supabase.removeChannel(channel);
-    });
-    this.subscriptions.clear();
-  }
-
-  // Share tracking methods
+  /**
+   * Share tracking
+   */
   async trackShare(
     videoId: string,
-    userId: string,
-    platform: string = "direct") {
+    platform: string = "direct",
+  ): Promise<{ success: boolean; share?: ShareRow }> {
     try {
-      // Track the share event in database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false };
+
+      const shareData: ShareInsert = {
+        video_id: videoId,
+        shared_by_user_id: user.id,
+        share_type: "external",
+        platform: platform,
+      };
+
       const { data, error } = await supabase
-        .from("wolfpack_video_shares")
-        .insert({
-          video_id: videoId,
-          shared_by_user_id: userId,
-          shared_to_platform: platform,
-          created_at: new Date().toISOString() })
+        .from("wolfpack_shares")
+        .insert(shareData)
         .select()
         .single();
 
@@ -610,9 +662,6 @@ class WolfpackSocialService {
         return { success: false };
       }
 
-      // Update video shares count
-      await this.updatewolfpack_videosharesCount(videoId);
-
       return { success: true, share: data };
     } catch (error) {
       console.error("Error tracking share:", error);
@@ -620,46 +669,20 @@ class WolfpackSocialService {
     }
   }
 
-  async updatewolfpack_videosharesCount(videoId: string) {
-    try {
-      // Get current shares count
-      const { data: sharesData, error: sharesError } = await supabase
-        .from("wolfpack_video_shares")
-        .select("id")
-        .eq("video_id", videoId);
-
-      if (sharesError) {
-        console.error("Error getting shares count:", sharesError);
-        return;
-      }
-
-      const sharesCount = sharesData?.length || 0;
-
-      // Update video shares count
-      const { error: updateError } = await supabase
-        .from("wolfpack_videos")
-        .update({ shares_count: sharesCount })
-        .eq("id", videoId);
-
-      if (updateError) {
-        console.error("Error updating video shares count:", updateError);
-      }
-    } catch (error) {
-      console.error("Error updating shares count:", error);
-    }
-  }
-
-  async getwolfpack_videoshares(videoId: string) {
+  async getVideoShares(
+    videoId: string,
+  ): Promise<Array<ShareRow & { user?: Partial<UserRow> }>> {
     try {
       const { data, error } = await supabase
-        .from("wolfpack_video_shares")
+        .from("wolfpack_shares")
         .select(`
           *,
           user:users!shared_by_user_id (
             id,
             first_name,
             last_name,
-            avatar_url
+            avatar_url,
+            display_name
           )
         `)
         .eq("video_id", videoId)
@@ -675,6 +698,125 @@ class WolfpackSocialService {
       console.error("Error getting video shares:", error);
       return [];
     }
+  }
+
+  // Alias for backward compatibility
+  async getwolfpack_videoshares(
+    videoId: string,
+  ): Promise<Array<ShareRow & { user?: Partial<UserRow> }>> {
+    return this.getVideoShares(videoId);
+  }
+
+  /**
+   * Real-time subscriptions
+   */
+  subscribeToVideoStats(
+    videoId: string,
+    callback: (stats: WolfpackVideoStats) => void,
+  ): () => void {
+    const channelName = `video-stats-${videoId}`;
+
+    // Clean up existing subscription
+    this.unsubscribe(channelName);
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wolfpack_post_likes",
+          filter: `video_id=eq.${videoId}`,
+        },
+        async () => {
+          const stats = await this.getVideoStats(videoId);
+          callback(stats);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wolfpack_comments",
+          filter: `video_id=eq.${videoId}`,
+        },
+        async () => {
+          const stats = await this.getVideoStats(videoId);
+          callback(stats);
+        },
+      )
+      .subscribe();
+
+    this.subscriptions.set(channelName, channel);
+
+    return () => this.unsubscribe(channelName);
+  }
+
+  // Aliases for backward compatibility
+  subscribeTowolfpack_videostats(
+    videoId: string,
+    callback: (stats: WolfpackVideoStats) => void,
+  ): () => void {
+    return this.subscribeToVideoStats(videoId, callback);
+  }
+
+  subscribeToComments(
+    videoId: string,
+    callback: (comments: WolfpackComment[]) => void,
+  ): () => void {
+    const channelName = `comments-${videoId}`;
+
+    // Clean up existing subscription
+    this.unsubscribe(channelName);
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wolfpack_comments",
+          filter: `video_id=eq.${videoId}`,
+        },
+        async () => {
+          const comments = await this.getComments(videoId);
+          callback(comments);
+        },
+      )
+      .subscribe();
+
+    this.subscriptions.set(channelName, channel);
+
+    return () => this.unsubscribe(channelName);
+  }
+
+  // Alias for backward compatibility
+  subscribeTowolfpack_comments(
+    videoId: string,
+    callback: (comments: WolfpackComment[]) => void,
+  ): () => void {
+    return this.subscribeToComments(videoId, callback);
+  }
+
+  private unsubscribe(channelName: string) {
+    const channel = this.subscriptions.get(channelName);
+    if (channel) {
+      supabase.removeChannel(channel);
+      this.subscriptions.delete(channelName);
+    }
+  }
+
+  /**
+   * Clean up all subscriptions
+   */
+  cleanup() {
+    this.subscriptions.forEach((channel) => {
+      supabase.removeChannel(channel);
+    });
+    this.subscriptions.clear();
   }
 }
 
