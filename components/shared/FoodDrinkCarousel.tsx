@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Utensils, Wine, Star, DollarSign, Search, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Utensils, Wine, Star, Search, Play } from 'lucide-react';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
-import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
+// import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
 import WatchItMadeModal from '@/components/menu/WatchItMadeModal';
 import { getMenuItemVideoUrl } from '@/lib/constants/video-urls';
 
@@ -104,7 +104,7 @@ const carouselItems: CarouselItem[] = [
   { 
     id: '8', 
     name: 'Chorizo & Potato Breakfast Burrito', 
-    image: '/food-menu-images/ham-and-potatoe-burrito.png', 
+    image: '/food-menu-images/Chorizo-and-Potatoe-burrito.png', 
     type: 'food', 
     description: 'Breakfast burrito with scrambled eggs, chorizo, seasoned potatoes, cheese, and salsa.',
     price: '$15.00',
@@ -196,7 +196,7 @@ const carouselItems: CarouselItem[] = [
   {
     id: '16.5',
     name: 'Burrito',
-    image: '/food-menu-images/asada-burrito.png',
+    image: '/food-menu-images/burrito.png',
     type: 'food',
     description: 'Large flour tortilla filled with your choice of meat, rice, beans, cheese, lettuce, pico de gallo, and sour cream.',
     price: '$14.00',
@@ -207,7 +207,7 @@ const carouselItems: CarouselItem[] = [
   { 
     id: '17', 
     name: 'Flautas (4)', 
-    image: '/food-menu-images/flautas.png', 
+    image: '/food-menu-images/regular-flautas.png', 
     type: 'food', 
     description: 'Four crispy rolled tortillas filled with chicken or beef, served with guacamole, sour cream, and salsa verde.',
     price: '$10.00',
@@ -913,7 +913,7 @@ const carouselItems: CarouselItem[] = [
 ];
 
 // Function to get watch-it-made video URL for specific items
-const getWatchItMadeVideo = (itemName: string, itemDescription: string): string | null => {
+const getWatchItMadeVideo = (itemName: string, /* itemDescription: string */): string | null => {
   return getMenuItemVideoUrl(itemName);
 };
 
@@ -1015,10 +1015,10 @@ export function FoodDrinkCarousel() {
     });
   };
 
-  const goToSlide = (index: number) => {
-    setIsAutoPlaying(false);
-    setCurrentIndex(index);
-  };
+  // const goToSlide = (index: number) => {
+  //   setIsAutoPlaying(false);
+  //   setCurrentIndex(index);
+  // };
 
   const maxIndex = Math.max(0, filteredItems.length - itemsPerView);
 
