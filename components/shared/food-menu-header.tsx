@@ -14,7 +14,7 @@ interface FoodMenuHeaderProps {
 }
 
 export function FoodMenuHeader({
-  title = "Menu",
+  // title = "Menu",
   location,
   showBack = false,
   tableNumber = '1',

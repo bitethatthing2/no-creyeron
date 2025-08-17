@@ -26,7 +26,7 @@ export function AboutHero() {
         </h1>
         
         <p className="text-xl sm:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
-          Salem & Portland's premier sports bar and entertainment venue, 
+          Salem & Portland&apos;s premier sports bar and entertainment venue, 
           specializing in Mexican cuisine and high-energy atmosphere.
         </p>
         

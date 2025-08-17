@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Phone, Clock, Instagram, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export function Footer() {
@@ -31,7 +30,7 @@ export function Footer() {
               />
             </div>
             <p className="text-lg text-gray-300 leading-relaxed text-center lg:text-left">
-              Oregon's premier <span className="text-orange-400 font-semibold">UFC House</span> • 
+              Oregon&apos;s premier <span className="text-orange-400 font-semibold">UFC House</span> • 
               Legendary <span className="text-orange-400 font-semibold">Birria</span> • 
               <span className="text-orange-400 font-semibold">Live Music</span>
             </p>

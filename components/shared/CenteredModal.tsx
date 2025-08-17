@@ -106,7 +106,7 @@ export function CenteredModal({
 interface EventCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onEventCreate: (eventData: any) => void;
+  onEventCreate: (eventData: Record<string, unknown>) => void;
 }
 
 export function EventCreationModal({ isOpen, onClose, onEventCreate }: EventCreationModalProps) {
@@ -149,7 +149,7 @@ export function EventCreationModal({ isOpen, onClose, onEventCreate }: EventCrea
     }
   ];
 
-  const handleEventTypeSelect = (eventType: any) => {
+  const handleEventTypeSelect = (eventType: Record<string, unknown>) => {
     setSelectedEventType(eventType.id);
     setEventTitle(eventType.title);
     setEventDuration(eventType.defaultDuration);
@@ -275,7 +275,7 @@ export function EventCreationModal({ isOpen, onClose, onEventCreate }: EventCrea
 interface MassMessageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSendMessage: (messageData: any) => void;
+  onSendMessage: (messageData: Record<string, unknown>) => void;
   memberCount?: number;
 }
 
@@ -312,7 +312,7 @@ export function MassMessageModal({
     }
   ];
 
-  const handleTemplateSelect = (template: any) => {
+  const handleTemplateSelect = (template: Record<string, unknown>) => {
     setSelectedTemplate(template.id);
     setCustomMessage(template.message);
   };

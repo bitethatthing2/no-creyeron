@@ -19,7 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import WolfpackOfflineManager from '@/lib/utils/wolfpack-offline-manager';
+// import WolfpackOfflineManager from '@/lib/utils/wolfpack-offline-manager'; // TODO: Module not found
 
 interface OfflineStatusIndicatorProps {
   className?: string;
@@ -100,9 +100,9 @@ export default function OfflineStatusIndicator({
     };
 
     // Add event listeners
-    window.addEventListener('wolfpack-sync-status-changed' as any, handleSyncStatusChanged);
-    window.addEventListener('wolfpack-sync-completed' as any, handleSyncCompleted);
-    window.addEventListener('wolfpack-sync-failed' as any, handleSyncFailed);
+    window.addEventListener('wolfpack-sync-status-changed', handleSyncStatusChanged);
+    window.addEventListener('wolfpack-sync-completed', handleSyncCompleted);
+    window.addEventListener('wolfpack-sync-failed', handleSyncFailed);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
@@ -110,9 +110,9 @@ export default function OfflineStatusIndicator({
     const interval = setInterval(updateSyncStatus, 30000); // Every 30 seconds
 
     return () => {
-      window.removeEventListener('wolfpack-sync-status-changed' as any, handleSyncStatusChanged);
-      window.removeEventListener('wolfpack-sync-completed' as any, handleSyncCompleted);
-      window.removeEventListener('wolfpack-sync-failed' as any, handleSyncFailed);
+      window.removeEventListener('wolfpack-sync-status-changed', handleSyncStatusChanged);
+      window.removeEventListener('wolfpack-sync-completed', handleSyncCompleted);
+      window.removeEventListener('wolfpack-sync-failed', handleSyncFailed);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       clearInterval(interval);

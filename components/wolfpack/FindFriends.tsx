@@ -247,7 +247,7 @@ export default function FindFriends({ onClose }: FindFriendsProps) {
             ) : (
               <div className="text-center py-8 text-gray-400">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No users found for "{searchQuery}"</p>
+                <p>No users found for &quot;{searchQuery}&quot;</p>
               </div>
             )}
           </div>

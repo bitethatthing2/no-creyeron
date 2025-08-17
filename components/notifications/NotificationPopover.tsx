@@ -64,7 +64,7 @@ export function NotificationPopover() {
         return;
       }
 
-      setNotifications((data as any[]) || []);
+      setNotifications((data as Notification[]) || []);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
       setNotifications([]);

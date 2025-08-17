@@ -8,8 +8,7 @@ import {
   Bell,
   ChefHat,
   DollarSign,
-  BookOpen,
-  Archive
+  BookOpen
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LogoutButton } from '@/components/auth/LogoutButton';

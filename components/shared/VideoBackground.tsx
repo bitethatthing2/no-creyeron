@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from 'react';
+import Image from 'next/image';
 
 interface VideoBackgroundProps {
   wolfpack_videosrc?: string;
@@ -115,10 +116,11 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
       
       {/* Error fallback */}
       {hasError && posterSrc && (
-        <img 
+        <Image 
           src={posterSrc} 
           alt="Video poster"
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          className="object-cover"
         />
       )}
       

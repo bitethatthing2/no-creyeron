@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageCircle, Music, UtensilsCrossed, ShoppingBag, Calendar, LogIn, BookOpen, Shield, Info, Settings } from 'lucide-react';
+import { Home, Music, ShoppingBag, Calendar, LogIn, Shield, Info, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getZIndexClass } from '@/lib/constants/z-index';
 // useWolfpackAccess functionality integrated into TikTok-style Wolfpack Local Pack
@@ -10,7 +10,6 @@ import { useDJPermissions } from '@/lib/hooks/useDJPermissions';
 import { useAdminAccess } from '@/lib/hooks/useAdminAccess';
 import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { DynamicLogo } from './DynamicLogo';
 // import { usewolfpack_comments } from '@/lib/contexts/wolfpack_commentsContext';
 
 export const BottomNav = () => {
@@ -22,7 +21,7 @@ export const BottomNav = () => {
   const { user } = useAuth();
   const [isMounted, setIsMounted] = React.useState(false);
   // const { iswolfpack_commentsOpen } = usewolfpack_comments();
-  const iswolfpack_commentsOpen = false; // Temporarily disabled until context is working
+  // const iswolfpack_commentsOpen = false; // Temporarily disabled until context is working
 
   // Set up mounted state
   React.useEffect(() => {
@@ -180,9 +179,9 @@ export const BottomNav = () => {
   }
 
   // Check if we're on the DJ dashboard page or chat pages
-  const isDJDashboard = pathname === '/dj';
-  const isChatPage = pathname.startsWith('/wolfpack/chat');
-  const isWolfpackPage = pathname.startsWith('/wolfpack');
+  // const isDJDashboard = pathname === '/dj';
+  // const isChatPage = pathname.startsWith('/wolfpack/chat');
+  // const isWolfpackPage = pathname.startsWith('/wolfpack');
 
   // Hide BottomNav on chat pages, feed page, main page, and when wolfpack_comments are open
   const shouldHideBottomNav = pathname === '/' || 

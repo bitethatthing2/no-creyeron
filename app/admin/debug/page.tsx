@@ -3,7 +3,7 @@
 import * as React from 'react';
 import AuthDebugDashboard from '@/components/admin/AuthDebugDashboard';
 import SuperAdminDashboardSwitcher from '@/components/admin/SuperAdminDashboardSwitcher';
-import { createBrowserClient } from '@supabase/ssr';
+// import { createBrowserClient } from '@supabase/ssr';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,9 +77,9 @@ export default function AdminDebugPage() {
         setMigrationStatus('✅ Supreme admin access successfully granted! All systems operational.');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error applying supreme admin access:', error);
-      setMigrationStatus(`❌ Error: ${error.message}`);
+      setMigrationStatus(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsApplying(false);
     }
