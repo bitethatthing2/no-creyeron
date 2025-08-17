@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
-import { Utensils, Star, Users, MapPin, Clock } from "lucide-react";
+import { Utensils, Star, Users, MapPin, Clock, RefreshCw } from "lucide-react";
 import { VideoBackground } from '@/components/shared/VideoBackground';
 import { FoodDrinkCarousel } from '@/components/shared/FoodDrinkCarousel';
 import { Footer } from '@/components/shared/Footer';
 import { TopNav } from '@/components/shared/TopNav';
-import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
+import { getSmartCacheBustedUrl, clearBrowserImageCache } from '@/lib/utils/image-cache';
 import { DynamicGoogleMaps } from '@/components/shared/DynamicGoogleMaps';
 import { InstagramEmbed } from '@/components/shared/InstagramEmbed';
 
@@ -138,6 +138,17 @@ export default function Page() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Clear Cache Button - Temporary */}
+          <div className="max-w-md mx-auto mb-4">
+            <Button 
+              onClick={() => clearBrowserImageCache()}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Clear Image Cache
+            </Button>
           </div>
 
           {/* Order Online - Inline Icons */}

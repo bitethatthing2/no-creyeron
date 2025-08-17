@@ -3673,7 +3673,7 @@ export type Database = {
           },
         ];
       };
-      wolfpack_direct_messages: {
+      wolfpack_messages: {
         Row: {
           content: string | null;
           conversation_id: string | null;
@@ -3730,133 +3730,133 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_dm_conversations";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_user_conversations";
             referencedColumns: ["conversation_id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "active_wolfpack_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "current_user_profile";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "user_interaction_permissions";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "user_storage_stats";
             referencedColumns: ["user_id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_recipient_id_fkey";
+            foreignKeyName: "wolfpack_messages_recipient_id_fkey";
             columns: ["recipient_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["user_id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_reply_to_message_id_fkey";
+            foreignKeyName: "wolfpack_messages_reply_to_message_id_fkey";
             columns: ["reply_to_message_id"];
             isOneToOne: false;
-            referencedRelation: "wolfpack_direct_messages";
+            referencedRelation: "wolfpack_messages";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "active_wolfpack_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "current_user_profile";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "user_interaction_permissions";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "user_storage_stats";
             referencedColumns: ["user_id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wolfpack_direct_messages_conversation_id_fkey";
+            foreignKeyName: "wolfpack_messages_conversation_id_fkey";
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "wolfpack_active_members";

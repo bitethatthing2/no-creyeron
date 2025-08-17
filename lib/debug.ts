@@ -40,6 +40,7 @@ interface MessagingEventData {
   senderId?: string;
   recipientId?: string;
   messageId?: string;
+  conversationId?: string;
   type?: string;
   metadata?: Record<string, unknown>;
 }

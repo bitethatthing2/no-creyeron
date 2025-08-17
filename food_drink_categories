@@ -69,9 +69,9 @@ INSERT INTO "archive"."_removed_indexes_log" ("index_name", "table_name", "remov
 	('idx_wolfpack_activity_notifications_related_user_id', 'wolfpack_activity_notifications', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 36),
 	('idx_wolfpack_activity_notifications_related_video_id', 'wolfpack_activity_notifications', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 37),
 	('idx_wolfpack_comments_user_id', 'wolfpack_comments', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 38),
-	('idx_wolfpack_direct_messages_shared_post_id', 'wolfpack_direct_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 39),
-	('idx_wolfpack_dm_recipient_unread', 'wolfpack_direct_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 40),
-	('idx_wolfpack_direct_messages_reply_to_message_id', 'wolfpack_direct_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 41),
+	('idx_wolfpack_messages_shared_post_id', 'wolfpack_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 39),
+	('idx_wolfpack_dm_recipient_unread', 'wolfpack_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 40),
+	('idx_wolfpack_messages_reply_to_message_id', 'wolfpack_messages', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 41),
 	('idx_wolfpack_friend_suggestions_suggested_user_id', 'wolfpack_friend_suggestions', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 42),
 	('idx_wolfpack_videos_ingested_content_id', 'wolfpack_videos', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 43),
 	('idx_wolfpack_shares_shared_recipient_id', 'wolfpack_shares', '2025-07-21 21:09:46.448973', 'Unused index - flagged by performance advisor', NULL, 44),
@@ -2286,7 +2286,7 @@ INSERT INTO "public"."_system_documentation" ("id", "category", "table_name", "d
 	('3e7978dd-7a8f-4eee-85f9-bdff7631fc33', 'SYSTEM', 'app_config', 'Application configuration', 'Key-value store for app settings', '2025-07-21 19:29:56.682058+00'),
 	('ddd7d7c8-87e6-4e35-ab2e-e55a25bbdd36', 'SYSTEM', 'feature_flags', 'Feature toggle configuration', 'Enable/disable features dynamically', '2025-07-21 19:29:56.682058+00'),
 	('54182c69-dd04-4352-a990-90f55defb7f6', 'SOURCE_OF_TRUTH', 'wolfpack_chat_messages', 'Chat messages in wolfpack', 'Real-time chat between wolfpack members', '2025-07-21 19:29:56.682058+00'),
-	('8f6fcc09-6e27-4b0f-995d-2fdd6c9605f2', 'SOURCE_OF_TRUTH', 'wolfpack_direct_messages', 'DMs between users', 'Private messages between wolfpack members', '2025-07-21 19:29:56.682058+00'),
+	('8f6fcc09-6e27-4b0f-995d-2fdd6c9605f2', 'SOURCE_OF_TRUTH', 'wolfpack_messages', 'DMs between users', 'Private messages between wolfpack members', '2025-07-21 19:29:56.682058+00'),
 	('40c9dced-61da-43e6-a64a-164a7babeb18', 'SOURCE_OF_TRUTH', 'wolfpack_follows', 'User follow relationships', 'Social graph for wolfpack members', '2025-07-21 19:29:56.682058+00'),
 	('aca26b1a-365a-4562-9166-166c9b415f85', 'SOURCE_OF_TRUTH', 'wolfpack_interactions', 'User interactions (winks, etc)', 'Social interactions between members', '2025-07-21 19:29:56.682058+00'),
 	('8b223f3b-1531-4c91-a37a-80fa4928c8a7', 'SUPPORT', 'modifier_group_items', 'Menu modifier options', 'Individual modifiers within modifier groups', '2025-07-21 19:29:56.682058+00'),
@@ -2484,7 +2484,7 @@ INSERT INTO "public"."feature_flags" ("id", "flag_name", "description", "is_enab
 	('bdfe44cf-9548-4843-98c3-863dbd2fcc63', 'wolfpack_video_upload', 'Enables video upload functionality. When OFF, users cannot upload new wolfpack_videos.', true, '{user,admin,vip}', '{}', '2025-07-16 17:21:22.353125+00', '2025-07-22 16:53:29.042427+00'),
 	('768de818-a390-4c08-900e-49f57cdeffa1', 'wolfpack_video_discovery', 'Enables the For You page algorithm. When OFF, shows chronological feed instead.', true, '{user,admin,vip}', '{}', '2025-07-16 17:21:22.353125+00', '2025-07-22 16:53:29.042427+00'),
 	('2abe40e2-ce4c-4890-9f21-2ca49dbfe4b7', 'wolfpack_social_following', 'Enables following other users', true, '{user,admin,vip}', '{}', '2025-07-22 16:53:29.042427+00', '2025-07-22 16:53:29.042427+00'),
-	('3d7b9f2b-be8c-45bb-8942-216e7c76cb85', 'wolfpack_direct_messages', 'Enables sending direct messages between users', true, '{user,admin,vip}', '{}', '2025-07-22 16:53:29.042427+00', '2025-07-22 16:53:29.042427+00'),
+	('3d7b9f2b-be8c-45bb-8942-216e7c76cb85', 'wolfpack_messages', 'Enables sending direct messages between users', true, '{user,admin,vip}', '{}', '2025-07-22 16:53:29.042427+00', '2025-07-22 16:53:29.042427+00'),
 	('94a1092b-fa99-4bd2-abdb-e503d5bf2095', 'wolfpack_chat_rooms', 'Enables location-based chat rooms (Portland, Salem)', true, '{user,admin,vip}', '{}', '2025-07-22 16:53:29.042427+00', '2025-07-22 16:53:29.042427+00'),
 	('854e9dd8-a75c-433d-905c-1f27a4f97e0a', 'wolfpack_comments', 'Enables commenting on wolfpack_videos', true, '{user,admin,vip}', '{}', '2025-07-22 16:53:29.042427+00', '2025-07-22 16:53:29.042427+00'),
 	('259f5d02-f37c-4610-b209-37c596a7275c', 'wolfpack_post_likes', 'Enables liking wolfpack_videos', true, '{user,admin,vip}', '{}', '2025-07-22 16:53:29.042427+00', '2025-07-22 16:53:29.042427+00'),
@@ -2566,13 +2566,13 @@ const checkDJAccess = async () => {
 
 // In your render
 {canBroadcast && <DJBroadcastPanel />}', 'Show DJ controls only for DJs', '2025-07-22 16:54:13.074029+00'),
-	('042a46d9-9d00-4650-91e0-9e8a442c103d', 'wolfpack_direct_messages', 'sql', '-- In an RLS policy
-CREATE POLICY "Users can send DMs if feature enabled" ON wolfpack_direct_messages
+	('042a46d9-9d00-4650-91e0-9e8a442c103d', 'wolfpack_messages', 'sql', '-- In an RLS policy
+CREATE POLICY "Users can send DMs if feature enabled" ON wolfpack_messages
 FOR INSERT TO authenticated
 WITH CHECK (
   EXISTS (
     SELECT 1 FROM check_feature_access(
-      "wolfpack_direct_messages", 
+      "wolfpack_messages", 
       auth.uid()
     ) AS result
     WHERE (result->>"enabled")::boolean = true
@@ -2873,7 +2873,7 @@ INSERT INTO "public"."system_config" ("id", "config_key", "config_value", "descr
 	('8673fc4b-2102-4f27-a695-be8389266575', 'ordering_rules', '{"auto_approve_vip": true, "vip_credit_limit": 500.00, "default_credit_limit": 100.00, "require_bartender_approval": true}', 'Ordering and bartab rules', '2025-07-08 03:19:31.849759+00', NULL),
 	('138e7c5e-1f0c-49bc-80d2-8d9dbcc3b6c4', 'dj_rules', '{"require_primary_dj": true, "max_djs_per_location": 3, "dj_can_broadcast_only_at_assigned_location": true}', 'DJ assignment and broadcast rules', '2025-07-08 03:19:31.849759+00', NULL),
 	('4546a36a-97dd-4666-9389-570f1c3f8572', 'messaging_system_status', '"wolfpack_chat_messages"', 'Active messaging system uses wolfpack_chat_messages (simple session-based). Complex system (wolfpack_messages) was abandoned mid-migration. See audit report for details.', '2025-07-20 10:22:58.21453+00', NULL),
-	('794aec16-4a9f-42e6-b2be-a97859086de8', 'core_features_overview', '{"dj_system": {"core_tables": ["dj_broadcasts", "dj_broadcast_responses", "dj_events", "dj_event_participants", "dj_dashboard_state", "dj_quick_actions"], "description": "DJ broadcast and event management"}, "wolfpack_social": {"core_tables": ["wolfpack_videos", "wolfpack_comments", "wolfpack_post_likes", "wolfpack_follows", "wolfpack_shares", "wolfpack_saved_posts", "wolfpack_hashtags", "wolfpack_post_hashtags"], "description": "TikTok-style social video app", "messaging_tables": ["wolfpack_chat_messages", "wolfpack_chat_sessions", "wolfpack_direct_messages"]}, "food_drink_ordering": {"core_tables": ["food_drink_categories", "food_drink_items", "menu_items", "menu_item_modifiers", "modifier_group_items", "bartender_orders", "order_items", "kitchen_orders"], "description": "Food and drink menu with ordering"}}', 'Core system architecture - Three main features: Wolfpack Social (TikTok-style), DJ System, Food/Drink Ordering', '2025-07-20 10:35:16.869424+00', NULL);
+	('794aec16-4a9f-42e6-b2be-a97859086de8', 'core_features_overview', '{"dj_system": {"core_tables": ["dj_broadcasts", "dj_broadcast_responses", "dj_events", "dj_event_participants", "dj_dashboard_state", "dj_quick_actions"], "description": "DJ broadcast and event management"}, "wolfpack_social": {"core_tables": ["wolfpack_videos", "wolfpack_comments", "wolfpack_post_likes", "wolfpack_follows", "wolfpack_shares", "wolfpack_saved_posts", "wolfpack_hashtags", "wolfpack_post_hashtags"], "description": "TikTok-style social video app", "messaging_tables": ["wolfpack_chat_messages", "wolfpack_chat_sessions", "wolfpack_messages"]}, "food_drink_ordering": {"core_tables": ["food_drink_categories", "food_drink_items", "menu_items", "menu_item_modifiers", "modifier_group_items", "bartender_orders", "order_items", "kitchen_orders"], "description": "Food and drink menu with ordering"}}', 'Core system architecture - Three main features: Wolfpack Social (TikTok-style), DJ System, Food/Drink Ordering', '2025-07-20 10:35:16.869424+00', NULL);
 
 
 --
@@ -2904,7 +2904,7 @@ INSERT INTO "public"."system_feature_documentation" ("id", "feature_category", "
 	('a309b19a-fdf2-4903-b7bd-fdff4f9ff769', 'video', 'Video Interactions', 'Like, comment, share wolfpack_videos', 'implemented', '{wolfpack_post_likes,wolfpack_comments,wolfpack_shares,wolfpack_saved_posts}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
 	('9c3b65f4-7f08-4338-921c-d5c1fa1c8c5f', 'social', 'User Profiles', 'Complete user profile system with wolfpack membership', 'implemented', '{users}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
 	('376c22f7-393a-4d72-95ae-71851592fcd4', 'social', 'Following System', 'Users can follow each other', 'implemented', '{wolfpack_follows}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
-	('7b224a44-4411-4b87-a758-d412a3943413', 'social', 'Direct Messages', 'Send messages between users', 'implemented', '{wolfpack_direct_messages,wolfpack_dm_conversations}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
+	('7b224a44-4411-4b87-a758-d412a3943413', 'social', 'Direct Messages', 'Send messages between users', 'implemented', '{wolfpack_messages,wolfpack_dm_conversations}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
 	('1552102b-b664-41eb-b742-f7bbc3160b18', 'social', 'Chat Rooms', 'Location-based chat rooms (portland, salem)', 'implemented', '{wolfpack_chat_sessions,wolfpack_chat_messages,wolfpack_chat_reactions}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
 	('af0f9705-f570-428a-af3f-e71e45877cd0', 'social', 'Friend Suggestions', 'Suggest friends based on location/interests', 'implemented', '{wolfpack_friend_suggestions}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
 	('8a812996-8485-4ded-b7d7-abfec5048f54', 'dj', 'DJ Broadcasts', 'DJs can send announcements/broadcasts', 'implemented', '{dj_broadcasts,dj_broadcast_responses}', '{}', NULL, '2025-07-22 16:48:33.009896+00', '2025-07-22 16:48:33.009896+00'),
@@ -3143,7 +3143,7 @@ INSERT INTO "public"."wolfpack_comment_reactions" ("id", "comment_id", "user_id"
 
 
 --
--- Data for Name: wolfpack_direct_messages; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: wolfpack_messages; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 

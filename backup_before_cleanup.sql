@@ -3679,7 +3679,7 @@ BEGIN
     ELSIF p_content_type = 'message' THEN
         SELECT id, message AS text_content, conversation_id AS user_id, created_at
         INTO v_content_record
-        FROM wolfpack_direct_messages
+        FROM wolfpack_messages
         WHERE id = p_content_id;
     ELSE
         RETURN jsonb_build_object(
@@ -13480,7 +13480,7 @@ CREATE OR REPLACE FUNCTION "public"."get_conversation_messages"("p_conversation_
     AS $$
 BEGIN
     -- Mark messages as read
-    UPDATE wolfpack_direct_messages
+    UPDATE wolfpack_messages
     SET is_read = true
     WHERE conversation_id = p_conversation_id
     AND recipient_id = p_user_id
@@ -13498,11 +13498,11 @@ BEGIN
         m.created_at,
         m.is_read,
         m.conversation_id = p_user_id AS is_own_message
-    FROM wolfpack_direct_messages m
+    FROM wolfpack_messages m
     JOIN users u ON m.conversation_id = u.id
     WHERE m.conversation_id = p_conversation_id
     AND (p_before_id IS NULL OR m.created_at < (
-        SELECT created_at FROM wolfpack_direct_messages WHERE id = p_before_id
+        SELECT created_at FROM wolfpack_messages WHERE id = p_before_id
     ))
     ORDER BY m.created_at DESC
     LIMIT p_limit;
@@ -17328,7 +17328,7 @@ BEGIN
         WHEN c.user1_id = p_user_id THEN c.user2_id
         ELSE c.user1_id
     END
-    LEFT JOIN wolfpack_direct_messages m ON m.conversation_id = c.id
+    LEFT JOIN wolfpack_messages m ON m.conversation_id = c.id
     WHERE c.user1_id = p_user_id OR c.user2_id = p_user_id
     GROUP BY c.id, u.id
     ORDER BY c.last_message_at DESC NULLS LAST
@@ -22470,7 +22470,7 @@ CREATE OR REPLACE FUNCTION "public"."mark_message_read"("p_message_id" "uuid", "
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-    UPDATE wolfpack_direct_messages
+    UPDATE wolfpack_messages
     SET is_read = true
     WHERE id = p_message_id
     AND recipient_id = p_user_id;
@@ -22702,7 +22702,7 @@ BEGIN
         SELECT DISTINCT 
             LEAST(conversation_id, recipient_id) as user1,
             GREATEST(conversation_id, recipient_id) as user2
-        FROM wolfpack_direct_messages
+        FROM wolfpack_messages
     LOOP
         -- Create conversation
         v_conversation_id := get_or_create_direct_conversation(r.user1, r.user2);
@@ -22719,12 +22719,12 @@ BEGIN
             COALESCE(message_type, 'text'),
             created_at,
             jsonb_build_object(
-                'migrated_from', 'wolfpack_direct_messages',
+                'migrated_from', 'wolfpack_messages',
                 'original_id', id,
                 'media_url', media_url,
                 'shared_video_id', shared_video_id
             )
-        FROM wolfpack_direct_messages
+        FROM wolfpack_messages
         WHERE (conversation_id = r.user1 AND recipient_id = r.user2)
            OR (conversation_id = r.user2 AND recipient_id = r.user1)
         ORDER BY created_at;
@@ -22735,7 +22735,7 @@ BEGIN
             m.id,
             dm.recipient_id,
             dm.read_at
-        FROM wolfpack_direct_messages dm
+        FROM wolfpack_messages dm
         JOIN wolfpack_messages m ON m.metadata->>'original_id' = dm.id::text
         WHERE dm.is_read = TRUE AND dm.read_at IS NOT NULL;
         
@@ -26718,7 +26718,7 @@ BEGIN
     END IF;
     
     -- Insert message
-    INSERT INTO wolfpack_direct_messages (
+    INSERT INTO wolfpack_messages (
         conversation_id,
         conversation_id,
         recipient_id,
@@ -34006,7 +34006,7 @@ ALTER SEQUENCE "public"."bartender_orders_order_number_seq" OWNED BY "public"."b
 CREATE OR REPLACE VIEW "public"."core_table_stats" WITH ("security_invoker"='on') AS
  SELECT
         CASE
-            WHEN (("t"."table_name")::"name" = ANY (ARRAY['wolfpack_videos'::"name", 'wolfpack_comments'::"name", 'wolfpack_post_likes'::"name", 'wolfpack_follows'::"name", 'wolfpack_chat_messages'::"name", 'wolfpack_direct_messages'::"name"])) THEN '🐺 Wolfpack Social'::"text"
+            WHEN (("t"."table_name")::"name" = ANY (ARRAY['wolfpack_videos'::"name", 'wolfpack_comments'::"name", 'wolfpack_post_likes'::"name", 'wolfpack_follows'::"name", 'wolfpack_chat_messages'::"name", 'wolfpack_messages'::"name"])) THEN '🐺 Wolfpack Social'::"text"
             WHEN (("t"."table_name")::"name" = ANY (ARRAY['dj_broadcasts'::"name", 'dj_events'::"name", 'dj_broadcast_responses'::"name"])) THEN '🎧 DJ System'::"text"
             WHEN (("t"."table_name")::"name" = ANY (ARRAY['food_drink_items'::"name", 'bartender_orders'::"name", 'menu_items'::"name"])) THEN '🍔 Food & Drink'::"text"
             ELSE NULL::"text"
@@ -34017,10 +34017,10 @@ CREATE OR REPLACE VIEW "public"."core_table_stats" WITH ("security_invoker"='on'
           WHERE (("columns"."table_name")::"name" = ("t"."table_name")::"name")) AS "columns",
     "pg_size_pretty"("pg_total_relation_size"(("t"."table_name")::"regclass")) AS "size"
    FROM "information_schema"."tables" "t"
-  WHERE ((("t"."table_schema")::"name" = 'public'::"name") AND (("t"."table_name")::"name" = ANY (ARRAY['wolfpack_videos'::"name", 'wolfpack_comments'::"name", 'wolfpack_post_likes'::"name", 'wolfpack_follows'::"name", 'wolfpack_chat_messages'::"name", 'wolfpack_direct_messages'::"name", 'dj_broadcasts'::"name", 'dj_events'::"name", 'dj_broadcast_responses'::"name", 'food_drink_items'::"name", 'bartender_orders'::"name", 'menu_items'::"name"])))
+  WHERE ((("t"."table_schema")::"name" = 'public'::"name") AND (("t"."table_name")::"name" = ANY (ARRAY['wolfpack_videos'::"name", 'wolfpack_comments'::"name", 'wolfpack_post_likes'::"name", 'wolfpack_follows'::"name", 'wolfpack_chat_messages'::"name", 'wolfpack_messages'::"name", 'dj_broadcasts'::"name", 'dj_events'::"name", 'dj_broadcast_responses'::"name", 'food_drink_items'::"name", 'bartender_orders'::"name", 'menu_items'::"name"])))
   ORDER BY
         CASE
-            WHEN (("t"."table_name")::"name" = ANY (ARRAY['wolfpack_videos'::"name", 'wolfpack_comments'::"name", 'wolfpack_post_likes'::"name", 'wolfpack_follows'::"name", 'wolfpack_chat_messages'::"name", 'wolfpack_direct_messages'::"name"])) THEN '🐺 Wolfpack Social'::"text"
+            WHEN (("t"."table_name")::"name" = ANY (ARRAY['wolfpack_videos'::"name", 'wolfpack_comments'::"name", 'wolfpack_post_likes'::"name", 'wolfpack_follows'::"name", 'wolfpack_chat_messages'::"name", 'wolfpack_messages'::"name"])) THEN '🐺 Wolfpack Social'::"text"
             WHEN (("t"."table_name")::"name" = ANY (ARRAY['dj_broadcasts'::"name", 'dj_events'::"name", 'dj_broadcast_responses'::"name"])) THEN '🎧 DJ System'::"text"
             WHEN (("t"."table_name")::"name" = ANY (ARRAY['food_drink_items'::"name", 'bartender_orders'::"name", 'menu_items'::"name"])) THEN '🍔 Food & Drink'::"text"
             ELSE NULL::"text"
@@ -35269,7 +35269,7 @@ CREATE OR REPLACE VIEW "public"."wolfpack_comment_reaction_summary" WITH ("secur
 ALTER TABLE "public"."wolfpack_comment_reaction_summary" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."wolfpack_direct_messages" (
+CREATE TABLE IF NOT EXISTS "public"."wolfpack_messages" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "conversation_id" "uuid" NOT NULL,
     "recipient_id" "uuid" NOT NULL,
@@ -35286,15 +35286,15 @@ CREATE TABLE IF NOT EXISTS "public"."wolfpack_direct_messages" (
     "edited_at" timestamp with time zone,
     "deleted_at" timestamp with time zone,
     "reactions" "jsonb" DEFAULT '{}'::"jsonb",
-    CONSTRAINT "wolfpack_direct_messages_check" CHECK (("conversation_id" <> "recipient_id")),
-    CONSTRAINT "wolfpack_direct_messages_message_type_check" CHECK ((("message_type")::"text" = ANY (ARRAY[('text'::character varying)::"text", ('video'::character varying)::"text", ('image'::character varying)::"text", ('post_share'::character varying)::"text"])))
+    CONSTRAINT "wolfpack_messages_check" CHECK (("conversation_id" <> "recipient_id")),
+    CONSTRAINT "wolfpack_messages_message_type_check" CHECK ((("message_type")::"text" = ANY (ARRAY[('text'::character varying)::"text", ('video'::character varying)::"text", ('image'::character varying)::"text", ('post_share'::character varying)::"text"])))
 );
 
 
-ALTER TABLE "public"."wolfpack_direct_messages" OWNER TO "postgres";
+ALTER TABLE "public"."wolfpack_messages" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."wolfpack_direct_messages" IS 'Primary table for individual direct messages. Supports text, media, replies, reactions, and threading.';
+COMMENT ON TABLE "public"."wolfpack_messages" IS 'Primary table for individual direct messages. Supports text, media, replies, reactions, and threading.';
 
 
 
@@ -35586,7 +35586,7 @@ CREATE OR REPLACE VIEW "public"."wolfpack_user_conversations" WITH ("security_in
             "count"("m"."id") FILTER (WHERE (("m"."recipient_id" = "auth"."uid"()) AND (NOT "m"."is_read"))) AS "unread_count",
             "max"("m"."created_at") AS "last_message_at"
            FROM ("public"."wolfpack_dm_conversations" "c"
-             LEFT JOIN "public"."wolfpack_direct_messages" "m" ON (("m"."conversation_id" = "c"."id")))
+             LEFT JOIN "public"."wolfpack_messages" "m" ON (("m"."conversation_id" = "c"."id")))
           WHERE (("auth"."uid"() = "c"."user1_id") OR ("auth"."uid"() = "c"."user2_id"))
           GROUP BY "c"."id", "c"."user1_id", "c"."user2_id"
         )
@@ -36254,8 +36254,8 @@ ALTER TABLE ONLY "public"."wolfpack_comments"
 
 
 
-ALTER TABLE ONLY "public"."wolfpack_direct_messages"
-    ADD CONSTRAINT "wolfpack_direct_messages_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "public"."wolfpack_messages"
+    ADD CONSTRAINT "wolfpack_messages_pkey" PRIMARY KEY ("id");
 
 
 
@@ -36729,7 +36729,7 @@ CREATE INDEX "idx_wolfpack_comments_video_created" ON "public"."wolfpack_comment
 
 
 
-CREATE INDEX "idx_wolfpack_dm_conversation" ON "public"."wolfpack_direct_messages" USING "btree" (LEAST("conversation_id", "recipient_id"), GREATEST("conversation_id", "recipient_id"), "created_at" DESC);
+CREATE INDEX "idx_wolfpack_dm_conversation" ON "public"."wolfpack_messages" USING "btree" (LEAST("conversation_id", "recipient_id"), GREATEST("conversation_id", "recipient_id"), "created_at" DESC);
 
 
 
@@ -36950,7 +36950,7 @@ CREATE OR REPLACE TRIGGER "set_comment_user_id_trigger" BEFORE INSERT ON "public
 
 
 
-CREATE OR REPLACE TRIGGER "set_dm_user_ids_trigger" BEFORE INSERT ON "public"."wolfpack_direct_messages" FOR EACH ROW EXECUTE FUNCTION "public"."set_dm_user_ids"();
+CREATE OR REPLACE TRIGGER "set_dm_user_ids_trigger" BEFORE INSERT ON "public"."wolfpack_messages" FOR EACH ROW EXECUTE FUNCTION "public"."set_dm_user_ids"();
 
 
 
@@ -37002,7 +37002,7 @@ CREATE OR REPLACE TRIGGER "update_comment_reaction_count_trigger" AFTER INSERT O
 
 
 
-CREATE OR REPLACE TRIGGER "update_conversation_on_message" AFTER INSERT ON "public"."wolfpack_direct_messages" FOR EACH ROW EXECUTE FUNCTION "public"."update_conversation_timestamp"();
+CREATE OR REPLACE TRIGGER "update_conversation_on_message" AFTER INSERT ON "public"."wolfpack_messages" FOR EACH ROW EXECUTE FUNCTION "public"."update_conversation_timestamp"();
 
 
 
@@ -37400,23 +37400,23 @@ ALTER TABLE ONLY "public"."wolfpack_comments"
 
 
 
-ALTER TABLE ONLY "public"."wolfpack_direct_messages"
-    ADD CONSTRAINT "wolfpack_direct_messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."wolfpack_dm_conversations"("id");
+ALTER TABLE ONLY "public"."wolfpack_messages"
+    ADD CONSTRAINT "wolfpack_messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."wolfpack_dm_conversations"("id");
 
 
 
-ALTER TABLE ONLY "public"."wolfpack_direct_messages"
-    ADD CONSTRAINT "wolfpack_direct_messages_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."wolfpack_messages"
+    ADD CONSTRAINT "wolfpack_messages_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."wolfpack_direct_messages"
-    ADD CONSTRAINT "wolfpack_direct_messages_reply_to_message_id_fkey" FOREIGN KEY ("reply_to_message_id") REFERENCES "public"."wolfpack_direct_messages"("id");
+ALTER TABLE ONLY "public"."wolfpack_messages"
+    ADD CONSTRAINT "wolfpack_messages_reply_to_message_id_fkey" FOREIGN KEY ("reply_to_message_id") REFERENCES "public"."wolfpack_messages"("id");
 
 
 
-ALTER TABLE ONLY "public"."wolfpack_direct_messages"
-    ADD CONSTRAINT "wolfpack_direct_messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."wolfpack_messages"
+    ADD CONSTRAINT "wolfpack_messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -37717,7 +37717,7 @@ CREATE POLICY "Public view hashtags" ON "public"."wolfpack_post_hashtags" FOR SE
 
 
 
-CREATE POLICY "Recipients can mark as read" ON "public"."wolfpack_direct_messages" FOR UPDATE TO "authenticated" USING (("recipient_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Recipients can mark as read" ON "public"."wolfpack_messages" FOR UPDATE TO "authenticated" USING (("recipient_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -37789,7 +37789,7 @@ CREATE POLICY "Users can respond to broadcasts" ON "public"."dj_broadcast_respon
 
 
 
-CREATE POLICY "Users can send messages" ON "public"."wolfpack_direct_messages" FOR INSERT WITH CHECK (("conversation_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can send messages" ON "public"."wolfpack_messages" FOR INSERT WITH CHECK (("conversation_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -37853,7 +37853,7 @@ CREATE POLICY "Users can view metrics" ON "public"."upload_performance_metrics" 
 
 
 
-CREATE POLICY "Users can view own messages" ON "public"."wolfpack_direct_messages" FOR SELECT TO "authenticated" USING ((("conversation_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("recipient_id" = ( SELECT "auth"."uid"() AS "uid"))));
+CREATE POLICY "Users can view own messages" ON "public"."wolfpack_messages" FOR SELECT TO "authenticated" USING ((("conversation_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("recipient_id" = ( SELECT "auth"."uid"() AS "uid"))));
 
 
 
@@ -38445,7 +38445,7 @@ CREATE POLICY "wolfpack_comment_reactions_update_policy" ON "public"."wolfpack_c
 ALTER TABLE "public"."wolfpack_comments" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."wolfpack_direct_messages" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."wolfpack_messages" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."wolfpack_dm_conversations" ENABLE ROW LEVEL SECURITY;
@@ -43784,9 +43784,9 @@ GRANT ALL ON TABLE "public"."wolfpack_comment_reaction_summary" TO "service_role
 
 
 
-GRANT ALL ON TABLE "public"."wolfpack_direct_messages" TO "anon";
-GRANT ALL ON TABLE "public"."wolfpack_direct_messages" TO "authenticated";
-GRANT ALL ON TABLE "public"."wolfpack_direct_messages" TO "service_role";
+GRANT ALL ON TABLE "public"."wolfpack_messages" TO "anon";
+GRANT ALL ON TABLE "public"."wolfpack_messages" TO "authenticated";
+GRANT ALL ON TABLE "public"."wolfpack_messages" TO "service_role";
 
 
 

@@ -773,7 +773,7 @@ export type Database = {
           created_at?: string | null;
         };
       };
-      wolfpack_direct_messages: {
+      wolfpack_messages: {
         Row: {
           id: string;
           conversation_id: string;
@@ -1383,7 +1383,7 @@ export type WolfpackPost = Tables<"wolfpack_posts">;
 export type WolfpackInteraction = Tables<"wolfpack_interactions">;
 export type WolfpackFollow = Tables<"wolfpack_follows">;
 export type WolfpackChatMessage = Tables<"wolfpack_chat_messages">;
-export type WolfpackDirectMessage = Tables<"wolfpack_direct_messages">;
+export type WolfpackDirectMessage = Tables<"wolfpack_messages">;
 export type WolfpackActivityNotification = Tables<
   "wolfpack_activity_notifications"
 >;
@@ -1405,7 +1405,7 @@ export type WolfpackInteractionInsert = TablesInsert<"wolfpack_interactions">;
 export type WolfpackFollowInsert = TablesInsert<"wolfpack_follows">;
 export type WolfpackChatMessageInsert = TablesInsert<"wolfpack_chat_messages">;
 export type WolfpackDirectMessageInsert = TablesInsert<
-  "wolfpack_direct_messages"
+  "wolfpack_messages"
 >;
 export type WolfpackActivityNotificationInsert = TablesInsert<
   "wolfpack_activity_notifications"
@@ -1428,7 +1428,7 @@ export type WolfpackInteractionUpdate = TablesUpdate<"wolfpack_interactions">;
 export type WolfpackFollowUpdate = TablesUpdate<"wolfpack_follows">;
 export type WolfpackChatMessageUpdate = TablesUpdate<"wolfpack_chat_messages">;
 export type WolfpackDirectMessageUpdate = TablesUpdate<
-  "wolfpack_direct_messages"
+  "wolfpack_messages"
 >;
 export type WolfpackActivityNotificationUpdate = TablesUpdate<
   "wolfpack_activity_notifications"
