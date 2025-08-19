@@ -89,16 +89,11 @@ Located: `/components/wolfpack/feed/VideoInteractionButtons.tsx`
 - Optimistic updates
 - Consistent styling
 
-### 5. `AnonymousFriendlyFeed` Component
-Located: `/components/wolfpack/feed/AnonymousFriendlyFeed.tsx`
+### 5. Anonymous-Friendly Feed Pattern
 
-**Purpose**: Complete feed implementation demonstrating the anonymous viewing pattern.
+**Purpose**: Feed implementations that work for both anonymous and authenticated users.
 
-**Features**:
-- Works for both anonymous and authenticated users
-- Smooth authentication prompts
-- Optimistic updates
-- Social features (like, comment, share, follow)
+**Note**: The specific `AnonymousFriendlyFeed` component has been removed as it was inconsistent with the project architecture. Use existing feed components with proper authentication handling instead.
 
 ### 6. `WolfpackFeedServiceEnhanced` Service
 Located: `/lib/services/wolfpack/feed-enhanced.ts`
@@ -118,14 +113,14 @@ Located: `/lib/services/wolfpack/feed-enhanced.ts`
 Replace your current feed component with the new pattern:
 
 ```tsx
-// In your main feed page
-import { AnonymousFriendlyFeed } from '@/components/wolfpack/feed/AnonymousFriendlyFeed';
-import { WolfpackFeedServiceEnhanced } from '@/lib/services/wolfpack/feed-enhanced';
+// Use existing feed components with proper authentication handling
+import { TikTokStyleFeed } from '@/components/wolfpack/feed/TikTokStyleFeed';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function WolfpackFeedPage() {
   const { user } = useAuth();
-  const [posts, setPosts] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -134,11 +129,13 @@ export default function WolfpackFeedPage() {
 
   const loadFeed = async () => {
     try {
-      const result = await WolfpackFeedServiceEnhanced.fetchFeed({
-        currentUserId: user?.id,
+      const result = await WolfpackService.feed.fetchFeedItems({
+        userId: user?.id,
         limit: 20
       });
-      setPosts(result.posts);
+      if (result.success) {
+        setVideos(result.data);
+      }
     } catch (error) {
       console.error('Failed to load feed:', error);
     } finally {
@@ -149,10 +146,13 @@ export default function WolfpackFeedPage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <AnonymousFriendlyFeed 
-      posts={posts}
-      onLoadMore={loadFeed}
-      hasMore={true}
+    <TikTokStyleFeed 
+      wolfpack_videos={videos}
+      currentUser={user}
+      onLike={handleLike}
+      onComment={handleComment}
+      onShare={handleShare}
+      onFollow={handleFollow}
     />
   );
 }
