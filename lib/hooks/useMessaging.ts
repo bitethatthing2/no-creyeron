@@ -868,12 +868,11 @@ export function useMessaging(): UseMessagingReturn {
         if (existing) {
           for (const participation of existing) {
             // Type guard to ensure conversation exists and has the expected structure
-            const conv = participation.conversation as { id: string; conversation_type: string } | null;
-            if (!conv) continue;
-            if (
-              conv && !Array.isArray(conv) &&
-              conv.conversation_type === "direct"
-            ) {
+            const convArray = participation.conversation as { id: string; conversation_type: string }[] | null;
+            if (!convArray || !Array.isArray(convArray) || convArray.length === 0) continue;
+            
+            const conv = convArray[0]; // Get the first (and should be only) conversation
+            if (conv && conv.conversation_type === "direct") {
               const { data: otherParticipant } = await supabase
                 .from("wolfpack_conversation_participants")
                 .select("user_id")
