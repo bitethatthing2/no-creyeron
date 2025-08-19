@@ -6,7 +6,7 @@ import { Home, Music, ShoppingBag, Calendar, LogIn, Shield, Info, Settings } fro
 import { cn } from '@/lib/utils';
 import { getZIndexClass } from '@/lib/constants/z-index';
 // useWolfpackAccess functionality integrated into TikTok-style Wolfpack Local Pack
-import { useDJPermissions } from '@/lib/hooks/useDJPermissions';
+// Note: DJ permissions removed - functionality not implemented
 import { useAdminAccess } from '@/lib/hooks/useAdminAccess';
 import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,8 @@ export const BottomNav = () => {
   const pathname = usePathname();
   // Wolfpack access integrated into TikTok-style Wolfpack Local Pack
   const canCheckout = true; // Default to true as access is handled in main app
-  const { isActiveDJ } = useDJPermissions();
+  // DJ permissions functionality removed - not implemented
+  const isActiveDJ = false;
   const { isAdmin } = useAdminAccess();
   const { user } = useAuth();
   const [isMounted, setIsMounted] = React.useState(false);
