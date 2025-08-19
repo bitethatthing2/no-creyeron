@@ -201,10 +201,10 @@ class FeatureFlagsService {
         success: true,
         flag: data,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || "Failed to toggle feature",
+        error: error instanceof Error ? error.message : "Failed to toggle feature",
       };
     }
   }
@@ -236,10 +236,10 @@ class FeatureFlagsService {
         success: true,
         flag: data,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || "Failed to update feature flag",
+        error: error instanceof Error ? error.message : "Failed to update feature flag",
       };
     }
   }
@@ -308,8 +308,8 @@ export function useFeatureFlag(flagName: string): UseFeatureFlagResult {
       );
 
       setResult(featureResult);
-    } catch (err: any) {
-      setError(new Error(err.message || "Failed to check feature flag"));
+    } catch (err: unknown) {
+      setError(new Error(err instanceof Error ? err.message : "Failed to check feature flag"));
       setResult({
         enabled: false,
         reason: "Check failed",
@@ -379,8 +379,8 @@ export function useMultipleFeatureFlags(
       );
 
       setFeatures(results);
-    } catch (err: any) {
-      setError(new Error(err.message || "Failed to check feature flags"));
+    } catch (err: unknown) {
+      setError(new Error(err instanceof Error ? err.message : "Failed to check feature flags"));
 
       // Set all features to disabled on error
       const errorResults: Record<string, FeatureAccessResult> = {};
@@ -437,8 +437,8 @@ export function useFeatureFlagAdmin(): UseFeatureFlagAdminResult {
 
       const allFlags = await featureFlagsService.getAllFeatureFlags();
       setFlags(allFlags);
-    } catch (err: any) {
-      setError(new Error(err.message || "Failed to load feature flags"));
+    } catch (err: unknown) {
+      setError(new Error(err instanceof Error ? err.message : "Failed to load feature flags"));
     } finally {
       setLoading(false);
     }
@@ -464,8 +464,8 @@ export function useFeatureFlagAdmin(): UseFeatureFlagAdminResult {
       }
 
       return result;
-    } catch (err: any) {
-      const errorMessage = err.message || "Failed to toggle feature";
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to toggle feature";
       setError(new Error(errorMessage));
       return { success: false, error: errorMessage };
     }
@@ -491,8 +491,8 @@ export function useFeatureFlagAdmin(): UseFeatureFlagAdminResult {
       }
 
       return result;
-    } catch (err: any) {
-      const errorMessage = err.message || "Failed to update feature flag";
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update feature flag";
       setError(new Error(errorMessage));
       return { success: false, error: errorMessage };
     }
