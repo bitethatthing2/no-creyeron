@@ -8,7 +8,7 @@
 import * as React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import type { Database } from "@/types/database";
+import type { Database } from "@/types/database.types";
 
 // Type definitions based on your Supabase schema
 type FeatureFlag = Database["public"]["Tables"]["feature_flags"]["Row"];
