@@ -397,6 +397,7 @@ async function showBrowserNotification(
       notif.close();
     };
   }
+  return;
 }
 
 export function useMessaging(): UseMessagingReturn {
@@ -868,6 +869,7 @@ export function useMessaging(): UseMessagingReturn {
           for (const participation of existing) {
             // Type guard to ensure conversation exists and has the expected structure
             const conv = participation.conversation as { id: string; conversation_type: string } | null;
+            if (!conv) continue;
             if (
               conv && !Array.isArray(conv) &&
               conv.conversation_type === "direct"
@@ -905,13 +907,13 @@ export function useMessaging(): UseMessagingReturn {
         // Add participants
         const participants: ParticipantInsert[] = [
           {
-            conversation_id: newConv.id,
+            conversation_id: newConv!.id,
             user_id: currentUserId,
             role: "member",
             is_active: true,
           },
           {
-            conversation_id: newConv.id,
+            conversation_id: newConv!.id,
             user_id: otherUserId,
             role: "member",
             is_active: true,
@@ -924,7 +926,7 @@ export function useMessaging(): UseMessagingReturn {
 
         if (partError) throw partError;
 
-        return newConv.id;
+        return newConv!.id;
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to create conversation",
@@ -962,7 +964,7 @@ export function useMessaging(): UseMessagingReturn {
           currentUserId,
           ...participantIds,
         ].map((userId) => ({
-          conversation_id: newConv.id,
+          conversation_id: newConv!.id,
           user_id: userId,
           role: userId === currentUserId ? "admin" : "member",
           is_active: true,
@@ -974,7 +976,7 @@ export function useMessaging(): UseMessagingReturn {
 
         if (partError) throw partError;
 
-        return newConv.id;
+        return newConv!.id;
       } catch (err) {
         setError(
           err instanceof Error
