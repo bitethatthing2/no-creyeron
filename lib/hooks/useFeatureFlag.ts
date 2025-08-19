@@ -7,7 +7,7 @@
 
 import * as React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
 
 // Type definitions based on your Supabase schema
