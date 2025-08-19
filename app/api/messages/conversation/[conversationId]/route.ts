@@ -117,13 +117,6 @@ interface ParticipantWithUser extends Participant {
   users: User | null;
 }
 
-interface SupabaseError {
-  message: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}
-
 interface Params {
   params: {
     conversationId: string;
