@@ -867,7 +867,7 @@ export function useMessaging(): UseMessagingReturn {
         if (existing) {
           for (const participation of existing) {
             // Type guard to ensure conversation exists and has the expected structure
-            const conv = participation.conversation;
+            const conv = participation.conversation as { id: string; conversation_type: string } | null;
             if (
               conv && !Array.isArray(conv) &&
               conv.conversation_type === "direct"
@@ -1014,6 +1014,10 @@ export function useMessaging(): UseMessagingReturn {
           async (
             payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>,
           ) => {
+            // Type guard for payload.new
+            const newRecord = payload.new as { id: string };
+            if (!newRecord.id) return;
+
             // Fetch full message with sender info
             const { data } = await supabase
               .from("wolfpack_messages")
@@ -1030,7 +1034,7 @@ export function useMessaging(): UseMessagingReturn {
                   profile_image_url
                 )
               `)
-              .eq("id", payload.new.id)
+              .eq("id", newRecord.id)
               .single();
 
             if (data) {
@@ -1067,10 +1071,14 @@ export function useMessaging(): UseMessagingReturn {
           (
             payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>,
           ) => {
+            // Type guard for payload.new
+            const newRecord = payload.new as { id: string } & Partial<DisplayMessage>;
+            if (!newRecord.id) return;
+
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === payload.new.id
-                  ? { ...msg, ...(payload.new as Partial<DisplayMessage>) }
+                msg.id === newRecord.id
+                  ? { ...msg, ...newRecord }
                   : msg
               )
             );
@@ -1087,8 +1095,12 @@ export function useMessaging(): UseMessagingReturn {
           (
             payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>,
           ) => {
+            // Type guard for payload.old
+            const oldRecord = payload.old as { id: string };
+            if (!oldRecord.id) return;
+
             setMessages((prev) =>
-              prev.filter((msg) => msg.id !== payload.old.id)
+              prev.filter((msg) => msg.id !== oldRecord.id)
             );
           },
         )
