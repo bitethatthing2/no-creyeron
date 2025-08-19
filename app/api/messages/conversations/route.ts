@@ -64,6 +64,13 @@ interface TransformedConversation {
   is_online: boolean;
 }
 
+interface SupabaseError {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
+
 export async function GET() {
   console.log("🔥 CONVERSATIONS API HIT AT:", new Date().toISOString());
   try {
@@ -236,7 +243,7 @@ export async function GET() {
                 )
               `)
               .eq("conversation_id", conversationId)
-              .limit(10) as { data: MessageWithSender[] | null; error: any };
+              .limit(10) as { data: MessageWithSender[] | null; error: SupabaseError | null };
 
             console.log(`📧 Messages for ${conversationId}:`, {
               messagesCount: allMessages?.length,
@@ -287,7 +294,7 @@ export async function GET() {
                 `)
                   .eq("conversation_id", conversationId) as {
                     data: ParticipantWithUser[] | null;
-                    error: any;
+                    error: SupabaseError | null;
                   };
 
               allParticipants = participantsData;
@@ -422,6 +429,7 @@ export async function GET() {
                   `)
                   .eq("conversation_id", conversationId) as {
                     data: ParticipantWithUser[] | null;
+                    error: SupabaseError | null;
                   };
 
                 allParticipants = participantsData;
