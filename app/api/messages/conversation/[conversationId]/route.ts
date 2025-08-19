@@ -55,7 +55,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       .from('wolfpack_conversation_participants')
       .select(`
         user_id,
-        users!inner(
+        users(
           id,
           auth_id,
           first_name,
@@ -68,6 +68,8 @@ export async function GET(request: NextRequest, { params }: Params) {
       `)
       .eq('conversation_id', conversationId)
       .neq('user_id', currentUserRecord?.id);
+
+    console.log(`Participants for conversation ${conversationId}:`, participants);
 
     return NextResponse.json({ 
       messages: messages || [],

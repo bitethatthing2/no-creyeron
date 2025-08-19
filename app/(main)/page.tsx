@@ -142,13 +142,15 @@ export default function Page() {
 
           {/* Clear Cache Button - Temporary */}
           <div className="max-w-md mx-auto mb-4">
-            <Button 
-              onClick={() => clearBrowserImageCache()}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 mx-auto"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Clear Image Cache
-            </Button>
+            {process.env.NODE_ENV === 'development' && (
+              <Button 
+                onClick={() => clearBrowserImageCache()}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 mx-auto"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Clear Image Cache
+              </Button>
+            )}
           </div>
 
           {/* Order Online - Inline Icons */}

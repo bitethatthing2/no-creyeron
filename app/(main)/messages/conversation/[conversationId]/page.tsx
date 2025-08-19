@@ -21,7 +21,7 @@ export default function ConversationPage() {
     error, 
     loadMessages, 
     sendMessage,
-    subscribeToMessages 
+    subscribeToConversation 
   } = useMessaging();
   
   const [newMessage, setNewMessage] = useState('');
@@ -56,14 +56,14 @@ export default function ConversationPage() {
       loadConversationData(conversationId);
       
       // Enhanced subscription with connection monitoring
-      const unsubscribe = subscribeToMessages(conversationId);
+      const unsubscribe = subscribeToConversation(conversationId);
       
       return () => {
         debugLog.messaging('ConversationPage unmount', { conversationId });
         unsubscribe();
       };
     }
-  }, [conversationId, loadMessages, subscribeToMessages]);
+  }, [conversationId, loadMessages, subscribeToConversation]);
 
   const loadConversationData = async (conversationId: string) => {
     try {
@@ -108,21 +108,30 @@ export default function ConversationPage() {
     // For direct conversations, show the other participant's name
     if (conversationData.conversation.conversation_type === 'direct') {
       // First try to get from participant data
-      const otherParticipant = conversationData.participants?.[0]?.users;
-      if (otherParticipant) {
-        return otherParticipant.display_name || 
-               `${otherParticipant.first_name || ''} ${otherParticipant.last_name || ''}`.trim() ||
-               otherParticipant.username ||
+      const otherParticipant = conversationData.participants?.[0];
+      if (otherParticipant?.users) {
+        const user = otherParticipant.users;
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        return user.display_name || 
+               fullName ||
+               user.username ||
                'Wolf Pack Member';
       }
       
       // Fall back to getting name from messages (sender info)
-      const otherUserMessage = messages.find(m => m.conversation_id !== currentUserId);
+      const otherUserMessage = messages.find(m => m.sender_id !== currentUserId);
       if (otherUserMessage) {
+        const fullName = `${otherUserMessage.sender_first_name || ''} ${otherUserMessage.sender_last_name || ''}`.trim();
         return otherUserMessage.sender_display_name || 
-               `${otherUserMessage.sender_first_name || ''} ${otherUserMessage.sender_last_name || ''}`.trim() ||
+               fullName ||
+               otherUserMessage.sender_username ||
                'Wolf Pack Member';
       }
+    }
+    
+    // For group conversations
+    if (conversationData.conversation.conversation_type === 'group') {
+      return 'WolfPack Team';
     }
     
     // Fall back to conversation name or default
@@ -232,8 +241,8 @@ export default function ConversationPage() {
         ) : (
           <div className="p-4 space-y-3">
             {messages.map((message, index) => {
-              const isFromCurrentUser = message.conversation_id === currentUserId;
-              const showAvatar = !isFromCurrentUser && (index === 0 || messages[index - 1]?.conversation_id !== message.conversation_id);
+              const isFromCurrentUser = message.sender_id === currentUserId;
+              const showAvatar = !isFromCurrentUser && (index === 0 || messages[index - 1]?.sender_id !== message.sender_id);
               
               return (
                 <div
@@ -270,7 +279,7 @@ export default function ConversationPage() {
                     <p className={`text-xs mt-1 px-2 ${
                       isFromCurrentUser ? 'text-right text-gray-400' : 'text-left text-gray-500'
                     }`}>
-                      {formatTime(message.created_at)}
+                      {message.created_at ? formatTime(message.created_at) : ''}
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from 'react';
+import * as React from "react";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -54,7 +54,9 @@ function getDeviceInfo(): DeviceInfo {
 
 export function useDeviceToken(authUserId?: string) {
   const [fcmToken, setFcmToken] = React.useState<string | null>(null);
-  const [deviceToken, setDeviceToken] = React.useState<DeviceToken | null>(null);
+  const [deviceToken, setDeviceToken] = React.useState<DeviceToken | null>(
+    null,
+  );
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [permission, setPermission] = React.useState<NotificationPermission>(
@@ -145,13 +147,18 @@ export function useDeviceToken(authUserId?: string) {
               device_info: JSON.stringify({
                 type: deviceInfo.type,
                 name: deviceInfo.name,
-                version: deviceInfo.version || process.env.NEXT_PUBLIC_APP_VERSION,
+                version: deviceInfo.version ||
+                  process.env.NEXT_PUBLIC_APP_VERSION,
                 isStandalone: deviceInfo.isStandalone,
-                browser: typeof window !== "undefined" ? navigator.userAgent : "unknown",
-                platform: typeof window !== "undefined" ? navigator.platform : "unknown",
+                browser: typeof window !== "undefined"
+                  ? navigator.userAgent
+                  : "unknown",
+                platform: typeof window !== "undefined"
+                  ? navigator.platform
+                  : "unknown",
               }),
               is_active: true,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .eq("token", tokenData.token)
             .select()
@@ -161,7 +168,7 @@ export function useDeviceToken(authUserId?: string) {
             throw new Error(updateError.message);
           }
 
-          console.log('FCM token updated successfully');
+          console.log("FCM token updated successfully");
           return updatedToken;
         } else {
           // Insert new token
@@ -174,12 +181,17 @@ export function useDeviceToken(authUserId?: string) {
               device_info: JSON.stringify({
                 type: deviceInfo.type,
                 name: deviceInfo.name,
-                version: deviceInfo.version || process.env.NEXT_PUBLIC_APP_VERSION,
+                version: deviceInfo.version ||
+                  process.env.NEXT_PUBLIC_APP_VERSION,
                 isStandalone: deviceInfo.isStandalone,
-                browser: typeof window !== "undefined" ? navigator.userAgent : "unknown",
-                platform: typeof window !== "undefined" ? navigator.platform : "unknown",
+                browser: typeof window !== "undefined"
+                  ? navigator.userAgent
+                  : "unknown",
+                platform: typeof window !== "undefined"
+                  ? navigator.platform
+                  : "unknown",
               }),
-              is_active: true
+              is_active: true,
             })
             .select()
             .single();
@@ -188,7 +200,7 @@ export function useDeviceToken(authUserId?: string) {
             throw new Error(insertError.message);
           }
 
-          console.log('FCM token saved successfully');
+          console.log("FCM token saved successfully");
           return newToken;
         }
       } catch (err) {
@@ -261,18 +273,20 @@ export function useDeviceToken(authUserId?: string) {
         setFcmToken(existingToken.token);
 
         // Update last used timestamp
-        if (existingToken.user_id) {
+        if (existingToken.id) {
           await supabase
             .from("user_fcm_tokens")
             .update({
               last_used_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
-            .eq("user_id", existingToken.user_id);
+            .eq("id", existingToken.id);
         }
-      } else if (Notification.permission === 'granted') {
+      } else if (Notification.permission === "granted") {
         // If permission is granted but no token exists, try to get token without requesting permission
-        console.log("Permission granted but no token found, attempting to get token...");
+        console.log(
+          "Permission granted but no token found, attempting to get token...",
+        );
         try {
           // Skip permission request since it's already granted
           if (typeof window !== "undefined" && "Notification" in window) {
@@ -290,7 +304,10 @@ export function useDeviceToken(authUserId?: string) {
                   deviceName: getDeviceInfo().name,
                   appVersion: process.env.NEXT_PUBLIC_APP_VERSION,
                 };
-                const savedToken = await saveDeviceToken(tokenData, finalUserId);
+                const savedToken = await saveDeviceToken(
+                  tokenData,
+                  finalUserId,
+                );
                 if (savedToken) {
                   setDeviceToken(savedToken);
                   setFcmToken(token);
@@ -311,7 +328,7 @@ export function useDeviceToken(authUserId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [loadDeviceToken, requestPermissionAndToken, saveDeviceToken, dbUserId]);
+  }, [loadDeviceToken, saveDeviceToken]);
 
   /**
    * Register new FCM token

@@ -6,7 +6,6 @@ import { Unsubscribe } from 'firebase/messaging';
 import { getMessagingInstance, fetchToken, requestNotificationPermission, setupForegroundMessageHandler } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import React from 'react';
 // Initialize Supabase client
 // Global flags to prevent multiple operations
 let isRegistrationInProgress = false;
@@ -69,7 +68,7 @@ const storeTokenInSupabase = async (tokenToStore: string): Promise<boolean> => {
     };
 
     // Use the upsert_fcm_token RPC function
-    const { data, error } = await supabase
+    const { error } = await supabase
       .rpc('upsert_fcm_token', {
         p_user_id: profile.id,
         p_token: tokenToStore,

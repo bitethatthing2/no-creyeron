@@ -1,8 +1,10 @@
 'use client'
 
+import * as React from 'react'
+import { useEffect, useRef } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import type { z, ZodTypeAny } from 'zod'
+import { useForm, FieldValues, Path, PathValue, DefaultValues } from 'react-hook-form'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -22,187 +24,236 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import * as React from 'react';
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import type { Database } from '@/types/database.types' // Import your generated Supabase types
 
-interface DynamicFormProps<T extends z.ZodRawShape = z.ZodRawShape> {
-  schema: z.ZodObject<T>
-  onSubmit: (data: z.infer<z.ZodObject<T>>) => void
-  isLoading?: boolean
-  initialValues?: Partial<z.infer<z.ZodObject<T>>>
-  labels?: Record<string, string | { label: string; options?: Record<string, string> }>
-  columnInfo?: Record<string, { data_type: string; is_nullable: boolean }>
+// Use exact Json type from Supabase
+type Json = Database['public']['Tables']['users']['Row']['permissions']
+
+// Type definitions with exact types
+interface LabelConfig {
+  label: string
+  description?: string
+  placeholder?: string
+  options?: Record<string, string>
 }
 
-const getZodDef = (schema: ZodTypeAny): Record<string, unknown> =>
-  (schema as { _def?: Record<string, unknown>; def?: Record<string, unknown> })._def || (schema as { _def?: Record<string, unknown>; def?: Record<string, unknown> }).def
+interface ColumnInfo {
+  data_type: string
+  is_nullable: boolean
+  column_default?: string | null
+  character_maximum_length?: number | null
+}
 
-const unwrapZodType = (fieldSchema: ZodTypeAny): ZodTypeAny => {
-  if (
-    !fieldSchema ||
-    typeof getZodDef(fieldSchema) !== 'object' ||
-    getZodDef(fieldSchema) === null
-  ) {
-    throw new Error(
-      `unwrapZodType received an invalid Zod schema object. Check the console for the problematic schema/key.`
-    )
-  }
+// Exact type for default values - no 'any'
+type DefaultValue = string | number | boolean | null | undefined | string[] | Json
+
+interface DynamicFormProps<TFieldValues extends FieldValues = FieldValues> {
+  schema: z.ZodObject<z.ZodRawShape>
+  onSubmitAction: (data: TFieldValues) => void | Promise<void>
+  isLoading?: boolean
+  initialValues?: Partial<TFieldValues>
+  labels?: Record<string, string | LabelConfig>
+  columnInfo?: Record<string, ColumnInfo>
+  className?: string
+  submitButtonText?: string
+  cancelButtonText?: string
+  onCancelAction?: () => void
+  showReset?: boolean
+  fieldOrder?: string[]
+  renderBeforeSubmit?: () => React.ReactNode
+  renderAfterSubmit?: () => React.ReactNode
+}
+
+// Type guard for ZodOptional
+function isZodOptional(schema: z.ZodTypeAny): schema is z.ZodOptional<z.ZodTypeAny> {
+  return schema._def?.typeName === z.ZodFirstPartyTypeKind.ZodOptional
+}
+
+// Type guard for ZodNullable
+function isZodNullable(schema: z.ZodTypeAny): schema is z.ZodNullable<z.ZodTypeAny> {
+  return schema._def?.typeName === z.ZodFirstPartyTypeKind.ZodNullable
+}
+
+// Type guard for ZodDefault
+function isZodDefault(schema: z.ZodTypeAny): schema is z.ZodDefault<z.ZodTypeAny> {
+  return schema._def?.typeName === z.ZodFirstPartyTypeKind.ZodDefault
+}
+
+// Type guard for ZodEffects
+function isZodEffects(schema: z.ZodTypeAny): schema is z.ZodEffects<z.ZodTypeAny> {
+  return schema._def?.typeName === z.ZodFirstPartyTypeKind.ZodEffects
+}
+
+// Type guard for ZodEnum
+function isZodEnum(schema: z.ZodTypeAny): schema is z.ZodEnum<[string, ...string[]]> {
+  return schema._def?.typeName === z.ZodFirstPartyTypeKind.ZodEnum
+}
+
+
+// Helper to get the actual type name from Zod schema
+const getZodTypeName = (schema: z.ZodTypeAny): z.ZodFirstPartyTypeKind | 'unknown' => {
+  const def = schema._def
+  if (!def || !def.typeName) return 'unknown'
+  return def.typeName
+}
+
+// Helper to unwrap optional/nullable/default types with proper type guards
+const unwrapZodType = (fieldSchema: z.ZodTypeAny): z.ZodTypeAny => {
   let currentSchema = fieldSchema
 
-  // Support both old (typeName) and new (type) Zod formats
-  const getTypeName = (def: Record<string, unknown>) => def.typeName || def.type
-
-  while (
-    getTypeName(getZodDef(currentSchema)) === 'ZodOptional' ||
-    getTypeName(getZodDef(currentSchema)) === 'optional' ||
-    getTypeName(getZodDef(currentSchema)) === 'ZodDefault' ||
-    getTypeName(getZodDef(currentSchema)) === 'default' ||
-    getTypeName(getZodDef(currentSchema)) === 'ZodNullable' ||
-    getTypeName(getZodDef(currentSchema)) === 'nullable' ||
-    getTypeName(getZodDef(currentSchema)) === 'ZodEffects' ||
-    getTypeName(getZodDef(currentSchema)) === 'effects'
-  ) {
-    const typeName = getTypeName(getZodDef(currentSchema))
-    if (typeName === 'ZodEffects' || typeName === 'effects') {
-      // For ZodEffects, get the schema inside the effect
-      currentSchema = getZodDef(currentSchema).schema
+  // Keep unwrapping until we get to the base type
+  while (true) {
+    if (isZodOptional(currentSchema)) {
+      currentSchema = currentSchema.unwrap()
+    } else if (isZodNullable(currentSchema)) {
+      currentSchema = currentSchema.unwrap()
+    } else if (isZodDefault(currentSchema)) {
+      currentSchema = currentSchema.removeDefault()
+    } else if (isZodEffects(currentSchema)) {
+      // For ZodEffects, get the inner schema
+      const innerSchema = currentSchema._def.schema
+      if (innerSchema) {
+        currentSchema = innerSchema
+      } else {
+        break
+      }
     } else {
-      currentSchema = getZodDef(currentSchema).innerType
+      break
     }
   }
+
   return currentSchema
 }
 
-export function DynamicForm<T extends z.ZodRawShape = z.ZodRawShape>({
+// Helper to get default value based on type
+const getDefaultValue = (fieldSchema: z.ZodTypeAny): DefaultValue => {
+  // Check for explicit default in ZodDefault
+  if (isZodDefault(fieldSchema)) {
+    const defaultValueFn = fieldSchema._def.defaultValue
+    if (typeof defaultValueFn === 'function') {
+      return defaultValueFn()
+    }
+  }
+
+  const baseType = unwrapZodType(fieldSchema)
+  const typeName = getZodTypeName(baseType)
+
+  switch (typeName) {
+    case z.ZodFirstPartyTypeKind.ZodString:
+      return ''
+    case z.ZodFirstPartyTypeKind.ZodBoolean:
+      return false
+    case z.ZodFirstPartyTypeKind.ZodNumber:
+      return 0
+    case z.ZodFirstPartyTypeKind.ZodEnum:
+      if (isZodEnum(baseType)) {
+        const values = baseType._def.values
+        return values[0] || ''
+      }
+      return ''
+    case z.ZodFirstPartyTypeKind.ZodArray:
+      return []
+    case z.ZodFirstPartyTypeKind.ZodObject:
+      return {}
+    default:
+      return undefined
+  }
+}
+
+function DynamicFormInner<TFieldValues extends FieldValues = FieldValues>({
   schema,
-  onSubmit,
+  onSubmitAction,
   isLoading = false,
   initialValues,
   labels,
   columnInfo,
-}: DynamicFormProps<T>) {
-  const isInitializingRef = React.useRef(true)
+  className,
+  submitButtonText = 'Submit',
+  cancelButtonText = 'Cancel',
+  onCancelAction,
+  showReset = false,
+  fieldOrder,
+  renderBeforeSubmit,
+  renderAfterSubmit,
+}: DynamicFormProps<TFieldValues>) {
+  const isInitializingRef = useRef(true)
 
-  const defaultValues = Object.keys(schema.shape).reduce(
-    (acc, key) => {
-      const originalFieldSchema = schema.shape[key]
-      if (typeof originalFieldSchema === 'undefined') {
-        throw new Error(
-          `Schema error: schema.shape['${key}'] is undefined. Check schema definition.`
-        )
-      }
+  // Build default values from schema
+  const defaultValues = React.useMemo(() => {
+    const values: Record<string, DefaultValue> = {}
+    const schemaShape = schema.shape
+    
+    if (schemaShape) {
+      Object.keys(schemaShape).forEach((key) => {
+        const fieldSchema = schemaShape[key] as z.ZodTypeAny
+        if (fieldSchema) {
+          values[key] = getDefaultValue(fieldSchema)
+        }
+      })
+    }
+    
+    return values as DefaultValues<TFieldValues>
+  }, [schema])
 
-      // Support both old (typeName) and new (type) Zod formats
-      const getTypeName = (def: Record<string, unknown>) => def.typeName || def.type
-
-      if (
-        getTypeName(getZodDef(originalFieldSchema)) === 'ZodDefault' ||
-        getTypeName(getZodDef(originalFieldSchema)) === 'default'
-      ) {
-        acc[key] = getZodDef(originalFieldSchema).defaultValue()
-        return acc
-      }
-
-      const baseType = unwrapZodType(originalFieldSchema)
-
-      switch (getTypeName(getZodDef(baseType))) {
-        case 'ZodString':
-        case 'string':
-          acc[key] = ''
-          break
-        case 'ZodBoolean':
-        case 'boolean':
-          acc[key] = false // Default optional booleans to false
-          break
-        case 'ZodEnum':
-        case 'enum':
-          // For enums, use the first enum value as default
-          const enumValues = getZodDef(baseType).values || []
-          acc[key] = enumValues.length > 0 ? enumValues[0] : ''
-          break
-        case 'ZodNumber':
-        case 'number':
-          acc[key] = 0 // Default optional numbers to 0
-          break
-        case 'ZodArray':
-        case 'array':
-          acc[key] = [] // Default arrays to empty array
-          break
-        default:
-          acc[key] = undefined // For other types, or if truly no default makes sense
-          break
-      }
-      return acc
-    },
-    {} as Record<string, unknown>
-  )
-
-  const form = useForm<z.infer<typeof schema>>({
+  // Initialize form with proper typing
+  const form = useForm<TFieldValues>({
     resolver: zodResolver(schema),
-    defaultValues: defaultValues as Record<string, unknown>,
+    defaultValues,
   })
 
-  React.useEffect(() => {
-    if (initialValues) {
+  // Handle initial values
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
       isInitializingRef.current = true
-      const schemaKeys = Object.keys(schema.shape)
-      const processedInitialValues = schemaKeys.reduce(
-        (acc, key) => {
-          const fieldDefFromSchema = schema.shape[key]
-          if (typeof fieldDefFromSchema === 'undefined') {
-            throw new Error(`Schema error in React.useEffect: schema.shape['${key}'] is undefined.`)
-          }
-          const value = initialValues.hasOwnProperty(key) ? initialValues[key] : undefined
-          const baseFieldType = unwrapZodType(fieldDefFromSchema)
-
-          // Support both old (typeName) and new (type) Zod formats
-          const getTypeName = (def: Record<string, unknown>) => def.typeName || def.type
-
-          const fieldTypeName = getTypeName(getZodDef(baseFieldType))
-          if (fieldTypeName === 'ZodBoolean' || fieldTypeName === 'boolean') {
-            acc[key] = !!value
-          } else if (fieldTypeName === 'ZodString' || fieldTypeName === 'string') {
-            acc[key] = value === null || value === undefined ? '' : String(value)
-          } else if (fieldTypeName === 'ZodEnum' || fieldTypeName === 'enum') {
-            const enumValues = getZodDef(baseFieldType).values || []
-            acc[key] =
-              value === null || value === undefined || !enumValues.includes(value)
-                ? enumValues[0] || ''
-                : String(value)
-          } else if (fieldTypeName === 'ZodNumber' || fieldTypeName === 'number') {
-            const num = Number(value)
-            acc[key] = isNaN(num) ? 0 : num
-          } else if (fieldTypeName === 'ZodArray' || fieldTypeName === 'array') {
-            // For arrays, the value should already be an array from the database
-            // Handle null values properly
-            if (Array.isArray(value)) {
-              acc[key] = value
-            } else if (value === null || value === undefined) {
-              acc[key] = []
-            } else if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
-              // Parse PostgreSQL array format like {ONE,TWO} into JavaScript array
-              try {
-                const innerContent = value.slice(1, -1) // Remove { and }
-                if (innerContent.trim() === '') {
-                  acc[key] = []
-                } else {
-                  // Split by comma and trim whitespace
-                  acc[key] = innerContent.split(',').map((item: string) => item.trim())
+      
+      const processedValues: Record<string, DefaultValue> = {}
+      const schemaShape = schema.shape
+      
+      if (schemaShape) {
+        Object.keys(schemaShape).forEach((key) => {
+          const fieldSchema = schemaShape[key] as z.ZodTypeAny
+          if (!fieldSchema) return
+          
+          const value = initialValues[key as keyof typeof initialValues]
+          const baseType = unwrapZodType(fieldSchema)
+          const typeName = getZodTypeName(baseType)
+          
+          // Process value based on type
+          switch (typeName) {
+            case z.ZodFirstPartyTypeKind.ZodBoolean:
+              processedValues[key] = Boolean(value)
+              break
+            case z.ZodFirstPartyTypeKind.ZodNumber:
+              processedValues[key] = value == null ? 0 : Number(value)
+              break
+            case z.ZodFirstPartyTypeKind.ZodString:
+              processedValues[key] = value == null ? '' : String(value)
+              break
+            case z.ZodFirstPartyTypeKind.ZodArray:
+              if (Array.isArray(value)) {
+                processedValues[key] = value
+              } else if (typeof value === 'string' && value.startsWith('{')) {
+                // Handle PostgreSQL array format
+                try {
+                  const innerContent = value.slice(1, -1)
+                  processedValues[key] = innerContent ? innerContent.split(',').map((item: string) => item.trim()) : []
+                } catch {
+                  processedValues[key] = []
                 }
-              } catch {
-                // If parsing fails, default to empty array
-                acc[key] = []
+              } else {
+                processedValues[key] = []
               }
-            } else {
-              acc[key] = []
-            }
-          } else {
-            acc[key] = value
+              break
+            default:
+              processedValues[key] = value as DefaultValue
           }
-          return acc
-        },
-        {} as Record<string, unknown>
-      )
-      form.reset(processedInitialValues as Record<string, unknown>)
+        })
+      }
+      
+      form.reset(processedValues as DefaultValues<TFieldValues>)
+      
       setTimeout(() => {
         isInitializingRef.current = false
       }, 0)
@@ -211,188 +262,183 @@ export function DynamicForm<T extends z.ZodRawShape = z.ZodRawShape>({
     }
   }, [initialValues, form, schema])
 
-  const renderField = (fieldName: string, fieldSchema: ZodTypeAny) => {
+  // Render individual field with proper typing
+  const renderField = (fieldName: string): React.ReactElement => {
+    const schemaShape = schema.shape
+    if (!schemaShape || !schemaShape[fieldName]) return <React.Fragment key={fieldName} />
+    
+    const fieldSchema = schemaShape[fieldName] as z.ZodTypeAny
     const baseType = unwrapZodType(fieldSchema)
-    // Support both old (typeName) and new (type) Zod formats
-    const getTypeName = (def: Record<string, unknown>) => def.typeName || def.type
-    const typeName = getTypeName(getZodDef(baseType))
+    const typeName = getZodTypeName(baseType)
     const description = fieldSchema.description
+    
+    const labelConfig = labels?.[fieldName]
+    const label = typeof labelConfig === 'string' 
+      ? labelConfig 
+      : labelConfig?.label || fieldName
+    const placeholder = typeof labelConfig === 'object' 
+      ? labelConfig.placeholder 
+      : `Enter ${fieldName}`
+    const fieldDescription = typeof labelConfig === 'object' 
+      ? labelConfig.description 
+      : description
+    
+    const colInfo = columnInfo?.[fieldName]
+    const isNullable = colInfo?.is_nullable || false
+    const maxLength = colInfo?.character_maximum_length
 
     return (
-      <FormField
+      <FormField<TFieldValues>
         key={fieldName}
         control={form.control}
-        name={fieldName as keyof typeof schema.shape}
+        name={fieldName as Path<TFieldValues>}
         render={({ field }) => {
-          const labelConfig = labels?.[fieldName]
-          const label =
-            typeof labelConfig === 'string' ? labelConfig : labelConfig?.label || fieldName
-          const typeDisplay = columnInfo?.[fieldName]?.data_type || ''
+          // Render different input types based on the Zod schema type
           switch (typeName) {
-            case 'ZodString':
-            case 'string':
+            case z.ZodFirstPartyTypeKind.ZodString: {
+              const isLongText = maxLength && maxLength > 255
+              const InputComponent = isLongText ? Textarea : Input
+              
               return (
-                <FormItem className="py-6 border-b">
-                  <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4 lg:gap-8">
-                    <div className="flex-1 pr-4">
-                      <FormLabel>{label}</FormLabel>
-                      <div className="text-sm text-muted-foreground mt-1">{typeDisplay}</div>
-                      {description && <FormDescription>{description}</FormDescription>}
-                      <FormMessage />
-                    </div>
-                    <div className="flex-1 lg:max-w-1/2">
-                      <FormControl>
-                        <Input
-                          placeholder={`Enter your ${fieldName}`}
-                          {...field}
-                          value={String(field.value || '')}
-                        />
-                      </FormControl>
-                    </div>
-                  </div>
+                <FormItem className="space-y-2">
+                  <FormLabel>{label}</FormLabel>
+                  {fieldDescription && (
+                    <FormDescription>{fieldDescription}</FormDescription>
+                  )}
+                  <FormControl>
+                    <InputComponent
+                      placeholder={placeholder}
+                      {...field}
+                      value={String(field.value || '')}
+                      maxLength={maxLength || undefined}
+                      className={cn(
+                        isLongText && 'min-h-[100px]'
+                      )}
+                    />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )
-            case 'ZodNumber':
-            case 'number':
+            }
+            
+            case z.ZodFirstPartyTypeKind.ZodNumber:
               return (
-                <FormItem className="py-6 border-b">
-                  <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4 lg:gap-8">
-                    <div className="flex-1 pr-4">
-                      <FormLabel>{label}</FormLabel>
-                      <div className="text-sm text-muted-foreground">{typeDisplay}</div>
-                      {description && <FormDescription>{description}</FormDescription>}
-                      <FormMessage />
-                    </div>
-                    <div className="flex-1 lg:max-w-1/2">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder={`Enter value for ${fieldName}`}
-                          {...field}
-                          value={String(field.value ?? '')}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            const num = parseInt(value, 10)
-                            field.onChange(isNaN(num) ? undefined : num)
-                          }}
-                        />
-                      </FormControl>
-                    </div>
-                  </div>
+                <FormItem className="space-y-2">
+                  <FormLabel>{label}</FormLabel>
+                  {fieldDescription && (
+                    <FormDescription>{fieldDescription}</FormDescription>
+                  )}
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder={placeholder}
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        const num = parseFloat(value)
+                        field.onChange(isNaN(num) ? undefined : num)
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )
-            case 'ZodBoolean':
-            case 'boolean':
+            
+            case z.ZodFirstPartyTypeKind.ZodBoolean:
               return (
-                <FormItem className="py-6 border-b flex flex-row items-center justify-between gap-8">
-                  <div>
-                    <FormLabel>{label}</FormLabel>
-                    <div className="text-sm text-muted-foreground">{typeDisplay}</div>
-                    {description && <FormDescription>{description}</FormDescription>}
-                    <FormMessage />
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">{label}</FormLabel>
+                    {fieldDescription && (
+                      <FormDescription>{fieldDescription}</FormDescription>
+                    )}
                   </div>
                   <FormControl>
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={Boolean(field.value)}
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
                 </FormItem>
               )
-            case 'ZodEnum':
-            case 'enum':
-              const options = getZodDef(baseType).values
+            
+            case z.ZodFirstPartyTypeKind.ZodEnum: {
+              if (!isZodEnum(baseType)) return <></>
+              const options: readonly string[] = baseType._def.values
               const optionLabels = typeof labelConfig === 'object' ? labelConfig.options : undefined
+              
               return (
-                <FormItem className="py-6 border-b">
-                  <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4 lg:gap-8">
-                    <div className="flex-1 pr-4">
-                      <FormLabel>{label}</FormLabel>
-                      <div className="text-sm text-muted-foreground">{typeDisplay}</div>
-                      {description && <FormDescription>{description}</FormDescription>}
-                      <FormMessage />
-                    </div>
-                    <div className="flex-1 lg:max-w-1/2">
-                      <Select
-                        onValueChange={(value) => {
-                          if (!isInitializingRef.current) {
-                            field.onChange(value)
-                          }
-                        }}
-                        value={String(field.value || '')}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={`Select a ${fieldName}`} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {options.map((option: string) => (
-                            <SelectItem key={option} value={option}>
-                              {optionLabels?.[option] || option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                <FormItem className="space-y-2">
+                  <FormLabel>{label}</FormLabel>
+                  {fieldDescription && (
+                    <FormDescription>{fieldDescription}</FormDescription>
+                  )}
+                  <Select
+                    onValueChange={field.onChange}
+                    value={String(field.value || '')}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={placeholder} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {isNullable && (
+                        <SelectItem value="">None</SelectItem>
+                      )}
+                      {options.map((option: string) => (
+                        <SelectItem key={option} value={option}>
+                          {optionLabels?.[option] || option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )
-            case 'ZodArray':
-            case 'array':
+            }
+            
+            case z.ZodFirstPartyTypeKind.ZodArray:
               return (
-                <FormItem className="py-6 border-b">
-                  <div className="flex flex-row items-center justify-between w-full gap-8">
-                    <div className="flex-1 pr-4">
-                      <FormLabel>{label}</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Enter as JSON array: [&quot;item1&quot;, &quot;item2&quot;]
-                        {columnInfo?.[fieldName]?.is_nullable && ' (leave empty for null)'}
-                      </div>
-
-                      {description && <FormDescription>{description}</FormDescription>}
-                      <FormMessage />
-                    </div>
-                    <div className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder={
-                            columnInfo?.[fieldName]?.is_nullable
-                              ? `[&quot;item1&quot;, &quot;item2&quot;] or leave empty for null`
-                              : `[&quot;item1&quot;, &quot;item2&quot;]`
+                <FormItem className="space-y-2">
+                  <FormLabel>{label}</FormLabel>
+                  {fieldDescription && (
+                    <FormDescription>{fieldDescription}</FormDescription>
+                  )}
+                  <FormControl>
+                    <Textarea
+                      placeholder='Enter as JSON array: ["item1", "item2"]'
+                      {...field}
+                      value={
+                        field.value == null
+                          ? ''
+                          : Array.isArray(field.value)
+                            ? JSON.stringify(field.value)
+                            : String(field.value || '')
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value.trim() === '') {
+                          field.onChange((isNullable ? null : []) as PathValue<TFieldValues, Path<TFieldValues>>)
+                        } else {
+                          try {
+                            const parsed = JSON.parse(value)
+                            field.onChange((Array.isArray(parsed) ? parsed : value) as PathValue<TFieldValues, Path<TFieldValues>>)
+                          } catch {
+                            field.onChange(value as PathValue<TFieldValues, Path<TFieldValues>>)
                           }
-                          {...field}
-                          value={
-                            field.value === null || field.value === undefined
-                              ? ''
-                              : Array.isArray(field.value)
-                                ? JSON.stringify(field.value)
-                                : String(field.value || '')
-                          }
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value.trim() === '') {
-                              // Empty string means null (for nullable) or empty array (for non-nullable)
-                              field.onChange(null)
-                            } else {
-                              try {
-                                const parsed = JSON.parse(value)
-                                if (Array.isArray(parsed)) {
-                                  field.onChange(parsed)
-                                } else {
-                                  // If it's not an array, treat as invalid input
-                                  field.onChange(value)
-                                }
-                              } catch {
-                                // Invalid JSON, keep the string value to show error
-                                field.onChange(value)
-                              }
-                            }
-                          }}
-                        />
-                      </FormControl>
-                    </div>
-                  </div>
+                        }
+                      }}
+                      className="font-mono text-sm"
+                    />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )
+            
             default:
+              // Return empty fragment for unsupported types
               return <></>
           }
         }}
@@ -400,18 +446,63 @@ export function DynamicForm<T extends z.ZodRawShape = z.ZodRawShape>({
     )
   }
 
+  // Determine field order
+  const fieldsToRender = fieldOrder || (schema.shape ? Object.keys(schema.shape) : [])
+
+  const handleSubmit = form.handleSubmit((data) => {
+    onSubmitAction(data)
+  })
+
+  const handleCancel = () => {
+    if (onCancelAction) {
+      onCancelAction()
+    }
+  }
+
+  const handleReset = () => {
+    form.reset()
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        {Object.keys(schema.shape).map((fieldName) =>
-          renderField(fieldName, schema.shape[fieldName])
-        )}
-        <div className="pt-6">
+      <form onSubmit={handleSubmit} className={cn('space-y-6', className)}>
+        {fieldsToRender.map((fieldName) => renderField(fieldName))}
+        
+        {renderBeforeSubmit?.()}
+        
+        <div className="flex items-center gap-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save'}
+            {isLoading ? 'Loading...' : submitButtonText}
           </Button>
+          
+          {onCancelAction && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isLoading}
+            >
+              {cancelButtonText}
+            </Button>
+          )}
+          
+          {showReset && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleReset}
+              disabled={isLoading}
+            >
+              Reset
+            </Button>
+          )}
         </div>
+        
+        {renderAfterSubmit?.()}
       </form>
     </Form>
   )
 }
+
+// Export the component with proper typing
+export const DynamicForm = React.memo(DynamicFormInner) as typeof DynamicFormInner

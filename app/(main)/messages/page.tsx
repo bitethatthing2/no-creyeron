@@ -179,8 +179,8 @@ export default function MessagesInboxPage() {
   }, [searchQuery, showAllMembers, searchForUsers]);
 
   const getDisplayName = (conversation: Conversation): string => {
-    // Skip generic placeholders
-    const invalidNames = ['Chat Participant', 'chat participant', ''];
+    // Skip generic placeholders and ID-based names
+    const invalidNames = ['chat participant', 'unknown user', 'wolf pack member', 'new message', 'new conversation', ''];
     
     // Try to get a valid display name
     const possibleNames = [
@@ -193,15 +193,22 @@ export default function MessagesInboxPage() {
     
     for (const name of possibleNames) {
       if (name && !invalidNames.includes(name.toLowerCase().trim())) {
+        // Also reject names that look like "Wolf Pack Chat" with an ID
+        if (name.startsWith('Wolf Pack Chat ') && name.length > 20) {
+          console.log(`Rejecting ID-based name: ${name}`);
+          continue;
+        }
         return name;
       }
     }
     
-    // If we have a user ID, show it as last resort
-    if (conversation.other_user_id) {
-      return `User ${conversation.other_user_id.slice(0, 8)}`;
+    // Check if this is a new conversation without messages
+    if (!conversation.last_message || conversation.last_message === '') {
+      return 'New Conversation';
     }
     
+    // We have messages but couldn't get the name - this is an error state
+    console.error(`Failed to get name for conversation ${conversation.id} with message: ${conversation.last_message}`);
     return 'Unknown User';
   };
 

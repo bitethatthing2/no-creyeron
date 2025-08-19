@@ -214,6 +214,11 @@ export const fetchToken = async (maxRetries = 2): Promise<string | null> => {
       // Use the VAPID key from secure configuration
       const vapidKey = firebaseConfig.vapidKey;
       
+      if (!vapidKey) {
+        console.error('VAPID key is missing from Firebase configuration');
+        throw new Error('VAPID key is required for FCM token generation');
+      }
+      
       console.log(`Attempting to get FCM token (attempt ${retryCount + 1}/${maxRetries + 1})`);
       
       // Check if service worker is active
