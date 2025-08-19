@@ -12,7 +12,6 @@ import type { Database } from "@/types/database.types";
 
 // Type definitions based on your Supabase schema
 type FeatureFlag = Database["public"]["Tables"]["feature_flags"]["Row"];
-type User = Database["public"]["Tables"]["users"]["Row"];
 
 /**
  * Result from checking feature access
@@ -358,9 +357,8 @@ export function useMultipleFeatureFlags(
   const [error, setError] = React.useState<Error | null>(null);
 
   // Memoize the flag names to prevent unnecessary re-renders
-  const memoizedFlagNames = React.useMemo(() => flagNames, [
-    flagNames.join(","),
-  ]);
+  const flagNamesKey = flagNames.join(",");
+  const memoizedFlagNames = React.useMemo(() => flagNames, [flagNamesKey]);
 
   const checkFeatures = React.useCallback(async () => {
     if (memoizedFlagNames.length === 0) {
