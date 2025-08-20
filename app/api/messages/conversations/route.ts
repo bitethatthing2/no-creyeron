@@ -25,7 +25,7 @@ interface ConversationParticipantRaw {
   joined_at: string;
   last_read_at: string | null;
   notification_settings: Record<string, unknown> | null;
-  wolfpack_conversations: ConversationData[] | null;
+  wolfpack_conversations: ConversationData | null;
 }
 
 interface ParticipantWithUser {
@@ -173,17 +173,15 @@ export async function GET() {
       conversations.map(async (convParticipant: ConversationParticipantRaw) => {
         try {
           const conversationId = convParticipant.conversation_id;
-          const conversationArray = convParticipant.wolfpack_conversations;
+          const conversation = convParticipant.wolfpack_conversations;
 
-          if (!conversationArray || !Array.isArray(conversationArray) || conversationArray.length === 0) {
+          if (!conversation) {
             console.warn(
               `No conversation data for participant:`,
               convParticipant,
             );
             return null;
           }
-
-          const conversation = conversationArray[0]; // Get the first (and should be only) conversation
 
           console.log(`🎯 Processing conversation:`, {
             conversation_id: conversationId,

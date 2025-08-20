@@ -66,16 +66,23 @@ export default function MessagesInboxPage() {
   const [retrying, setRetrying] = useState(false);
 
   const loadConversations = useCallback(async (isRetry = false) => {
+    if (!currentUser) {
+      console.log('⚠️ loadConversations called without currentUser');
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
       if (isRetry) setRetrying(true);
 
+      console.log('📞 Calling conversations API...');
       const response = await fetch('/api/messages/conversations', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -95,6 +102,9 @@ export default function MessagesInboxPage() {
       }
 
       const data = await response.json();
+      console.log('📱 Messages page received data:', data);
+      console.log('📱 Number of conversations:', data.conversations?.length || 0);
+      
       setConversations(data.conversations || []);
 
       setError(null);
@@ -163,10 +173,12 @@ export default function MessagesInboxPage() {
 
   useEffect(() => {
     if (!currentUser) {
+      console.log('❌ No current user, redirecting to login');
       router.push('/login');
       return;
     }
 
+    console.log('🚀 Messages page loading conversations for user:', currentUser.id);
     loadConversations();
   }, [currentUser, router, loadConversations]);
 
@@ -363,7 +375,15 @@ export default function MessagesInboxPage() {
                 {searchUsers.map((user: UserSearchResult) => (
                   <button
                     key={user.id}
-                    onClick={() => router.push(`/messages/user/${user.auth_id || user.id}`)}
+                    onClick={() => {
+                      console.log('🔍 Clicking on user:', {
+                        id: user.id,
+                        auth_id: user.auth_id,
+                        displayName: user.displayName || user.display_name,
+                        navigating_to: `/messages/user/${user.id}`
+                      });
+                      router.push(`/messages/user/${user.id}`);
+                    }}
                     className="w-full flex items-center gap-4 p-4 hover:bg-gray-900/50 transition-colors text-left"
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">

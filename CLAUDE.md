@@ -1,3 +1,28 @@
+# 🚨 ABSOLUTELY FORBIDDEN - DO NOT TOUCH THESE SYSTEMS 🚨
+
+## MESSAGING SYSTEM - WORKING, DO NOT MODIFY
+**❌ DO NOT TOUCH ANY OF THESE FILES:**
+- `/app/api/messages/conversations/route.ts` - WORKING
+- `/app/api/messages/wolfpack-members/route.ts` - WORKING  
+- `/lib/hooks/useMessaging.ts` - WORKING
+- `/app/(main)/messages/page.tsx` - WORKING
+- `/app/(main)/messages/user/[userId]/page.tsx` - WORKING
+- `/app/(main)/messages/conversation/[conversationId]/page.tsx` - WORKING
+
+**IF YOU NEED TO CHECK MESSAGING**: Read `MESSAGING_SYSTEM_CRITICAL_NOTES.md` FIRST
+
+## WHY THIS MATTERS
+- The messaging system is FULLY FUNCTIONAL as of 2025-01-20
+- Previous "improvements" broke working code repeatedly
+- Time wasted fixing the same issues: HOURS
+- User frustration level: MAXIMUM
+
+## IF ASKED TO MODIFY MESSAGING
+1. **STOP** - The system works
+2. **ASK** - "The messaging system is currently working. What specific NEW feature do you need?"
+3. **NEVER** refactor, optimize, or "improve" without explicit request
+4. **DOCUMENT** any new features in MESSAGING_SYSTEM_CRITICAL_NOTES.md
+
 # CRITICAL RULES - DO NOT BREAK
 
 ## NEVER TOUCH THE BACKEND

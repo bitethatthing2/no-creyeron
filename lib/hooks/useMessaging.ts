@@ -848,11 +848,21 @@ export function useMessaging(): UseMessagingReturn {
   // Create or get a direct conversation with another user
   const getOrCreateDirectConversation = React.useCallback(
     async (otherUserId: string) => {
-      if (!currentUserId) return null;
+      console.log('🔍 getOrCreateDirectConversation called with:', {
+        otherUserId,
+        currentUserId,
+        hasCurrentUser: !!currentUserId
+      });
+      
+      if (!currentUserId) {
+        console.error('❌ No current user ID available');
+        return null;
+      }
 
       try {
         // First check if a direct conversation already exists
-        const { data: existing } = await supabase
+        console.log('🔍 Checking for existing conversation...');
+        const { data: existing, error: existingError } = await supabase
           .from("wolfpack_conversation_participants")
           .select(`
             conversation_id,
@@ -863,16 +873,29 @@ export function useMessaging(): UseMessagingReturn {
           `)
           .eq("user_id", currentUserId)
           .eq("is_active", true);
+          
+        if (existingError) {
+          console.error('❌ Error fetching existing conversations:', existingError);
+          throw existingError;
+        }
+        
+        console.log('📊 Found participations:', existing?.length || 0);
 
         // Find direct conversation with the other user
         if (existing) {
           for (const participation of existing) {
-            // Type guard to ensure conversation exists and has the expected structure
-            const convArray = participation.conversation as { id: string; conversation_type: string }[] | null;
-            if (!convArray || !Array.isArray(convArray) || convArray.length === 0) continue;
+            // The conversation is a single object, not an array
+            const conv = participation.conversation as { id: string; conversation_type: string } | null;
+            console.log('🔍 Checking participation:', {
+              conversation_id: participation.conversation_id,
+              has_conversation: !!conv,
+              conversation_type: conv?.conversation_type
+            });
             
-            const conv = convArray[0]; // Get the first (and should be only) conversation
-            if (conv && conv.conversation_type === "direct") {
+            if (!conv) continue;
+            
+            if (conv.conversation_type === "direct") {
+              console.log('📍 Found direct conversation, checking for other participant...');
               const { data: otherParticipant } = await supabase
                 .from("wolfpack_conversation_participants")
                 .select("user_id")
@@ -882,11 +905,14 @@ export function useMessaging(): UseMessagingReturn {
                 .single();
 
               if (otherParticipant) {
+                console.log('✅ Found existing conversation with user:', participation.conversation_id);
                 return participation.conversation_id;
               }
             }
           }
         }
+        
+        console.log('📝 No existing conversation found, creating new one...');
 
         // Create new conversation
         const conversationInsert: ConversationInsert = {
@@ -925,8 +951,10 @@ export function useMessaging(): UseMessagingReturn {
 
         if (partError) throw partError;
 
+        console.log('✅ Successfully created new conversation:', newConv!.id);
         return newConv!.id;
       } catch (err) {
+        console.error('❌ Error in getOrCreateDirectConversation:', err);
         setError(
           err instanceof Error ? err.message : "Failed to create conversation",
         );
