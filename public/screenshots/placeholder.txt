@@ -1,0 +1,2 @@
+This is a placeholder file to create the screenshots directory.
+The actual screenshot files need to be created with proper mobile and desktop screenshots.

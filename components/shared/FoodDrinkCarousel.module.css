@@ -1,0 +1,138 @@
+/* =============================================================================
+   FOOD DRINK CAROUSEL - CSS MODULE
+   Production-ready styles for carousel component
+   ============================================================================= */
+
+/* Carousel Track Animation */
+.carouselTrack {
+  transition: transform 500ms ease-in-out;
+  transform: var(--carousel-transform);
+}
+
+/* Width classes for carousel items */
+.carouselItem {
+  flex-shrink: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.carouselItem1 {
+  width: 100%;
+}
+
+.carouselItem2 {
+  width: 50%;
+}
+
+.carouselItem3 {
+  width: 33.333333%;
+}
+
+.carouselItem4 {
+  width: 25%;
+}
+
+/* Scrollbar hide for category filters */
+.scrollbarHide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbarHide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Gradient overlays */
+.gradientOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+}
+
+/* Popular badge animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.popularBadge {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Card hover effects */
+.carouselCard {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carouselCard:hover {
+  transform: translateY(-4px);
+}
+
+.carouselCard:hover .cardImage {
+  transform: scale(1.1);
+}
+
+.cardImage {
+  transition: transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .carouselItem {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .carouselCard:hover {
+    transform: translateY(-6px);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .carouselTrack,
+  .carouselCard,
+  .cardImage,
+  .popularBadge {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .carouselCard {
+    border-width: 2px;
+  }
+  
+  .gradientOverlay {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  }
+}

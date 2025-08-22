@@ -1,0 +1,196 @@
+/* TikTok Style Feed Component Styles - Mobile First */
+/* 
+ * Design Philosophy: Mobile-first responsive design with progressive enhancement
+ * Error Prevention: Comprehensive fallbacks and defensive CSS
+ */
+
+.tiktokFeedTopnav {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+}
+
+.tiktokFeedScrollContainer {
+  scroll-behavior: smooth;
+  /* overscroll-behavior-y moved to @supports for Safari compatibility */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+/* Hide scrollbar for Firefox only if supported */
+@supports (scrollbar-width: none) {
+  .tiktokFeedScrollContainer {
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
+/* Only apply overscroll-behavior-y if supported (not on iOS Safari < 16) */
+@supports (overscroll-behavior-y: contain) {
+  .tiktokFeedScrollContainer {
+    overscroll-behavior-y: contain; /* More specific for vertical scrolling */
+  }
+}
+
+.tiktokFeedScrollContainer::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+.tiktokFeedBottomnav {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Video container optimizations */
+.videoContainer {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  /* Ensure proper rendering performance */
+  will-change: transform;
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
+/* Action buttons base styles */
+.actionButton {
+  -webkit-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.actionButton:active {
+  -webkit-transform: scale(0.95);
+  transform: scale(0.95);
+}
+
+/* Loading animation */
+.loadingSpinner {
+  -webkit-animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+/* Safe area insets for mobile */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .tiktokFeedBottomnav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .tiktokFeedTopnav {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .actionButton,
+  .loadingSpinner {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Video container with full viewport height - Mobile First */
+.videoContainerFull {
+  /* Mobile: Use dynamic viewport units for better mobile support */
+  min-height: 100dvh;
+  max-height: 100dvh;
+  height: 100dvh;
+  /* Fallback for older browsers */
+  min-height: 100vh;
+  max-height: 100vh; 
+  height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  /* Prevent overflow issues on mobile */
+  overflow: hidden;
+  /* Ensure proper touch handling */
+  touch-action: pan-y;
+}
+
+/* Video element styles - placeholder for future enhancements */
+
+/* Bottom navigation with safe area */
+.bottomNavWithSafeArea {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tiktokFeedBottomnav {
+    border-top: 2px solid white;
+    background: black;
+  }
+  
+  .tiktokFeedTopnav {
+    background: black;
+  }
+}
+
+/* Error Prevention & Cross-Browser Compatibility */
+.videoContainer *,
+.videoContainerFull *,
+.actionButton * {
+  box-sizing: border-box; /* Prevent layout shifts */
+}
+
+/* Progressive Enhancement for Larger Screens */
+@media (min-width: 768px) {
+  /* Tablet optimizations */
+  .actionButton:hover {
+    /* Only enable hover effects on devices that support them */
+    -webkit-transform: scale(1.05);
+    transform: scale(1.05);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop optimizations */
+  .tiktokFeedScrollContainer {
+    /* Better scrolling performance on desktop */
+    scroll-behavior: smooth;
+  }
+  
+  .videoContainer {
+    /* Enhanced GPU acceleration for desktop */
+    will-change: transform;
+  }
+}
+
+/* Prevent layout issues with dynamic content */
+@supports (height: 100dvh) {
+  .videoContainerFull {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+}
+
+/* Ensure compatibility with older browsers */
+@supports not (backdrop-filter: blur(8px)) {
+  .tiktokFeedTopnav,
+  .tiktokFeedBottomnav {
+    background: rgba(0, 0, 0, 0.8); /* Fallback background */
+  }
+}
