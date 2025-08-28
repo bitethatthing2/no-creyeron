@@ -3,7 +3,6 @@
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LocationProvider } from '@/lib/hooks/useLocationState';
 import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
-import { QueryProvider } from '@/lib/providers/query-provider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

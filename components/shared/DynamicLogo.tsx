@@ -41,12 +41,12 @@ export function DynamicLogo({
   
   const logoSources = {
     brand: {
-      light: '/icons/sidehustle-light-screen.png',
-      dark: '/icons/sidehustle.png'
+      light: 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/special-font-sidehustle-title.png',
+      dark: 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/special-font-sidehustle-title.png'
     },
     wolf: {
-      light: '/icons/wolf-icon-light-screen.png',
-      dark: '/icons/wolf-icon.png'
+      light: 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png',
+      dark: 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png'
     }
   };
 
@@ -73,10 +73,8 @@ export function preloadLogos() {
   if (typeof window === 'undefined') return;
 
   const imagesToPreload = [
-    '/icons/sidehustle.png',
-    '/icons/sidehustle-light-screen.png',
-    '/icons/wolf-icon.png',
-    '/icons/wolf-icon-light-screen.png'
+    'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/special-font-sidehustle-title.png',
+    'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png'
   ];
 
   imagesToPreload.forEach(src => {

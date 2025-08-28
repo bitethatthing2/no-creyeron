@@ -162,21 +162,31 @@ const ServiceWorkerScript = () => (
             // Check for corrupted cookies on load
             window.clearCorruptedCookies();
 
-            // Service Worker Registration
+            // Unregister existing service workers for dev
             if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(
-                  function(registration) {
-                    console.log('ServiceWorker registration successful');
-                  },
-                  function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                  }
-                ).catch(function(error) {
-                  console.log('ServiceWorker registration error:', error);
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                registrations.forEach(function(registration) {
+                  registration.unregister();
+                  console.log('ServiceWorker unregistered for dev mode');
                 });
               });
             }
+            
+            // Service Worker Registration - TEMPORARILY DISABLED FOR DEV
+            // if ('serviceWorker' in navigator) {
+            //   window.addEventListener('load', function() {
+            //     navigator.serviceWorker.register('/sw.js').then(
+            //       function(registration) {
+            //         console.log('ServiceWorker registration successful');
+            //       },
+            //       function(err) {
+            //         console.log('ServiceWorker registration failed: ', err);
+            //       }
+            //     ).catch(function(error) {
+            //       console.log('ServiceWorker registration error:', error);
+            //     });
+            //   });
+            // }
 
             // Register Firebase messaging service worker if needed
             if ('serviceWorker' in navigator && 'PushManager' in window) {

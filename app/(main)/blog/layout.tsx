@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 
 export const metadata: Metadata = {
   title: 'Side Hustle Blog - Salem\'s Premier Entertainment Venue | Artist Roster & Event Coverage',
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     siteName: 'Side Hustle Bar',
     images: [
       {
-        url: '/icons/wolf-and-title.png',
+        url: 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/wolf-and-title.png',
         width: 1200,
         height: 630,
         alt: 'Side Hustle Bar - Salem & Portland Entertainment Venue',
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Side Hustle Blog - Live Music Artist Roster & Event Coverage',
     description: 'Complete guide to Salem\'s premier entertainment venue featuring major artists, DJs, and event programming.',
-    images: ['/icons/wolf-and-title.png'],
+    images: ['https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/wolf-and-title.png'],
   },
   robots: {
     index: true,
@@ -57,11 +58,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function BlogLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+// Type for the layout props
+interface BlogLayoutProps {
+  children: ReactNode
+}
+
+/**
+ * Blog Layout Component
+ * Wraps all blog pages with consistent layout and metadata
+ */
+export default function BlogLayout({ children }: BlogLayoutProps) {
   return (
     <div>
       {children}

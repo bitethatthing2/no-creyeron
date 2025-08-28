@@ -3,8 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import consolidated menu styles */
-@import '../styles/consolidated-menu.css';
+/* Menu styles now handled by Tailwind classes in components */
 
 /* Remove default margins and ensure full coverage */
 html, body {
@@ -126,8 +125,7 @@ html {
   animation: slide-up 0.3s ease-out;
 }
 
-/* Import consolidated menu styles - single source of truth */
-@import '../styles/consolidated-menu.css';
+/* Menu styles integrated into components using Tailwind CSS */
 
 /* Content container for proper framing */
 .content-container {
@@ -156,6 +154,8 @@ nav[class*="fixed top-0"],
 /* REMOVED: wolfpack-chat.css import - styles moved inline where needed */
 
 /* REMOVED: @import '../styles/wolfpack.css'; - File was deleted */
+
+/* Menu Styles - now handled by individual CSS modules */
 
 /* Import Google Fonts for elegant typography */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
@@ -362,13 +362,21 @@ nav[class*="fixed top-0"],
     contain: layout style;
   }
   
-  /* Image loading optimization to prevent layout shifts */
-  img {
+  /* Image loading optimization - allow container control for menu images */
+  img:not(.menu-image) {
     height: auto;
   }
   
-  img[width][height] {
+  img[width][height]:not(.menu-image) {
     height: auto;
+  }
+  
+  /* Menu images should fill their containers */
+  .menu-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
   }
   
   /* Smooth transitions for dynamic content to reduce perceived layout shifts */

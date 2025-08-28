@@ -1,7 +1,11 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
 import { firebaseConfig } from '@/config/app.config';
-import { FirebaseConfig, FcmMessagePayload } from '@/types/features/firebase';
+// import { FirebaseConfig, FcmMessagePayload } from '@/types/features/firebase';
+
+// Temporary types during rebuild
+type FirebaseConfig = any;
+type FcmMessagePayload = any;
 
 // Use secure configuration from validated environment
 const firebaseClientConfig: FirebaseConfig = firebaseConfig;

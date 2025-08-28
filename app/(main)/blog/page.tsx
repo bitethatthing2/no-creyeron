@@ -1,11 +1,65 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Calendar, Music, Users, MapPin, Clock, Star, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import type { Database } from '@/types/supabase';
+import Image from 'next/image';
+
+// Type definitions from your Supabase schema
+type ContentPost = Database['public']['Tables']['content_posts']['Row'];
+
+// Constants for Supabase storage URLs
+const STORAGE_BASE_URL = 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public';
+
+const STORAGE_URLS = {
+  logo: `${STORAGE_BASE_URL}/icons/special-font-sidehustle-title.png`,
+  sidehustle: `${STORAGE_BASE_URL}/front-end-images/sidehustle.png`,
+  favicon: `${STORAGE_BASE_URL}/icons/favicon.png`,
+  wolfIcon: `${STORAGE_BASE_URL}/icons/wolf-512x512.png`,
+  wolfPaw: `${STORAGE_BASE_URL}/icons/wolf-paw-192x192.png`,
+  ufcSection: `${STORAGE_BASE_URL}/front-end-images/ufc-section.jpeg`,
+  variety: `${STORAGE_BASE_URL}/front-end-images/variety.png`,
+  salemLocation: `${STORAGE_BASE_URL}/front-end-images/salem-location.jpg`,
+  portlandLocation: `${STORAGE_BASE_URL}/front-end-images/portland-side-hustle.jpg`,
+} as const;
+
+// Interface for blog data structure
+interface BlogData {
+  posts?: ContentPost[];
+  featuredPost?: ContentPost;
+  stats: {
+    followers: number;
+    reviews: number;
+    locations: number;
+  };
+}
 
 export default function BlogPage() {
+  const [blogData] = useState<BlogData>({
+    stats: {
+      followers: 101000,
+      reviews: 750,
+      locations: 2
+    }
+  });
+
+  // You can fetch actual content posts from Supabase here
+  useEffect(() => {
+    // Example: Fetch content posts from your Supabase database
+    // const fetchPosts = async () => {
+    //   const { data, error } = await supabase
+    //     .from('content_posts')
+    //     .select('*')
+    //     .eq('post_type', 'blog')
+    //     .order('created_at', { ascending: false });
+    //   if (data) setBlogData(prev => ({ ...prev, posts: data }));
+    // };
+    // fetchPosts();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black">
       {/* Hero Section */}
@@ -16,34 +70,40 @@ export default function BlogPage() {
             <button 
               onClick={() => window.history.back()}
               className="flex items-center text-gray-300 hover:text-white mb-8 transition-colors"
+              aria-label="Go back to previous page"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
               Back
             </button>
             <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <Music className="h-8 w-8 text-red-500 mr-3" />
-              <h1 className="text-4xl md:text-6xl font-bold text-white">
-                Side Hustle Blog
-              </h1>
-            </div>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Salem&apos;s Premier Entertainment Destination - Artist Spotlights, Event Coverage & Music Scene Updates
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
-                <Users className="h-4 w-4 mr-2" />
-                101K+ Followers
-              </Badge>
-              <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
-                <Star className="h-4 w-4 mr-2" />
-                750+ Five-Star Reviews
-              </Badge>
-              <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
-                <MapPin className="h-4 w-4 mr-2" />
-                Salem & Portland
-              </Badge>
-            </div>
+                <Image
+                  src={STORAGE_URLS.logo}
+                  alt="Side Hustle Logo"
+                  width={120}
+                  height={48}
+                  className="h-12 w-auto mr-4"
+                  priority
+                />
+                <h1 className="text-4xl md:text-6xl font-bold text-white">
+                  Side Hustle Blog
+                </h1>
+              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+                Salem&apos;s Premier Entertainment Destination - Artist Spotlights, Event Coverage & Music Scene Updates
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
+                  <Users className="h-4 w-4 mr-2" />
+                  {(blogData.stats.followers / 1000).toFixed(0)}K+ Followers
+                </Badge>
+                <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
+                  <Star className="h-4 w-4 mr-2" />
+                  {blogData.stats.reviews}+ Five-Star Reviews
+                </Badge>
+                <Badge variant="secondary" className="bg-red-600/20 text-red-300 border-red-600/30">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Salem & Portland
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
@@ -173,10 +233,10 @@ export default function BlogPage() {
                     <h4 className="font-semibold text-blue-400 mb-2">J Balvin After Party Sponsors</h4>
                     <p className="text-gray-300 text-sm">
                       The official J Balvin USA Tour after party was proudly sponsored by: 
-                      <strong className="text-white">Xicha Brewing (@xichabrewing)</strong>, 
-                      <strong className="text-white">IX Construction (@ixconstruction_)</strong>, 
-                      <strong className="text-white">MC Spectrum LLC (@m_c_spectrumllc)</strong>, and 
-                      <strong className="text-white">Nebula9 Vodka (@nebula9vodka)</strong>. 
+                      <strong className="text-white"> Xicha Brewing (@xichabrewing)</strong>, 
+                      <strong className="text-white"> IX Construction (@ixconstruction_)</strong>, 
+                      <strong className="text-white"> MC Spectrum LLC (@m_c_spectrumllc)</strong>, and 
+                      <strong className="text-white"> Nebula9 Vodka (@nebula9vodka)</strong>. 
                       Hosted by DJ Denver PDX (@djdenverpdx) with &ldquo;Back to the Rayo&rdquo; theming.
                     </p>
                   </div>
@@ -241,7 +301,7 @@ export default function BlogPage() {
                     <h4 className="font-semibold text-blue-400 mb-2">Featured DJs</h4>
                     <p className="text-gray-300 text-sm">
                       <strong className="text-white">DJ Denver PDX</strong> (@djdenverpdx - Denver Orozco) has opened for major acts including J Balvin, Maluma, Pitbull, Daddy Yankee, Don Omar, Ozuna, Grupo Firme, and Farruko. 
-                      <strong className="text-white">DJ Carlos</strong> (@djcarlosofficial_ - Carlos Rodriguez) also performs at Side Hustle events.
+                      <strong className="text-white"> DJ Carlos</strong> (@djcarlosofficial_ - Carlos Rodriguez) also performs at Side Hustle events.
                     </p>
                   </div>
                 </div>
@@ -399,17 +459,17 @@ export default function BlogPage() {
                   <h3 className="text-xl font-bold text-white mb-4">Connect With Side Hustle Bar</h3>
                   <div className="flex flex-wrap justify-center gap-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-400">101K+</div>
+                      <div className="text-2xl font-bold text-red-400">{(blogData.stats.followers / 1000).toFixed(0)}K+</div>
                       <div className="text-gray-400 text-sm">Instagram Followers</div>
                       <div className="text-gray-500 text-xs">@sidehustle_bar</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-400">750+</div>
+                      <div className="text-2xl font-bold text-red-400">{blogData.stats.reviews}+</div>
                       <div className="text-gray-400 text-sm">Five-Star Reviews</div>
                       <div className="text-gray-500 text-xs">Google & Yelp</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-400">2</div>
+                      <div className="text-2xl font-bold text-red-400">{blogData.stats.locations}</div>
                       <div className="text-gray-400 text-sm">Locations</div>
                       <div className="text-gray-500 text-xs">Salem & Portland</div>
                     </div>
@@ -429,14 +489,14 @@ export default function BlogPage() {
             "@context": "https://schema.org",
             "@type": "Blog",
             "name": "Side Hustle Blog",
-            "description": "Salem&apos;s premier hip-hop and R&B venue blog featuring artist spotlights, event coverage, and music scene updates",
+            "description": "Salem's premier hip-hop and R&B venue blog featuring artist spotlights, event coverage, and music scene updates",
             "url": "https://sidehustlelounge.com/blog",
             "publisher": {
               "@type": "Organization",
               "name": "Side Hustle Bar",
               "logo": {
                 "@type": "ImageObject",
-                "url": "https://sidehustlelounge.com/icons/wolf-and-title.png"
+                "url": STORAGE_URLS.logo
               },
               "address": {
                 "@type": "PostalAddress",

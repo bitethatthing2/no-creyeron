@@ -72,9 +72,7 @@ export { WolfpackFeedService } from "./feed";
 import { WolfpackAuthService } from "./auth";
 import { WolfpackFeedService } from "./feed";
 
-// Temporary imports for legacy service compatibility
-import { WolfpackBackendService } from "../wolfpack-backend.service";
-import { wolfpackSocialService } from "../wolfpack-social.service";
+// Legacy services removed during cleanup - functionality moved to consolidated services
 
 /**
  * Unified Wolfpack Service - Single interface for all Wolfpack functionality
@@ -103,11 +101,7 @@ export class WolfpackService {
   // Feed Management
   static feed = WolfpackFeedService;
 
-  // Legacy backend service (temporary compatibility)
-  static backend = WolfpackBackendService;
-
-  // Legacy social service (temporary compatibility)
-  static social = wolfpackSocialService;
+  // Legacy services removed during cleanup
 
   // Future modules
   // static membership = WolfpackMembershipService;
@@ -161,8 +155,6 @@ export default WolfpackService;
 // Legacy compatibility exports (temporary during migration)
 export { WolfpackAuthService as LegacyWolfpackAuthService };
 export { WolfpackFeedService as LegacyWolfpackFeedService };
-export { WolfpackBackendService };
-export { wolfpackSocialService };
+// Removed legacy service exports
 
-// Export with uppercase for backward compatibility
-export { wolfpackSocialService as WolfpackSocialService };
+// Legacy service exports removed during cleanup

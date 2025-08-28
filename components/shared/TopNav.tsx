@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LocationSwitcher } from '@/components/shared/LocationSwitcher';
 import { usePathname } from 'next/navigation';
-import { getSmartCacheBustedUrl } from '@/lib/utils/image-cache';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 
@@ -32,24 +31,18 @@ export function TopNav() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-lg border-b border-white/30" style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)' }}>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-lg border-b border-white/30 topnav-shadow">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center">
             <Image
-              src={getSmartCacheBustedUrl('/icons/wolf-icon.png')}
+              src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/white-icon-nav.png?v=20250825-2"
               alt="Side Hustle"
-              width={56}
-              height={56}
-              className="w-14 h-14"
-            />
-            <Image
-              src={getSmartCacheBustedUrl('/icons/sidehustle.png')}
-              alt="Side Hustle"
-              width={100}
-              height={32}
-              className="hidden sm:block h-8"
+              width={48}
+              height={48}
+              className="w-12 h-12"
+              unoptimized
             />
           </Link>
 

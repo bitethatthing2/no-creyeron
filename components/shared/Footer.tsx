@@ -22,7 +22,7 @@ export function Footer() {
           <div className="space-y-6 lg:col-span-1">
             <div className="flex items-center justify-center lg:justify-start space-x-3">
               <Image 
-                src="/icons/wolf-and-title.png"
+                src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/wolf-and-title.png"
                 alt="Side Hustle Bar"
                 width={200}
                 height={80}
@@ -182,7 +182,7 @@ export function Footer() {
                   aria-label="Order on DoorDash"
                 >
                   <Image 
-                    src="/icons/doordash_icon.png" 
+                    src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/doordash_icon.png" 
                     alt="DoorDash" 
                     width={36} 
                     height={36}
@@ -198,7 +198,7 @@ export function Footer() {
                   aria-label="Order on Uber Eats"
                 >
                   <Image 
-                    src="/icons/uber-eats.png" 
+                    src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/uber-eats.png" 
                     alt="Uber Eats" 
                     width={36} 
                     height={36}
@@ -214,7 +214,7 @@ export function Footer() {
                   aria-label="Order on Postmates"
                 >
                   <Image 
-                    src="/icons/postmates.png" 
+                    src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/postmates.png" 
                     alt="Postmates" 
                     width={36} 
                     height={36}
@@ -284,8 +284,8 @@ export function Footer() {
               "telephone": "+15033919977",
               "priceRange": "$$",
               "servesCuisine": "Mexican",
-              "image": "/icons/side-hustle-exterior.jpg",
-              "logo": "/icons/wolf-and-title.png",
+              "image": "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/side-hustle-exterior.jpg",
+              "logo": "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/wolf-and-title.png",
               "sameAs": [
                 "https://instagram.com/sidehustle_bar",
                 "https://www.doordash.com/store/side-hustle-bar-salem-25388462/27964950/",
