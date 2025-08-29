@@ -244,14 +244,25 @@ export class WolfpackFeedService {
     const { page = 1, limit = 20 } = validatePagination(options.page, options.limit);
 
     try {
+      console.log('[FEED_SERVICE] Starting fetchFeedItems with options:', options);
+      
       // Get current user session for authorization
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[FEED_SERVICE] Session status:', session ? 'Found' : 'None', session?.user?.id || 'No user');
       
       if (!session) {
+        console.warn('[FEED_SERVICE] No authenticated session, falling back to direct query');
         throw new Error('No authenticated session');
       }
 
       const edgeFunctionUrl = `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/FEED_PROCESSOR/get-feed`;
+      const requestBody = {
+        page,
+        limit,
+        userId: options.userId,
+      };
+      
+      console.log('[FEED_SERVICE] Calling edge function:', edgeFunctionUrl, requestBody);
       
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
@@ -259,20 +270,22 @@ export class WolfpackFeedService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          page,
-          limit,
-          userId: options.userId,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('[FEED_SERVICE] Edge function response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error(`FEED_PROCESSOR error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('[FEED_SERVICE] Edge function error response:', errorText);
+        throw new Error(`FEED_PROCESSOR error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('[FEED_SERVICE] Edge function result:', result);
       
       if (!result.success) {
+        console.error('[FEED_SERVICE] Edge function returned failure:', result.error);
         throw new Error(result.error || 'Feed processing failed');
       }
 
@@ -309,10 +322,12 @@ export class WolfpackFeedService {
       return createSuccessResponse(items);
 
     } catch (error) {
-      console.error('FEED_PROCESSOR failed, using fallback:', error);
+      console.error('[FEED_SERVICE] FEED_PROCESSOR failed, using fallback:', error);
       
       // Fallback to direct Supabase query if edge function fails
       const offset = (page - 1) * limit;
+      console.log('[FEED_SERVICE] Using fallback query with offset:', offset, 'limit:', limit);
+      
       const query = supabase
         .from("content_posts")
         .select(
@@ -334,12 +349,23 @@ export class WolfpackFeedService {
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
-      const { data, error: queryError } = await query;
+      console.log('[FEED_SERVICE] Executing fallback query...');
+      const { data, error: queryError, count } = await query;
 
-      if (queryError) throw queryError;
+      if (queryError) {
+        console.error('[FEED_SERVICE] Fallback query error:', queryError);
+        throw queryError;
+      }
+
+      console.log('[FEED_SERVICE] Fallback query results:', { 
+        dataLength: data?.length || 0, 
+        count, 
+        firstItem: data?.[0] ? { id: data[0].id, caption: data[0].caption } : null 
+      });
 
       const content_posts = data as WolfpackVideoRow[] | null;
       if (!content_posts) {
+        console.log('[FEED_SERVICE] No content_posts returned, returning empty array');
         return createSuccessResponse([]);
       }
 
@@ -353,13 +379,17 @@ export class WolfpackFeedService {
         } as FeedItem;
       });
 
+      console.log('[FEED_SERVICE] Transformed items:', items.length, 'items');
+
       if (options.userId && options.userId !== options.currentUserId) {
         const filteredItems = items.filter((item) =>
           item.user_id === options.userId
         );
+        console.log('[FEED_SERVICE] Filtered for user:', options.userId, 'got', filteredItems.length, 'items');
         return createSuccessResponse(filteredItems);
       }
 
+      console.log('[FEED_SERVICE] Returning', items.length, 'items');
       return createSuccessResponse(items);
     }
   }, "WolfpackFeedService.fetchFeedItems");

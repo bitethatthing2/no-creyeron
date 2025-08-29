@@ -98,6 +98,8 @@ export default function OptimizedWolfpackFeedPage() {
 
   // Load feed from service - no extra parameters for initial load
   const loadFeed = useCallback(async (loadMore = false) => {
+    console.log('[FEED] loadFeed called:', { authLoading, isAuthenticated, loadMore });
+    
     if (authLoading) {
       console.log('[FEED] Auth still loading...');
       return;
@@ -112,38 +114,46 @@ export default function OptimizedWolfpackFeedPage() {
     try {
       if (!loadMore) {
         setLoading(true);
+        console.log('[FEED] Starting fresh feed load...');
       }
       setError(null);
       
-      // Check if fetchFeedItems accepts parameters
+      console.log('[FEED] Calling WolfpackService.feed.fetchFeedItems...');
       const response = await WolfpackService.feed.fetchFeedItems();
+      console.log('[FEED] Service response:', response);
       
       if (!response.success) {
-        setError(response.error || 'Failed to load feed');
+        const errorMsg = response.error || 'Failed to load feed';
+        console.error('[FEED] Service error:', errorMsg);
+        setError(errorMsg);
         return;
       }
 
       const feedPosts = response.data ?? [];
+      console.log('[FEED] Raw feed posts:', feedPosts);
       
       // Transform posts with correct field mappings
       const transformedVideos = feedPosts.map(transformPost);
+      console.log('[FEED] Transformed videos:', transformedVideos);
       
       if (loadMore) {
         // If service doesn't support pagination, don't add duplicates
         const existingIds = new Set(videos.map(v => v.id));
         const newVideos = transformedVideos.filter(v => !existingIds.has(v.id));
         setVideos(prev => [...prev, ...newVideos]);
+        console.log(`[FEED] Added ${newVideos.length} new videos (total: ${videos.length + newVideos.length})`);
       } else {
         setVideos(transformedVideos);
+        console.log(`[FEED] Set ${transformedVideos.length} videos`);
       }
-      
-      console.log(`[FEED] Loaded ${feedPosts.length} videos`);
       
     } catch (err) {
       console.error('[FEED] Error loading videos:', err);
+      console.error('[FEED] Error details:', err instanceof Error ? err.stack : err);
       setError(`Failed to load videos: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
+      console.log('[FEED] Loading finished');
     }
   }, [isAuthenticated, authLoading, router, transformPost, videos]);
 
