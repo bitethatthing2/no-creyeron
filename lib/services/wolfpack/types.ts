@@ -344,26 +344,6 @@ export interface WolfpackLike {
   created_at: string;
 }
 
-export interface DJEvent {
-  id: string;
-  title: string;
-  description?: string;
-  start_time: string;
-  end_time?: string;
-  location_id: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface DJBroadcast {
-  id: string;
-  event_id: string;
-  stream_url?: string;
-  is_live: boolean;
-  viewer_count: number;
-  started_at?: string;
-  ended_at?: string;
-}
 
 export interface EnrichedVideo extends FeedVideoItem {
   comments?: WolfpackComment[];
@@ -374,9 +354,6 @@ export interface EnrichedComment extends WolfpackComment {
   replies?: WolfpackComment[];
 }
 
-export interface ActiveEvent extends DJEvent {
-  broadcast?: DJBroadcast;
-}
 
 export interface PackMember extends WolfpackUser {
   joined_at?: string;
