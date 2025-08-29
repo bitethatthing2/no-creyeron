@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Play, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef, TouchEvent } from 'react';
+import { Play, Clock } from 'lucide-react';
 import { getMenuItemVideoUrl } from '@/lib/constants/video-urls';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { MenuItem } from '@/types/functions/MENU_ITEMS';
@@ -43,6 +43,12 @@ export default function SliderMenu({
   const [showWatchItMadeModal, setShowWatchItMadeModal] = useState('');
   const [modalVideoUrl, setModalVideoUrl] = useState('');
   const [modalItemName, setModalItemName] = useState('');
+  
+  // Touch handling refs
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const isDragging = useRef<boolean>(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   // Stable filters object
   const menuFilters = useMemo(() => ({
@@ -151,6 +157,35 @@ export default function SliderMenu({
       setCurrentIndex(currentIndex - 1);
     }
   }, [currentIndex]);
+  
+  // Touch handlers for swipe
+  const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  }, []);
+  
+  const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+  
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    
+    const swipeThreshold = 50; // minimum distance for swipe
+    const diff = touchStartX.current - touchEndX.current;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        // Swiped left - go to next
+        nextSlide();
+      } else {
+        // Swiped right - go to previous
+        prevSlide();
+      }
+    }
+  }, [nextSlide, prevSlide]);
 
   const handleVideoClick = useCallback((item: MenuItem) => {
     if (item.video_url) {
@@ -275,35 +310,14 @@ export default function SliderMenu({
         </div>
       )}
 
-      {/* Navigation Controls */}
+      {/* Item counter for mobile */}
       {filteredItems.length > 0 && (
-        <div className={styles.controls}>
-          <button
-            onClick={prevSlide}
-            disabled={currentIndex === 0}
-            className={styles.controlButton}
-            aria-label="Previous item"
-            title="Previous item"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          
-          <span className={styles.indicator}>
-            {currentIndex + 1} of {filteredItems.length}
-          </span>
-          <button
-            onClick={nextSlide}
-            disabled={currentIndex >= filteredItems.length - 1}
-            className={styles.controlButton}
-            aria-label="Next item"
-            title="Next item"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+        <div className={styles.counter}>
+          <span>{currentIndex + 1} / {filteredItems.length}</span>
         </div>
       )}
 
-      {/* Mobile Slider */}
+      {/* Mobile Slider with Touch Support */}
       <div className={styles.mobileSlider}>
         <div className={styles.sliderContainer}>
           {filteredItems.length === 0 ? (
@@ -320,8 +334,12 @@ export default function SliderMenu({
             </div>
           ) : (
             <div 
+              ref={sliderRef}
               className={styles.sliderTrack}
               data-current-index={currentIndex}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               {filteredItems.map((item) => (
                 <div key={item.id} className={styles.sliderItem}>
@@ -349,12 +367,6 @@ export default function SliderMenu({
         </div>
       </div>
 
-      {/* Results count */}
-      {filteredItems.length > 0 && (
-        <div className="text-center py-6 text-gray-400 text-sm">
-          Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-        </div>
-      )}
 
       {/* Watch It Made Modal */}
       {showWatchItMadeModal && modalVideoUrl && (
@@ -383,8 +395,8 @@ function MenuCard({ item, onVideoClick }: MenuCardProps) {
             src={item.image_url}
             alt={item.name}
             className={styles.image}
-            width={400}
-            height={400}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             unoptimized
             onError={(e) => {
               // Fallback to placeholder if image fails to load

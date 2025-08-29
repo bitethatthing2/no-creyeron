@@ -14,7 +14,8 @@ import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';
 import { Loader2, Sparkles } from 'lucide-react';
 import type { WolfpackVideoItem as TikTokVideoItem } from '@/components/wolfpack/feed/TikTokStyleFeed';
 import { FeatureFlagDebug } from '@/components/debug/FeatureFlagDebug';
-export default function OptimizedWolfpackFeedPage() {
+
+export default function FeedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
@@ -64,58 +65,40 @@ export default function OptimizedWolfpackFeedPage() {
       }
       setError(null);
       
-      console.log('[FEED] Using FEED_PROCESSOR Edge Function...');
+      console.log('[FEED] Using SocialFeedService...');
       
       // Get current user session for authorization
       const { data: { session } } = await supabase.auth.getSession();
       console.log('[FEED] Session status:', session ? 'Found' : 'None', session?.user?.id || 'No user');
       
-      if (!session) {
-        console.warn('[FEED] No authenticated session, cannot access FEED_PROCESSOR');
-        setError('Authentication required to load feed');
+      // Use the local service to fetch feed
+      const feedResponse = currentUser 
+        ? await SocialService.feed.fetchAuthenticatedFeed({
+            limit: 20,
+            offset: loadMore ? videos.length : 0,
+            currentUserId: currentUser.id
+          })
+        : await SocialService.feed.fetchPublicFeed({
+            limit: 20,
+            offset: loadMore ? videos.length : 0
+          });
+      
+      console.log('[FEED] Service response:', feedResponse);
+      
+      if (!feedResponse.posts || feedResponse.posts.length === 0) {
+        console.log('[FEED] No posts returned from service - empty feed');
+        if (!loadMore) {
+          setVideos([]);
+        }
         return;
       }
 
-      const edgeFunctionUrl = `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/FEED_PROCESSOR/get-feed`;
-      const requestBody = {
-        limit: 20,
-        offset: 0,
-        type: 'for-you'
-      };
-      
-      console.log('[FEED] Calling FEED_PROCESSOR:', edgeFunctionUrl, requestBody);
-      
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('[FEED] FEED_PROCESSOR response status:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[FEED] FEED_PROCESSOR error response:', errorText);
-        throw new Error(`FEED_PROCESSOR error: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('[FEED] FEED_PROCESSOR result:', result);
-      
-      if (!result.success) {
-        console.error('[FEED] FEED_PROCESSOR returned failure:', result.error);
-        setError(result.error || 'Feed processing failed');
-        return;
-      }
-
-      // Transform the response data using the existing transform function
-      const transformedVideos: FeedVideoItem[] = (result.data || []).map((item: any) => 
-        transformToFeedVideoItem(item)
+      // Transform the posts to FeedVideoItem format
+      const transformedVideos: FeedVideoItem[] = feedResponse.posts.map((post: any) => 
+        transformToFeedVideoItem(post)
       );
-      console.log('[FEED] Transformed videos from FEED_PROCESSOR:', transformedVideos);
+      console.log('[FEED] Transformed videos:', transformedVideos);
+      console.log('[FEED] Number of videos:', transformedVideos.length);
       
       if (loadMore) {
         // If service doesn't support pagination, don't add duplicates
@@ -136,7 +119,7 @@ export default function OptimizedWolfpackFeedPage() {
       setLoading(false);
       console.log('[FEED] Loading finished');
     }
-  }, [isAuthenticated, authLoading, router, transformPost, videos]);
+  }, [isAuthenticated, authLoading, videos, currentUser]);
 
   // Auth redirect check
   useEffect(() => {
