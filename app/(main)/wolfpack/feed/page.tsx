@@ -26,6 +26,11 @@ export default function OptimizedWolfpackFeedPage() {
 
   // Modal states
   const [showPostCreator, setShowPostCreator] = useState(false);
+  
+  // Debug showPostCreator state changes
+  useEffect(() => {
+    console.log('[FEED] showPostCreator state changed to:', showPostCreator);
+  }, [showPostCreator]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareVideoData, setShareVideoData] = useState<{ 
     id: string; 
@@ -491,7 +496,10 @@ export default function OptimizedWolfpackFeedPage() {
         onShareAction={handleShare}
         onFollowAction={handleFollow}
         onDelete={handleDelete}
-        onCreatePost={() => setShowPostCreator(true)}
+        onCreatePost={() => {
+          console.log('[FEED] Create post button clicked, setting showPostCreator to true');
+          setShowPostCreator(true);
+        }}
         onLoadMore={handleLoadMore}
         hasMore={hasMore}
         isLoading={loading}

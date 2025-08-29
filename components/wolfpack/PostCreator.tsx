@@ -22,6 +22,7 @@ enum CreatorStep {
 }
 
 export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
+  console.log('[POST_CREATOR] Render - isOpen:', isOpen);
   const { currentUser } = useAuth();
   const [step, setStep] = React.useState<CreatorStep>(CreatorStep.CAMERA);
   const [caption, setCaption] = React.useState('');
@@ -60,7 +61,6 @@ export function PostCreator({ isOpen, onClose, onSuccess }: PostCreatorProps) {
       setStep(CreatorStep.CAMERA);
       setCaption('');
       setMediaUrl('');
-      setPosting(false);
       resetRecording();
     } else {
       stopCamera();
