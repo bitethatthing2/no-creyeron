@@ -376,7 +376,7 @@ class AuthService {
   /**
    * Join Wolfpack
    */
-  async joinMembership(): Promise<void> {
+  async joinWolfpack(): Promise<void> {
     if (!this.currentUser) {
       throw errorService.handleAuthError(new Error("Not authenticated"));
     }
@@ -387,7 +387,7 @@ class AuthService {
         "You need to be a member to join the Wolfpack",
         ErrorSeverity.MEDIUM,
         ErrorCategory.AUTHORIZATION,
-        { action: "joinMembership" },
+        { action: "joinWolfpack" },
       );
     }
 
@@ -403,7 +403,7 @@ class AuthService {
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        "joinMembership",
+        "joinWolfpack",
       );
     }
   }

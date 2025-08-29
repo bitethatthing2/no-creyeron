@@ -1,213 +1,250 @@
 'use client';
 
-import React from 'react';
+import * as React from 'react';
 import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { formatMessageTime } from '@/lib/utils/date-utils';
+import { cn } from '@/lib/utils';
+import type { 
+  ChatMessage,
+  ChatMessageReaction,
+  User,
+  MessageWithSender,
+  MessageItemProps 
+} from '@/types/chat';
 
-interface Message {
-  id: string;
-  content: string;
-  user_id: string;
-  display_name: string;
-  avatar_url?: string;
-  created_at: string;
-  is_flagged?: boolean;
-  reactions?: Array<{
-    id: string;
-    emoji: string;
-    user_id: string;
-  }>;
+function formatMessageTime(timestamp: string | null): string {
+  if (!timestamp) return '';
+  
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays < 7) return `${diffDays}d`;
+  
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-interface MessageItemProps {
-  message: Message;
-  currentUserId?: string;
-  isNewMessage?: boolean;
-  variant?: 'default' | 'mobile';
-  onAvatarClick?: (userId: string, displayName: string, avatarUrl?: string) => void;
-  onReactionToggle?: (messageId: string, emoji: string, reactionId?: string) => void;
-  className?: string;
+function getDisplayName(sender: Pick<User, 'display_name' | 'username'> | null): string {
+  if (!sender) return 'Unknown User';
+  return sender.display_name || sender.username || 'Anonymous';
 }
 
-const getAvatarFallback = (displayName: string): string => {
-  return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-};
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export function MessageItem({
   message,
   currentUserId,
-  isNewMessage = false,
-  variant = 'default',
-  onAvatarClick,
-  onReactionToggle,
-  className = ''
-}: MessageItemProps) {
-  const isCurrentUser = message.user_id === currentUserId;
-  const isPrivate = message.content.includes('[PRIVATE]:');
+  onReactionAdd,
+  onReactionRemove,
+  className
+}: MessageItemProps): React.ReactElement | null {
+  // Don't render deleted or null messages
+  if (message.is_deleted || !message.content) return null;
 
-  // Mobile variant styling
-  if (variant === 'mobile') {
-    return (
-      <div className={`message-item group flex gap-3 py-3 px-4 rounded-xl transition-colors w-full max-w-full box-border ${
-        isPrivate ? 'bg-purple-900/20 border-l-2 border-purple-500' : 'bg-white/5 hover:bg-white/10'
-      } ${className}`}>
-        {/* Avatar */}
-        <div className="flex-shrink-0">
-          <Image 
-            src={message.avatar_url || '/default-avatar.png'}
-            alt={message.display_name}
-            width={36}
-            height={36}
-            className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-600"
-            unoptimized={message.avatar_url?.includes('dicebear.com')}
-          />
-        </div>
-        
-        {/* Message content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`font-semibold text-xs truncate ${isPrivate ? 'text-purple-400' : 'text-blue-400'}`}>
-              {message.display_name}
-            </span>
-            {isPrivate && (
-              <span className="text-purple-300 text-xs bg-purple-500/20 px-1.5 py-0.5 rounded">Private</span>
-            )}
-            <span className="text-gray-500 text-xs flex-shrink-0">
-              {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-          <div className="text-white text-sm leading-relaxed break-words">{message.content}</div>
-          
-          {/* Message Reactions Display */}
-          {message.reactions && message.reactions.length > 0 && (
-            <div className="flex gap-1 mt-2 flex-wrap">
-              {Object.entries(
-                message.reactions.reduce((acc: Record<string, { count: number; userReacted: boolean; reactionId?: string }>, reaction) => {
-                  const isCurrentUserReaction = reaction.user_id === currentUserId;
-                  if (!acc[reaction.emoji]) {
-                    acc[reaction.emoji] = { count: 0, userReacted: false };
-                  }
-                  acc[reaction.emoji].count += 1;
-                  if (isCurrentUserReaction) {
-                    acc[reaction.emoji].userReacted = true;
-                    acc[reaction.emoji].reactionId = reaction.id;
-                  }
-                  return acc;
-                }, {})
-              ).map(([emoji, data]) => (
-                <button
-                  key={emoji}
-                  onClick={() => onReactionToggle?.(message.id, emoji, data.reactionId)}
-                  className={`text-xs px-2 py-1 rounded-full transition-colors ${
-                    data.userReacted 
-                      ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50' 
-                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
-                  }`}
-                >
-                  {emoji} {data.count}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const isCurrentUser = message.sender_id === currentUserId;
+  const displayName = getDisplayName(message.sender);
+  const avatarUrl = message.sender?.avatar_url;
 
-  // Default variant styling
+  // Group reactions by reaction type
+  const groupedReactions = React.useMemo(() => {
+    if (!message.message_reactions?.length) return {};
+
+    return message.message_reactions.reduce((acc, reaction) => {
+      const reactionText = reaction.reaction;
+      if (!reactionText) return acc;
+      
+      if (!acc[reactionText]) {
+        acc[reactionText] = {
+          count: 0,
+          users: [],
+          userReacted: false,
+          reactionId: undefined as string | undefined
+        };
+      }
+      
+      acc[reactionText].count++;
+      if (reaction.user_id) {
+        acc[reactionText].users.push(reaction.user_id);
+      }
+      
+      if (reaction.user_id === currentUserId) {
+        acc[reactionText].userReacted = true;
+        acc[reactionText].reactionId = reaction.id;
+      }
+      
+      return acc;
+    }, {} as Record<string, {
+      count: number;
+      users: string[];
+      userReacted: boolean;
+      reactionId?: string;
+    }>);
+  }, [message.message_reactions, currentUserId]);
+
+  const handleReactionClick = React.useCallback(async (reaction: string) => {
+    const reactionData = groupedReactions[reaction];
+    
+    try {
+      if (reactionData?.userReacted && reactionData.reactionId) {
+        await onReactionRemove?.(reactionData.reactionId);
+      } else {
+        await onReactionAdd?.(message.id, reaction);
+      }
+    } catch (error) {
+      console.error('Failed to toggle reaction:', error);
+    }
+  }, [groupedReactions, message.id, onReactionAdd, onReactionRemove]);
+
   return (
-    <div className={`flex gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ${
-      isCurrentUser ? 'flex-row-reverse' : ''
-    } ${className}`}>
+    <div className={cn(
+      "flex gap-3 p-4 group hover:bg-gray-800/30 transition-colors",
+      isCurrentUser ? "flex-row-reverse" : "flex-row",
+      className
+    )}>
       {/* Avatar */}
       <div className="flex-shrink-0">
-        <button
-          onClick={() => onAvatarClick?.(message.user_id, message.display_name, message.avatar_url)}
-          className={`h-8 w-8 rounded-full overflow-hidden transition-all duration-200 ${
-            isCurrentUser 
-              ? 'cursor-default ring-2 ring-blue-500/30' 
-              : 'cursor-pointer hover:ring-2 hover:ring-primary/50 hover:scale-105'
-          } ${isCurrentUser && isNewMessage ? 'animate-pulse' : ''}`}
-          disabled={isCurrentUser}
-        >
-          {message.avatar_url ? (
-            <img
-              src={message.avatar_url}
-              alt={message.display_name}
-              className="h-full w-full object-cover rounded-full"
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-600">
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
             />
           ) : (
-            <div className={`h-full w-full flex items-center justify-center text-white text-xs font-medium rounded-full ${
-              isCurrentUser ? 'bg-blue-600' : 'bg-gray-600'
-            }`}>
-              {getAvatarFallback(message.display_name)}
+            <div className="w-full h-full flex items-center justify-center text-white text-xs font-medium">
+              {getInitials(displayName)}
             </div>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Message Content */}
-      <div className={`flex-1 min-w-0 ${isCurrentUser ? 'text-right' : ''}`}>
-        <div className={`flex items-center gap-2 mb-1 ${isCurrentUser ? 'justify-end' : ''}`}>
-          <span className={`font-medium text-sm ${
-            isCurrentUser ? 'text-blue-700' : 'text-gray-900'
-          }`}>
-            {message.display_name}
+      <div className={cn("flex-1 min-w-0 max-w-md", isCurrentUser ? "text-right" : "text-left")}>
+        {/* Message Header */}
+        <div className={cn(
+          "flex items-center gap-2 mb-1",
+          isCurrentUser ? "justify-end" : "justify-start"
+        )}>
+          <span className="text-sm font-medium text-gray-300">
+            {displayName}
           </span>
           <span className="text-xs text-gray-500">
             {formatMessageTime(message.created_at)}
           </span>
-          {isCurrentUser && (
-            <Badge variant="outline" className="text-xs px-1 py-0 bg-blue-50 border-blue-200 text-blue-700">
-              You
-            </Badge>
-          )}
-          {message.is_flagged && (
-            <Badge variant="destructive" className="text-xs px-1 py-0">
-              Flagged
-            </Badge>
+          {message.is_edited && (
+            <span className="text-xs text-gray-500">(edited)</span>
           )}
         </div>
-        <div className={`inline-block px-3 py-2 rounded-lg text-sm break-words max-w-xs md:max-w-md lg:max-w-lg ${
-          isCurrentUser 
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25' 
-            : 'bg-gray-100 text-gray-800'
-        } ${isCurrentUser && isNewMessage ? 'animate-in slide-in-from-right-2 duration-300' : ''}`}>
+
+        {/* Message Bubble */}
+        <div className={cn(
+          "inline-block max-w-full px-4 py-2 rounded-2xl text-sm break-words",
+          isCurrentUser
+            ? "bg-blue-600 text-white rounded-br-md"
+            : "bg-gray-700 text-gray-100 rounded-bl-md"
+        )}>
           {message.content}
         </div>
-        
-        {/* Message Reactions Display for Default Variant */}
-        {message.reactions && message.reactions.length > 0 && (
-          <div className={`flex gap-1 mt-2 flex-wrap ${isCurrentUser ? 'justify-end' : ''}`}>
-            {Object.entries(
-              message.reactions.reduce((acc: Record<string, { count: number; userReacted: boolean; reactionId?: string }>, reaction) => {
-                const isCurrentUserReaction = reaction.user_id === currentUserId;
-                if (!acc[reaction.emoji]) {
-                  acc[reaction.emoji] = { count: 0, userReacted: false };
-                }
-                acc[reaction.emoji].count += 1;
-                if (isCurrentUserReaction) {
-                  acc[reaction.emoji].userReacted = true;
-                  acc[reaction.emoji].reactionId = reaction.id;
-                }
-                return acc;
-              }, {})
-            ).map(([emoji, data]) => (
-              <button
-                key={emoji}
-                onClick={() => onReactionToggle?.(message.id, emoji, data.reactionId)}
-                className={`text-xs px-2 py-1 rounded-full transition-colors ${
-                  data.userReacted 
-                    ? 'bg-blue-500/20 text-blue-600 border border-blue-500/30' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+
+        {/* Media Attachments */}
+        {message.media_url && (
+          <div className="mt-2">
+            {message.media_type?.startsWith('image/') ? (
+              <div className="rounded-lg overflow-hidden max-w-sm">
+                <Image
+                  src={message.media_url}
+                  alt="Shared image"
+                  width={300}
+                  height={200}
+                  className="object-cover w-full h-auto"
+                />
+              </div>
+            ) : message.media_type?.startsWith('video/') ? (
+              <video
+                src={message.media_url}
+                controls
+                className="rounded-lg max-w-sm"
+                poster={message.media_thumbnail_url || undefined}
               >
-                {emoji} {data.count}
+                Your browser does not support video playback.
+              </video>
+            ) : (
+              <a
+                href={message.media_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm underline"
+              >
+                View attachment
+              </a>
+            )}
+            
+            {/* Media metadata */}
+            {message.media_size && (
+              <div className="text-xs text-gray-500 mt-1">
+                {(message.media_size / 1024 / 1024).toFixed(1)} MB
+                {message.media_duration && ` • ${Math.floor(message.media_duration / 60)}:${(message.media_duration % 60).toString().padStart(2, '0')}`}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Existing Reactions */}
+        {Object.keys(groupedReactions).length > 0 && (
+          <div className={cn(
+            "flex gap-1 mt-2 flex-wrap",
+            isCurrentUser ? "justify-end" : "justify-start"
+          )}>
+            {Object.entries(groupedReactions).map(([reaction, data]) => (
+              <button
+                key={reaction}
+                onClick={() => handleReactionClick(reaction)}
+                className={cn(
+                  "text-xs px-2 py-1 rounded-full transition-colors",
+                  data.userReacted
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-600 text-gray-300 hover:bg-gray-500"
+                )}
+                title={`${data.count} reaction${data.count !== 1 ? 's' : ''}`}
+              >
+                {reaction} {data.count}
               </button>
             ))}
           </div>
         )}
+
+        {/* Quick reaction buttons - shown on hover */}
+        <div className={cn(
+          "flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity",
+          isCurrentUser ? "justify-end" : "justify-start"
+        )}>
+          {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => 
+            !groupedReactions[emoji] && (
+              <button
+                key={emoji}
+                onClick={() => handleReactionClick(emoji)}
+                className="text-sm hover:bg-gray-600 rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                title={`React with ${emoji}`}
+              >
+                {emoji}
+              </button>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

@@ -24,8 +24,8 @@ interface CreatePostPayload {
 
 interface PostCreatorProps {
   readonly isOpen: boolean;
-  readonly onCloseAction: () => void;
-  readonly onSuccessAction: () => void;
+  readonly onClose: () => void;
+  readonly onSuccess: () => void;
 }
 
 /**
@@ -36,8 +36,8 @@ interface PostCreatorProps {
  */
 export function PostCreator({ 
   isOpen, 
-  onCloseAction, 
-  onSuccessAction 
+  onClose, 
+  onSuccess 
 }: PostCreatorProps): React.ReactElement | null {
   // State management
   const [step, setStep] = React.useState<CreatorStep>('camera');
@@ -60,6 +60,7 @@ export function PostCreator({
     recordingMode,
     isRecording,
     recordingTime,
+    recordingProgress,
     capturedMedia,
     mediaUrl,
     setRecordingMode,
@@ -140,7 +141,7 @@ export function PostCreator({
       };
 
       await createPost(payload);
-      onSuccessAction();
+      onSuccess();
     } catch (error) {
       console.error('Error posting content:', error);
       // Error handling is managed within the createPost hook
@@ -153,7 +154,7 @@ export function PostCreator({
     recordingMode, 
     recordingTime, 
     createPost, 
-    onSuccessAction
+    onSuccess
   ]);
 
   /**
@@ -161,16 +162,13 @@ export function PostCreator({
    */
   const handleClose = React.useCallback((): void => {
     if (posting) return;
-    onCloseAction();
-  }, [posting, onCloseAction]);
+    onClose();
+  }, [posting, onClose]);
 
   // Early return if modal is not open
   if (!isOpen) {
-    console.log('[POST_CREATOR] Modal not open, returning null');
     return null;
   }
-  
-  console.log('[POST_CREATOR] Rendering modal - isOpen:', isOpen);
 
   const isOnCameraStep = step === 'camera';
   const headerTitle = isOnCameraStep ? 'Create Post' : 'Add Caption';

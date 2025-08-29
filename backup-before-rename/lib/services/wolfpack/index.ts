@@ -66,13 +66,13 @@ export { WolfpackServiceError as WolfpackErrorHandler } from "./errors";
 
 // Export individual services
 export { WolfpackAuthService } from "./auth";
-export { SocialFeedService as SocialFeedService } from "./feed";
-export { SocialInteractionService } from "./social";
+export { WolfpackFeedServiceEnhanced as WolfpackFeedService } from "./feed";
+export { WolfpackSocialService } from "./social";
 
 // Import all services for unified interface
 import { WolfpackAuthService } from "./auth";
-import { SocialFeedService as SocialFeedService } from "./feed";
-import { SocialInteractionService } from "./social";
+import { WolfpackFeedServiceEnhanced as WolfpackFeedService } from "./feed";
+import { WolfpackSocialService } from "./social";
 
 // Legacy services removed during cleanup - functionality moved to consolidated services
 
@@ -84,27 +84,27 @@ import { SocialInteractionService } from "./social";
  *
  * Usage:
  * ```typescript
- * import { SocialService } from '@/lib/services/wolfpack';
+ * import { WolfpackService } from '@/lib/services/wolfpack';
  *
  * // Authentication
- * const user = await SocialService.auth.getCurrentUser();
+ * const user = await WolfpackService.auth.getCurrentUser();
  *
  * // Feed operations
- * const feed = await SocialService.feed.fetchFeedItems();
+ * const feed = await WolfpackService.feed.fetchFeedItems();
  *
  * // Social features (coming soon)
- * // const likes = await SocialService.social.likePost(postId);
+ * // const likes = await WolfpackService.social.likePost(postId);
  * ```
  */
-export class SocialService {
+export class WolfpackService {
   // Authentication & Authorization
   static auth = WolfpackAuthService;
 
   // Feed Management
-  static feed = SocialFeedService;
+  static feed = WolfpackFeedService;
 
   // Social Features
-  static social = SocialInteractionService;
+  static social = WolfpackSocialService;
 
   // Legacy services removed during cleanup
 
@@ -154,11 +154,11 @@ export class SocialService {
 }
 
 // Default export for convenience
-export default SocialService;
+export default WolfpackService;
 
 // Legacy compatibility exports (temporary during migration)
 export { WolfpackAuthService as LegacyWolfpackAuthService };
-export { SocialFeedService as LegacyWolfpackFeedService };
+export { WolfpackFeedService as LegacyWolfpackFeedService };
 // Removed legacy service exports
 
 // Legacy service exports removed during cleanup

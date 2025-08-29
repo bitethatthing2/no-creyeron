@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { UserProfileManager } from '@/components/wolfpack/UserProfileManager';
+import { WolfpackProfileManager } from '@/components/wolfpack/WolfpackProfileManager';
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function EditProfilePage() {
           <h1 className="text-2xl sm:text-3xl font-bold">Edit Profile</h1>
         </div>
         
-        <UserProfileManager />
+        <WolfpackProfileManager />
       </div>
     </div>
   );

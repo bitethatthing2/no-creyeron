@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { SocialService } from '@/lib/services/wolfpack';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import { supabase } from '@/lib/supabase';
 import type { FeedVideoItem } from '@/lib/services/wolfpack/types';
 import { transformToFeedVideoItem } from '@/lib/services/wolfpack/types';
@@ -290,7 +290,7 @@ export default function OptimizedWolfpackFeedPage() {
 
     // Make the actual request
     try {
-      const response = await SocialService.social.toggleLike(videoId);
+      const response = await WolfpackService.social.toggleLike(videoId);
       
       // Revert if failed
       if (!response.success) {
@@ -352,7 +352,7 @@ export default function OptimizedWolfpackFeedPage() {
     }
 
     try {
-      const response = await SocialService.feed.deletePost(videoId);
+      const response = await WolfpackService.feed.deletePost(videoId);
       
       if (response.success) {
         setVideos(prevVideos => prevVideos.filter(v => v.id !== videoId));

@@ -48,7 +48,7 @@ interface UserPreferences {
   contentFilters: string[];
 }
 
-export class SocialFeedService {
+export class WolfpackFeedServiceEnhanced {
   /**
    * Fetch public feed - accessible without authentication
    * Returns posts without user-specific data like "is_liked"

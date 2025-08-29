@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import VideoComments from '@/components/wolfpack/VideoCommentsOptimized';
 import FindFriends from '@/components/wolfpack/FindFriends';
-import { SocialService } from '@/lib/services/wolfpack';
+import { WolfpackService } from '@/lib/services/wolfpack';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import styles from './TikTokStyleFeed.module.css';
@@ -305,7 +305,7 @@ export default function TikTokStyleFeed({
       return newMap;
     });
 
-    const result = await SocialService.social.toggleFollow(userId);
+    const result = await WolfpackService.social.toggleFollow(userId);
     
     if (!result.success) {
       setFollowingStatus(prev => {

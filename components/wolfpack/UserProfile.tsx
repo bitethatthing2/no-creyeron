@@ -17,89 +17,229 @@ import {
   Camera,
   Settings,
   Crown,
-  User } from 'lucide-react';
+  User 
+} from 'lucide-react';
 import Image from 'next/image';
-import { useConsistentAuth } from '@/lib/hooks/useConsistentAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import type { User as UserType, ContentPost } from '@/types/supabase';
+import { toast } from '@/components/ui/use-toast';
 
 interface UserStats {
   followers: number;
   following: number;
-  content_posts: number;
+  posts: number;
   likes: number;
-  wolfpack_level: number;
-  pack_coins: number;
 }
 
 interface UserProfileProps {
   isOpen: boolean;
   onCloseAction: () => void;
- conversationid?: string;
+  userId?: string; // Changed from conversationid to userId for clarity
 }
 
-export default function UserProfile({ isOpen, onCloseAction,conversationid }: UserProfileProps) {
-  const { user } = useConsistentAuth();
-  const [stats] = React.useState<UserStats>({
-    followers: 1234,
-    following: 567,
-    content_posts: 89,
-    likes: 12400,
-    wolfpack_level: 8,
-    pack_coins: 2890
+export default function UserProfile({ isOpen, onCloseAction, userId }: UserProfileProps) {
+  const { currentUser } = useAuth();
+  const [profileUser, setProfileUser] = React.useState<UserType | null>(null);
+  const [stats, setStats] = React.useState<UserStats>({
+    followers: 0,
+    following: 0,
+    posts: 0,
+    likes: 0
   });
-  const [isOwnProfile, setIsOwnProfile] = React.useState(true);
+  const [recentPosts, setRecentPosts] = React.useState<ContentPost[]>([]);
+  const [isFollowing, setIsFollowing] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
 
+  const isOwnProfile = !userId || userId === currentUser?.id;
+  const displayUserId = userId || currentUser?.id;
+
+  // Load user profile and stats
   React.useEffect(() => {
-    if (conversationid && user) {
-      setIsOwnProfile(conversationid === user.id);
+    const loadProfile = async () => {
+      if (!displayUserId) return;
+
+      setLoading(true);
+      try {
+        // Get user data
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', displayUserId)
+          .single();
+
+        if (userError) throw userError;
+        setProfileUser(userData);
+
+        // Get follower count
+        const { count: followersCount } = await supabase
+          .from('social_follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', displayUserId);
+
+        // Get following count
+        const { count: followingCount } = await supabase
+          .from('social_follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', displayUserId);
+
+        // Get posts count
+        const { count: postsCount } = await supabase
+          .from('content_posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', displayUserId)
+          .eq('is_active', true);
+
+        // Get total likes on user's posts
+        const { data: postsData } = await supabase
+          .from('content_posts')
+          .select('likes_count')
+          .eq('user_id', displayUserId)
+          .eq('is_active', true);
+
+        const totalLikes = postsData?.reduce((sum, post) => sum + (post.likes_count || 0), 0) || 0;
+
+        setStats({
+          followers: followersCount || 0,
+          following: followingCount || 0,
+          posts: postsCount || 0,
+          likes: totalLikes
+        });
+
+        // Check if current user follows this user
+        if (currentUser && !isOwnProfile) {
+          const { data: followData } = await supabase
+            .from('social_follows')
+            .select('id')
+            .eq('follower_id', currentUser.id)
+            .eq('following_id', displayUserId)
+            .maybeSingle();
+
+          setIsFollowing(!!followData);
+        }
+
+        // Get recent posts
+        const { data: posts } = await supabase
+          .from('content_posts')
+          .select('*')
+          .eq('user_id', displayUserId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(9);
+
+        setRecentPosts(posts || []);
+
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load profile',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen && displayUserId) {
+      loadProfile();
     }
-  }, [conversationid, user]);
+  }, [isOpen, displayUserId, currentUser, isOwnProfile]);
 
+  const handleFollow = async () => {
+    if (!currentUser || !profileUser) return;
 
-  const userProfile = {
-    first_name: user?.first_name || 'Mark',
-    last_name: user?.last_name || 'Kahler',
-    username: user?.email?.split('@')[0] || 'mkahler599',
-    email: user?.email || 'mkahler599@gmail.com',
-    avatar_url: user?.avatar_url || '/icons/wolf-icon.png',
-    bio: 'Living the Wolf Pack life in Salem! 🐺 Side Hustle regular & pack leader',
-    location: 'Salem, OR',
-    joined_date: '2024-01-15',
-    verified: true,
-    pack_status: 'Alpha',
-    favorite_drinks: ['Margarita', 'IPA', 'Whiskey Sour'],
-    achievements: [
-      { name: 'Pack Leader', icon: Crown, description: 'Leading the Salem pack' },
-      { name: 'Regular', icon: Star, description: '100+ visits to Side Hustle' },
-      { name: 'Social Butterfly', icon: Users, description: '50+ wolfpack connections' },
-      { name: 'Video Creator', icon: Camera, description: '25+ content_posts posted' }
-    ]
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('social_follows')
+          .delete()
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', profileUser.id);
+
+        if (error) throw error;
+        
+        setIsFollowing(false);
+        setStats(prev => ({ ...prev, followers: Math.max(0, prev.followers - 1) }));
+        
+        toast({
+          title: 'Unfollowed',
+          description: `You unfollowed @${profileUser.username}`
+        });
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('social_follows')
+          .insert({
+            follower_id: currentUser.id,
+            following_id: profileUser.id
+          });
+
+        if (error) throw error;
+        
+        setIsFollowing(true);
+        setStats(prev => ({ ...prev, followers: prev.followers + 1 }));
+
+        // Create notification
+        await supabase
+          .from('notifications')
+          .insert({
+            recipient_id: profileUser.id,
+            related_user_id: currentUser.id,
+            type: 'follow',
+            title: 'New Follower',
+            message: `${currentUser.display_name || currentUser.username} started following you`,
+            status: 'unread'
+          });
+        
+        toast({
+          title: 'Following',
+          description: `You are now following @${profileUser.username}`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error toggling follow:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update follow status',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const recentcontent_posts = [
-    {
-      id: '1',
-      thumbnail: '/icons/wolf-icon.png',
-      likes: 3420,
-      content_comments: 156,
-      isVideo: true
-    },
-    {
-      id: '2',
-      thumbnail: '/icons/wolf-icon.png',
-      likes: 5678,
-      content_comments: 234,
-      isVideo: true
-    },
-    {
-      id: '3',
-      thumbnail: '/icons/wolf-icon.png',
-      likes: 4321,
-      content_comments: 198,
-      isVideo: true
+  const handleShare = async () => {
+    if (!profileUser) return;
+    
+    const profileUrl = `${window.location.origin}/profile/${profileUser.username}`;
+    
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      toast({
+        title: 'Link copied!',
+        description: 'Profile link has been copied to clipboard'
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
-  ];
+  };
 
   if (!isOpen) return null;
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (!profileUser) return null;
+
+  const displayName = profileUser.display_name || 
+                      (profileUser.first_name && profileUser.last_name ? 
+                        `${profileUser.first_name} ${profileUser.last_name}` : 
+                        profileUser.username);
+  const avatarUrl = profileUser.avatar_url || profileUser.profile_image_url || '/icons/wolf-icon.png';
 
   return (
     <div className="fixed inset-0 bg-black z-50 overflow-y-auto">
@@ -115,15 +255,18 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
             <X className="h-6 w-6" />
           </Button>
           <h1 className="text-white text-lg font-semibold">
-            {isOwnProfile ? 'Your Profile' : `@${userProfile.username}`}
+            {isOwnProfile ? 'Your Profile' : `@${profileUser.username}`}
           </h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-gray-800 rounded-full p-2"
-          >
-            <Settings className="h-6 w-6" />
-          </Button>
+          {isOwnProfile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.href = '/settings'}
+              className="text-white hover:bg-gray-800 rounded-full p-2"
+            >
+              <Settings className="h-6 w-6" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -134,19 +277,17 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
           <div className="relative inline-block mb-4">
             <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
               <Image
-                src={userProfile.avatar_url}
+                src={avatarUrl}
                 alt="Profile"
                 width={96}
                 height={96}
-                className="rounded-full"
+                className="rounded-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/icons/wolf-icon.png';
+                }}
               />
             </Avatar>
-            {userProfile.verified && (
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
-                <span className="text-white text-sm font-bold">✓</span>
-              </div>
-            )}
-            {userProfile.pack_status === 'Alpha' && (
+            {profileUser.role === 'admin' && (
               <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center border-2 border-white">
                 <Crown className="h-4 w-4 text-white" />
               </div>
@@ -154,26 +295,19 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
           </div>
           
           <h2 className="text-white text-2xl font-bold mb-1">
-            {userProfile.first_name} {userProfile.last_name}
+            {displayName}
           </h2>
-          <p className="text-gray-400 text-lg mb-2">@{userProfile.username}</p>
+          <p className="text-gray-400 text-lg mb-2">@{profileUser.username}</p>
+          
+          {profileUser.email && (
+            <p className="text-gray-500 text-sm mb-4">{profileUser.email}</p>
+          )}
           
           <div className="flex items-center justify-center gap-2 mb-4">
-            <MapPin className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-400">{userProfile.location}</span>
-          </div>
-          
-          <p className="text-white text-center max-w-sm mx-auto mb-4">
-            {userProfile.bio}
-          </p>
-          
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-400 text-sm">
-                Joined {new Date(userProfile.joined_date).toLocaleDateString()}
-              </span>
-            </div>
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <span className="text-gray-400 text-sm">
+              Joined {new Date(profileUser.created_at).toLocaleDateString()}
+            </span>
           </div>
         </div>
 
@@ -181,23 +315,16 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
         {isOwnProfile ? (
           <div className="flex gap-2">
             <Button 
-              onClick={() => {
-                // Navigate to profile edit page
-                window.location.href = '/profile/edit';
-              }}
-              className="flex-1 bg-white hover:bg-gray-200"
-              style={{ color: 'black' }}
+              onClick={() => window.location.href = '/profile/edit'}
+              className="flex-1 bg-white hover:bg-gray-200 text-black"
             >
-              <Edit className="h-4 w-4 mr-2 text-black" />
-              <span className="text-black font-medium">Edit Profile</span>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Profile
             </Button>
             <Button 
               variant="outline" 
               className="flex-1 border-gray-700 text-white hover:bg-gray-800"
-              onClick={() => {
-                // TODO: Implement share functionality
-                console.log('Share profile clicked');
-              }}
+              onClick={handleShare}
             >
               <Share className="h-4 w-4 mr-2" />
               Share Profile
@@ -206,22 +333,18 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
         ) : (
           <div className="flex gap-2">
             <Button 
-              className="flex-1 bg-white hover:bg-gray-200"
-              style={{ color: 'black' }}
-              onClick={() => {
-                // TODO: Implement follow functionality
-                console.log('Follow clicked');
-              }}
+              className={`flex-1 ${isFollowing ? 'bg-gray-600 hover:bg-gray-700' : 'bg-white hover:bg-gray-200 text-black'}`}
+              onClick={handleFollow}
             >
-              <User className="h-4 w-4 mr-2 text-black" />
-              <span className="text-black font-medium">Follow</span>
+              <User className="h-4 w-4 mr-2" />
+              {isFollowing ? 'Following' : 'Follow'}
             </Button>
             <Button 
               variant="outline" 
               className="flex-1 border-gray-700 text-white hover:bg-gray-800"
               onClick={() => {
-                // TODO: Implement message functionality
-                console.log('Message clicked');
+                // Navigate to chat
+                window.location.href = `/chat/${profileUser.id}`;
               }}
             >
               <MessageCircle className="h-4 w-4 mr-2" />
@@ -246,8 +369,8 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
           </Card>
           <Card className="bg-gray-900 border-gray-700">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-white mb-1">{stats.content_posts}</div>
-              <div className="text-gray-400 text-sm">content_posts</div>
+              <div className="text-2xl font-bold text-white mb-1">{stats.posts}</div>
+              <div className="text-gray-400 text-sm">Posts</div>
             </CardContent>
           </Card>
           <Card className="bg-gray-900 border-gray-700">
@@ -258,101 +381,44 @@ export default function UserProfile({ isOpen, onCloseAction,conversationid }: Us
           </Card>
         </div>
 
-        {/* Wolf Pack Status */}
-        <Card className="bg-gradient-to-r from-purple-600 to-pink-600 border-0">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-white font-bold text-lg">Wolf Pack Level {stats.wolfpack_level}</div>
-                <div className="text-purple-100 text-sm">Pack Coins: {stats.pack_coins}</div>
-              </div>
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-                <Image
-                  src="/icons/WOLFPACK-PAW.png"
-                  alt="Wolf Pack"
-                  width={32}
-                  height={32}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Achievements */}
-        <div>
-          <h3 className="text-white font-bold text-lg mb-4">Achievements</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {userProfile.achievements.map((achievement, index) => (
-              <Card key={index} className="bg-gray-900 border-gray-700">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
-                      <achievement.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-white font-medium text-sm">{achievement.name}</div>
-                      <div className="text-gray-400 text-xs">{achievement.description}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Content Tabs */}
+        {/* Recent Posts */}
         <div className="space-y-4">
-          {/* Tab Headers */}
-          <div className="flex border-b border-gray-800">
-            <div className="flex-1 py-3 text-center border-b-2 border-white">
-              <div className="w-6 h-6 mx-auto mb-1">📱</div>
-              <span className="text-white text-xs">content_posts</span>
-            </div>
-            <div className="flex-1 py-3 text-center">
-              <div className="w-6 h-6 mx-auto mb-1">❤️</div>
-              <span className="text-gray-400 text-xs">Liked</span>
-            </div>
-            {isOwnProfile && (
-              <div className="flex-1 py-3 text-center">
-                <div className="w-6 h-6 mx-auto mb-1">🔒</div>
-                <span className="text-gray-400 text-xs">Private</span>
-              </div>
-            )}
-          </div>
-
-          {/* Content Area */}
-          {recentcontent_posts.length > 0 ? (
+          <h3 className="text-white font-bold text-lg">Recent Posts</h3>
+          
+          {recentPosts.length > 0 ? (
             <div className="grid grid-cols-3 gap-1">
-              {recentcontent_posts.map((post) => (
-                <div key={post.id} className="aspect-square bg-gray-900 rounded-lg overflow-hidden relative">
-                  <Image
-                    src={post.thumbnail}
-                    alt="Post thumbnail"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute bottom-1 left-1 flex items-center gap-1">
-                    <Heart className="h-4 w-4 text-white" />
-                    <span className="text-white text-xs">{post.likes}</span>
+              {recentPosts.map((post) => (
+                <div 
+                  key={post.id} 
+                  className="aspect-square bg-gray-900 rounded-lg overflow-hidden relative cursor-pointer"
+                  onClick={() => window.location.href = `/post/${post.id}`}
+                >
+                  {post.thumbnail_url && (
+                    <Image
+                      src={post.thumbnail_url}
+                      alt="Post thumbnail"
+                      fill
+                      className="object-cover"
+                    />
+                  )}
+                  <div className="absolute bottom-1 left-1 flex items-center gap-1 bg-black/50 px-1 rounded">
+                    <Heart className="h-3 w-3 text-white" />
+                    <span className="text-white text-xs">{post.likes_count || 0}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Image
-                  src="/icons/wolf-icon.png"
-                  alt="No content_posts"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8"
-                />
-              </div>
-              <p className="text-white text-lg mb-2">Share a fun video you&#39;ve recorded recently</p>
-              <Button className="bg-red-500 text-white hover:bg-red-600 rounded-lg px-8 py-3 mt-4">
-                Upload
-              </Button>
+            <div className="text-center py-8">
+              <p className="text-gray-400">No posts yet</p>
+              {isOwnProfile && (
+                <Button 
+                  className="bg-red-500 text-white hover:bg-red-600 rounded-lg px-8 py-3 mt-4"
+                  onClick={() => window.location.href = '/create'}
+                >
+                  Create First Post
+                </Button>
+              )}
             </div>
           )}
         </div>

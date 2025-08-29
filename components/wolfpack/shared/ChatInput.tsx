@@ -1,182 +1,115 @@
 'use client';
 
 import * as React from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Send, Smile, Plus } from 'lucide-react';
-
-interface ChatInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSendMessage: (message: string) => Promise<void>;
-  placeholder?: string;
-  disabled?: boolean;
-  isConnected?: boolean;
-  variant?: 'default' | 'mobile';
-  maxLength?: number;
-  showEmojiPicker?: boolean;
-  showMediaOptions?: boolean;
-  onEmojiToggle?: () => void;
-  onMediaToggle?: () => void;
-  onEmojiSelect?: (emoji: string) => void;
-  typingUsers?: string[];
-  className?: string;
-}
+import { Send, Paperclip } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { ChatInputProps } from '@/types/chat';
 
 export function ChatInput({
-  value,
-  onChange,
+  conversationId,
   onSendMessage,
-  placeholder = "Type a message...",
   disabled = false,
-  isConnected = true,
-  variant = 'default',
-  maxLength = 500,
-  showEmojiPicker = false,
-  showMediaOptions = false,
-  onEmojiToggle,
-  onMediaToggle,
-  onEmojiSelect,
-  typingUsers = [],
-  className = ''
-}: ChatInputProps) {
+  placeholder = "Type a message...",
+  replyToId,
+  className
+}: ChatInputProps): React.ReactElement {
+  const [message, setMessage] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!value.trim() || isSubmitting || !isConnected) return;
+  const handleSubmit = React.useCallback(async () => {
+    if (!message.trim() || isSubmitting || disabled) return;
 
+    const messageContent = message.trim();
+    setMessage('');
     setIsSubmitting(true);
+
     try {
-      await onSendMessage(value);
-      onChange('');
+      await onSendMessage(conversationId, messageContent, 'text', undefined, replyToId);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Failed to send message:', error);
+      setMessage(messageContent);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [message, isSubmitting, disabled, conversationId, onSendMessage, replyToId]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
-  };
+  }, [handleSubmit]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
+  const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  }, []);
 
-  // Mobile variant
-  if (variant === 'mobile') {
-    const effectivePlaceholder = typingUsers.length > 0 
-      ? `${typingUsers.join(', ')} typing...` 
-      : placeholder;
+  return (
+    <div className={cn(
+      "flex items-end gap-3 p-4 bg-gray-900 border-t border-gray-800",
+      className
+    )}>
+      <button
+        type="button"
+        disabled={disabled || isSubmitting}
+        className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-300 disabled:opacity-50 transition-colors"
+        aria-label="Attach file"
+      >
+        <Paperclip className="w-5 h-5" />
+      </button>
 
-    return (
-      <div className={`flex-none p-4 bg-gray-800 border-t border-gray-700 safe-area-inset-bottom relative ${className}`}>
-        <div className="flex items-center gap-3">
-          {onMediaToggle && (
-            <button
-              onClick={onMediaToggle}
-              className="p-3 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              type="button"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+      <div className="flex-1 relative">
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled || isSubmitting}
+          className={cn(
+            "w-full min-h-[40px] max-h-[120px] px-4 py-2 pr-12",
+            "bg-gray-800 border border-gray-700 rounded-2xl",
+            "text-white placeholder-gray-400",
+            "resize-none outline-none",
+            "focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            "transition-colors"
           )}
-          
-          <div className="flex-1 relative">
-            <input 
-              ref={inputRef}
-              type="text"
-              className="w-full bg-gray-700 border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 text-base focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-              placeholder={effectivePlaceholder}
-              value={value}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyPress}
-              disabled={disabled || !isConnected}
-              maxLength={maxLength}
-            />
-          </div>
-          
-          {onEmojiToggle && (
-            <button
-              onClick={onEmojiToggle}
-              className="p-3 hover:bg-gray-700 rounded-full text-gray-400 hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              type="button"
-            >
-              <Smile className="w-5 h-5" />
-            </button>
-          )}
-          
-          <button
-            onClick={handleSubmit}
-            disabled={!value.trim() || isSubmitting || !isConnected}
-            className="p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-full text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center shadow-lg"
-            type="button"
-          >
-            {isSubmitting ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
-        </div>
+          rows={1}
+          maxLength={2000}
+        />
         
-        {/* Character counter for mobile */}
-        {value.length > maxLength * 0.9 && (
-          <p className="text-xs text-gray-400 mt-2 text-right">
-            {maxLength - value.length} characters remaining
-          </p>
+        {message.length > 1800 && (
+          <div className="absolute -top-6 right-0 text-xs text-gray-400">
+            {message.length}/2000
+          </div>
         )}
       </div>
-    );
-  }
 
-  // Default variant
-  return (
-    <div className={`p-4 border-t ${className}`}>
-      {!isConnected ? (
-        <div className="flex items-center justify-center py-3 text-gray-500">
-          <Button size="sm" variant="outline">
-            Sign In
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            ref={inputRef}
-            value={value}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyPress}
-            placeholder={placeholder}
-            disabled={disabled || isSubmitting || !isConnected}
-            maxLength={maxLength}
-            className="flex-1"
-          />
-          <Button
-            type="submit"
-            disabled={!value.trim() || isSubmitting || !isConnected}
-            size="sm"
-          >
-            {isSubmitting ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </form>
-      )}
-      
-      {/* Character counter for default */}
-      {value.length > maxLength * 0.9 && (
-        <p className="text-xs text-gray-500 mt-1 text-right">
-          {maxLength - value.length} characters remaining
-        </p>
-      )}
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!message.trim() || disabled || isSubmitting}
+        className={cn(
+          "flex-shrink-0 p-2 rounded-full transition-all",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          message.trim() && !disabled && !isSubmitting
+            ? "bg-blue-600 hover:bg-blue-700 text-white"
+            : "bg-gray-700 text-gray-400"
+        )}
+        aria-label="Send message"
+      >
+        {isSubmitting ? (
+          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Send className="w-5 h-5" />
+        )}
+      </button>
     </div>
   );
 }

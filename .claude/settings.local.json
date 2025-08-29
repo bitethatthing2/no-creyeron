@@ -101,7 +101,8 @@
       "Bash(./node_modules/.bin/supabase:*)",
       "Bash(npx next build:*)",
       "Read(/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/**)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

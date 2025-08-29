@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { mapSupabaseError, SocialService } from "@/lib/services/wolfpack";
+import { mapSupabaseError, WolfpackService } from "@/lib/services/wolfpack";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { location_id, latitude, longitude } = body;
 
     // Verify user authentication
-    const verifiedUser = await SocialService.auth.verifyUser();
+    const verifiedUser = await WolfpackService.auth.verifyUser();
     if (!verifiedUser) {
       return NextResponse.json(
         { error: "User verification failed", code: "AUTH_ERROR" },
@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is VIP or permanent pack member
-    const isVipUser = await SocialService.auth.isVipUser();
+    const isVipUser = await WolfpackService.auth.isVipUser();
     const isPermanentPackMember =
       verifiedUser.wolfpack_status === "permanent_member";
 
     // TODO: Location verification for non-VIP and non-permanent members
-    // The location service is not yet implemented in the consolidated SocialService
+    // The location service is not yet implemented in the consolidated WolfpackService
 
     // TODO: Join pack logic - membership service not yet implemented
     // For now, return a temporary response

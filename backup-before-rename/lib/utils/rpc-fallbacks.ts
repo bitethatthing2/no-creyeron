@@ -33,7 +33,7 @@ export class RPCFallbacks {
   }
 
   // Fallback for join_wolfpack
-  static async joinMembership(userId: string, data: any) {
+  static async joinWolfpack(userId: string, data: any) {
     try {
       const { error } = await supabase
         .from("users")
@@ -65,7 +65,7 @@ export class RPCFallbacks {
   }
 
   // Fallback for leave_wolfpack
-  static async leaveMembership(userId: string) {
+  static async leaveWolfpack(userId: string) {
     try {
       const { error } = await supabase
         .from("users")

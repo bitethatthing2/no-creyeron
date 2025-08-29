@@ -4,7 +4,7 @@ import * as React from 'react';
 import { X, Link, Facebook, Twitter, MessageCircle, Mail } from 'lucide-react';
 import { getZIndexClass } from '@/lib/constants/z-index';
 import { toast } from '@/components/ui/use-toast';
-import { WolfpackService } from '@/lib/services/wolfpack';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ShareModalProps {
@@ -16,10 +16,16 @@ interface ShareModalProps {
 }
 
 export default function ShareModal({ isOpen, onClose, videoId, caption, username }: ShareModalProps) {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const [copying, setCopying] = React.useState(false);
+  const [shareUrl, setShareUrl] = React.useState('');
 
-  const shareUrl = `${window.location.origin}/wolfpack/video/${videoId}`;
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setShareUrl(`${window.location.origin}/wolfpack/video/${videoId}`);
+    }
+  }, [videoId]);
+
   const shareText = `Check out this video by ${username || 'Wolf Pack member'}: ${caption || ''} #WolfPack #SideHustleBar`;
 
   const handleCopyLink = async () => {
@@ -27,9 +33,9 @@ export default function ShareModal({ isOpen, onClose, videoId, caption, username
       setCopying(true);
       await navigator.clipboard.writeText(shareUrl);
       
-      // Track the share
-      if (user) {
-        await WolfpackService.social.trackShare(videoId, user.id, 'copy_link');
+      // Track the share in content_interactions table
+      if (currentUser) {
+        await trackShare('copy_link');
       }
       
       toast({
@@ -46,6 +52,62 @@ export default function ShareModal({ isOpen, onClose, videoId, caption, username
       });
     } finally {
       setCopying(false);
+    }
+  };
+
+  const trackShare = async (platform: string) => {
+    if (!currentUser) return;
+
+    try {
+      // First check if user already shared this
+      const { data: existing } = await supabase
+        .from('content_interactions')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('content_id', videoId)
+        .eq('interaction_type', 'share')
+        .maybeSingle();
+
+      if (!existing) {
+        // Record the share interaction
+        const { error: interactionError } = await supabase
+          .from('content_interactions')
+          .insert({
+            user_id: currentUser.id,
+            content_id: videoId,
+            interaction_type: 'share'
+          });
+
+        if (interactionError && interactionError.code !== '23505') {
+          console.error('Error tracking share:', interactionError);
+        }
+      }
+
+      // Update share count on the post
+      const { data: postData } = await supabase
+        .from('content_posts')
+        .select('shares_count')
+        .eq('id', videoId)
+        .single();
+
+      if (postData) {
+        const { error: updateError } = await supabase
+          .from('content_posts')
+          .update({ 
+            shares_count: (postData.shares_count || 0) + 1 
+          })
+          .eq('id', videoId);
+
+        if (updateError) {
+          console.error('Error updating share count:', updateError);
+        }
+      }
+
+      // Log share details in metadata (optional)
+      console.log(`Share tracked: ${platform} for video ${videoId}`);
+      
+    } catch (error) {
+      console.error('Error tracking share:', error);
     }
   };
 
@@ -72,8 +134,8 @@ export default function ShareModal({ isOpen, onClose, videoId, caption, username
     }
 
     // Track the share
-    if (user) {
-      await WolfpackService.social.trackShare(videoId, user.id, platform);
+    if (currentUser) {
+      await trackShare(platform);
     }
 
     window.open(url, '_blank', 'width=600,height=600');

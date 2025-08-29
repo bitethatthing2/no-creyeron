@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { Database } from "@/types/database.types";
+import { Database } from "@/lib/supabase/types";
 
 /**
  * Get the current session on the server side

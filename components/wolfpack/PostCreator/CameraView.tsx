@@ -2,9 +2,11 @@
 
 import * as React from 'react';
 import { Camera, SwitchCamera, AlertCircle } from 'lucide-react';
-import { CameraStatus, FacingMode } from '@/lib/hooks/wolfpack/useCamera';
 import { cn } from '@/lib/utils';
-import styles from './PostCreator.module.css';
+
+// Define types locally since they should be part of useCamera hook
+type CameraStatus = 'idle' | 'loading' | 'active' | 'error';
+type FacingMode = 'user' | 'environment';
 
 interface CameraViewProps {
   hasStream: boolean;
@@ -37,8 +39,8 @@ const CameraViewComponent = React.forwardRef<HTMLVideoElement, CameraViewProps>(
             playsInline
             muted
             className={cn(
-              styles.cameraVideo,
-              facingMode === 'user' ? styles.cameraVideoFlipped : styles.cameraVideoNormal
+              "w-full h-full object-cover transition-transform duration-300",
+              facingMode === 'user' ? "scale-x-[-1]" : "scale-x-1"
             )}
           />
           
@@ -49,6 +51,7 @@ const CameraViewComponent = React.forwardRef<HTMLVideoElement, CameraViewProps>(
               disabled={isProcessing}
               className="absolute top-4 right-4 z-10 w-12 h-12 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:bg-black/50 disabled:opacity-50"
               aria-label="Switch camera"
+              type="button"
             >
               <SwitchCamera className="w-6 h-6 text-white" />
             </button>
@@ -95,7 +98,7 @@ const CameraViewComponent = React.forwardRef<HTMLVideoElement, CameraViewProps>(
               </p>
               <div className="bg-red-900/20 border border-red-800/30 rounded-lg p-3 mt-4">
                 <p className="text-white/60 text-xs">
-                  Make sure you&apos;ve granted camera permissions in your browser settings
+                  Make sure you have granted camera permissions in your browser settings
                 </p>
               </div>
             </div>
@@ -115,16 +118,15 @@ const CameraViewComponent = React.forwardRef<HTMLVideoElement, CameraViewProps>(
           <button
             onClick={onStartCamera}
             disabled={cameraStatus === 'loading'}
-            className={`
-              relative px-8 py-4 rounded-full font-semibold text-white
-              transition-all duration-300 transform
-              ${cameraStatus === 'loading' 
+            type="button"
+            className={cn(
+              "relative px-8 py-4 rounded-full font-semibold text-white transition-all duration-300 transform",
+              cameraStatus === 'loading' 
                 ? 'bg-gray-600 cursor-not-allowed opacity-50' 
                 : cameraStatus === 'error'
                   ? 'bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95'
                   : 'bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
-              }
-            `}
+            )}
           >
             <span className="relative z-10">
               {cameraStatus === 'loading' 

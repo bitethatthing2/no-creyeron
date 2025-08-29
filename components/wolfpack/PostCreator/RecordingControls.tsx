@@ -1,20 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { Camera, Video, Square, Circle, X, Zap, Timer } from 'lucide-react';
-import { RecordingMode } from '@/lib/hooks/wolfpack/useRecording';
+import { Camera, Video, Square, Circle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import styles from './PostCreator.module.css';
+
+// Define the type locally to avoid import issues
+type RecordingMode = 'photo' | 'video';
 
 interface RecordingControlsProps {
   recordingMode: RecordingMode;
   isRecording: boolean;
   hasStream: boolean;
+  recordingDuration: number;
   onModeChange: (mode: RecordingMode) => void;
   onMainAction: () => void;
-  recordingDuration?: number;
-  maxDuration?: number;
-  onCancel?: () => void;
+  onCancel: () => void;
   isProcessing?: boolean;
 }
 
@@ -22,13 +22,12 @@ function RecordingControlsComponent({
   recordingMode,
   isRecording,
   hasStream,
-  recordingDuration = 0,
-  maxDuration = 60,
+  recordingDuration,
   onModeChange,
   onMainAction,
   onCancel,
   isProcessing = false
-}: RecordingControlsProps) {
+}: RecordingControlsProps): React.ReactElement {
   
   const formatDuration = React.useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -36,13 +35,9 @@ function RecordingControlsComponent({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  const durationPercentage = React.useMemo(() => {
-    return Math.min((recordingDuration / maxDuration) * 100, 100);
-  }, [recordingDuration, maxDuration]);
-
   return (
     <div className="space-y-6">
-      {/* Recording Duration Display */}
+      {/* Recording Duration Display - Only show when recording video */}
       {isRecording && recordingMode === 'video' && (
         <div className="flex justify-center">
           <div className="bg-black/60 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2">
@@ -50,164 +45,104 @@ function RecordingControlsComponent({
             <span className="text-white font-mono text-sm">
               {formatDuration(recordingDuration)}
             </span>
-            <span className="text-white/50 text-xs">
-              / {formatDuration(maxDuration)}
-            </span>
           </div>
         </div>
       )}
 
-      {/* Mode Selector - Hide when recording */}
+      {/* Mode Selector - Only show when not recording */}
       {!isRecording && (
         <div className="flex justify-center">
-          <div className={cn("shadow-lg", styles.modeSelector)}>
-            <div className="flex gap-1">
-              {/* Photo Mode */}
-              <button
-                onClick={() => onModeChange('photo')}
-                disabled={isProcessing}
-                className={cn(
-                  styles.modeButton,
-                  recordingMode === 'photo' ? styles.modeButtonActive : styles.modeButtonInactive,
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
-                )}
-              >
-                <Camera className="w-4 h-4" />
-                <span>Photo</span>
-                {recordingMode === 'photo' && (
-                  <div className={styles.modeButtonGlow} />
-                )}
-              </button>
+          <div className="bg-black/30 backdrop-blur-sm rounded-full p-1 flex gap-1">
+            {/* Photo Mode */}
+            <button
+              type="button"
+              onClick={() => onModeChange('photo')}
+              disabled={isProcessing}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center",
+                recordingMode === 'photo' 
+                  ? "bg-white text-black" 
+                  : "text-white/70 hover:text-white",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              aria-pressed={recordingMode === 'photo'}
+              aria-label="Switch to photo mode"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              Photo
+            </button>
 
-              {/* Video Mode */}
-              <button
-                onClick={() => onModeChange('video')}
-                disabled={isProcessing}
-                className={cn(
-                  styles.modeButton,
-                  recordingMode === 'video' ? styles.modeButtonActive : styles.modeButtonInactive,
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
-                )}
-              >
-                <Video className="w-4 h-4" />
-                <span>Video</span>
-                {recordingMode === 'video' && (
-                  <div className={styles.modeButtonGlow} />
-                )}
-              </button>
-            </div>
+            {/* Video Mode */}
+            <button
+              type="button"
+              onClick={() => onModeChange('video')}
+              disabled={isProcessing}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center",
+                recordingMode === 'video' 
+                  ? "bg-white text-black" 
+                  : "text-white/70 hover:text-white",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              aria-pressed={recordingMode === 'video'}
+              aria-label="Switch to video mode"
+            >
+              <Video className="w-4 h-4 mr-2" />
+              Video
+            </button>
           </div>
         </div>
       )}
 
-      {/* Main Record Button */}
+      {/* Main Controls */}
       <div className="flex justify-center items-center gap-6">
-        {/* Cancel button when recording */}
-        {isRecording && onCancel && (
+        {/* Cancel button - Only show when recording */}
+        {isRecording && (
           <button
+            type="button"
             onClick={onCancel}
-            className="w-14 h-14 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/60 transition-all"
-            title="Cancel recording"
+            className="w-12 h-12 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/60 transition-all"
             aria-label="Cancel recording"
           >
-            <X className="w-6 h-6 text-white" />
+            <X className="w-5 h-5 text-white" />
           </button>
         )}
 
-        {/* Main Action Button */}
-        <div className="relative">
-          {/* Progress Ring for Video Recording */}
-          {isRecording && recordingMode === 'video' && (
-            <svg className={styles.progressRing}>
-              <circle
-                cx="48"
-                cy="48"
-                r="44"
-                stroke="rgba(255,255,255,0.2)"
-                strokeWidth="4"
-                fill="none"
-              />
-              <circle
-                cx="48"
-                cy="48"
-                r="44"
-                stroke="url(#gradient)"
-                strokeWidth="4"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 44}`}
-                strokeDashoffset={`${2 * Math.PI * 44 * (1 - durationPercentage / 100)}`}
-                className={styles.progressCircle}
-              />
-              <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ec4899" />
-                  <stop offset="100%" stopColor="#a855f7" />
-                </linearGradient>
-              </defs>
-            </svg>
+        {/* Main Record Button */}
+        <button
+          type="button"
+          onClick={onMainAction}
+          disabled={!hasStream || isProcessing}
+          className={cn(
+            "w-20 h-20 rounded-full flex items-center justify-center transition-all transform",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            "active:scale-95",
+            !hasStream 
+              ? "bg-gray-600" 
+              : recordingMode === 'photo'
+                ? "bg-white hover:bg-gray-100 shadow-lg"
+                : isRecording 
+                  ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                  : "bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 shadow-lg"
           )}
-
-          {/* Outer Ring Animation */}
-          <div className={cn(
-            styles.recordButtonRing,
-            isRecording
-              ? styles.recordButtonRingRecording
-              : hasStream
-                ? styles.recordButtonRingActive
-                : styles.recordButtonRingInactive
-          )} />
-
-          {/* Main Button */}
-          <button
-            onClick={onMainAction}
-            disabled={!hasStream || isProcessing}
-            className={cn(
-              styles.recordButtonBase,
-              "disabled:opacity-50 disabled:cursor-not-allowed"
-            )}
-          >
-            <div
-              className={cn(
-                styles.recordButtonInner,
-                recordingMode === 'photo'
-                  ? hasStream
-                    ? styles.recordButtonPhoto
-                    : styles.recordButtonPhotoDisabled
-                  : isRecording
-                    ? styles.recordButtonVideoRecording
-                    : hasStream
-                      ? styles.recordButtonVideo
-                      : styles.recordButtonVideoDisabled
-              )}
-            >
-              {/* Button Icon */}
-              {isProcessing ? (
-                <div className={cn("w-6 h-6", styles.loadingSpinner)} />
-              ) : recordingMode === 'photo' ? (
-                <Camera className="w-8 h-8 text-black/80" />
-              ) : isRecording ? (
-                <Square className="w-6 h-6 text-white rounded" />
-              ) : (
-                <Circle className="w-8 h-8 text-white" />
-              )}
-            </div>
-
-            {/* Flash Effect for Photo */}
-            {recordingMode === 'photo' && !isProcessing && hasStream && (
-              <Zap className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" />
-            )}
-          </button>
-        </div>
-
-        {/* Timer Options for Video (when not recording) */}
-        {recordingMode === 'video' && !isRecording && (
-          <button
-            className="w-14 h-14 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/60 transition-all"
-            title="Timer"
-          >
-            <Timer className="w-6 h-6 text-white" />
-          </button>
-        )}
+          aria-label={
+            recordingMode === 'photo' 
+              ? "Take photo" 
+              : isRecording 
+                ? "Stop recording" 
+                : "Start recording"
+          }
+        >
+          {isProcessing ? (
+            <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : recordingMode === 'photo' ? (
+            <Camera className="w-8 h-8 text-black" />
+          ) : isRecording ? (
+            <Square className="w-6 h-6 text-white fill-current" />
+          ) : (
+            <Circle className="w-8 h-8 text-white" />
+          )}
+        </button>
       </div>
 
       {/* Instructions */}
@@ -215,8 +150,8 @@ function RecordingControlsComponent({
         <div className="text-center">
           <p className="text-white/60 text-xs">
             {recordingMode === 'photo' 
-              ? 'Tap to capture photo' 
-              : 'Hold to record video'
+              ? 'Tap to take photo' 
+              : 'Tap to start recording'
             }
           </p>
         </div>

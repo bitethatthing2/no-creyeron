@@ -12,41 +12,16 @@ import {
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-// Removed unused import: getZIndexClass
 import { toast } from '@/components/ui/use-toast';
-import { WolfpackService } from '@/lib/services/wolfpack';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { User } from '@supabase/supabase-js';
+import type { ContentComment, User } from '@/types/supabase';
 
 // Types
-interface CommentUser {
-  id: string;
-  first_name?: string | null;
-  last_name?: string | null;
-  avatar_url?: string | null;
-  display_name?: string | null;
-  username?: string | null;
-  profile_image_url?: string | null;
-}
-
-interface SupabaseComment {
-  id: string;
-  user_id: string;
-  video_id: string;
-  content: string;
-  created_at: string;
-  parent_comment_id?: string | null;
-  users?: CommentUser | CommentUser[];
-  replies?: SupabaseComment[];
-  like_count?: number;
-  user_liked?: boolean;
-}
-
-interface Comment extends Omit<SupabaseComment, 'users' | 'replies'> {
-  user: CommentUser;
-  replies: Comment[];
-  like_count: number;
-  user_liked: boolean;
+interface CommentWithUser extends ContentComment {
+  user?: User;
+  replies?: CommentWithUser[];
+  likes_count?: number;
+  user_has_liked?: boolean;
 }
 
 interface VideoCommentsProps {
@@ -56,66 +31,6 @@ interface VideoCommentsProps {
   initialCommentCount: number;
   onCommentCountChange?: (count: number) => void;
 }
-
-interface UnifiedComment {
-  id: string;
-  user_id: string;
-  video_id: string;
-  content: string;
-  created_at: string;
-  parent_comment_id?: string | null;
-  users?: CommentUser | null;
-  user?: CommentUser | null;
-  replies?: UnifiedComment[];
-  like_count?: number;
-  likes_count?: number;
-  user_liked?: boolean;
-}
-
-interface ServiceResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-interface ToggleLikeResponse {
-  success: boolean;
-  action: "added" | "removed";
-  user_has_liked: boolean;
-  new_like_count: number;
-}
-
-// Convert unified service response to component format
-const convertUnifiedComments = (unifiedComments: UnifiedComment[]): Comment[] => {
-  return unifiedComments.map(comment => {
-    // Get user data from either users or user field
-    let userData: CommentUser;
-    if (comment.users && typeof comment.users === 'object' && !Array.isArray(comment.users)) {
-      userData = comment.users;
-    } else if (comment.user && typeof comment.user === 'object') {
-      userData = comment.user;
-    } else {
-      userData = {
-        id: comment.user_id,
-        first_name: 'Unknown',
-        last_name: 'User'
-      };
-    }
-
-    return {
-      id: comment.id,
-      user_id: comment.user_id,
-      video_id: comment.video_id,
-      content: comment.content,
-      created_at: comment.created_at,
-      parent_comment_id: comment.parent_comment_id,
-      user: userData,
-      replies: comment.replies ? convertUnifiedComments(comment.replies) : [],
-      like_count: comment.like_count || comment.likes_count || 0,
-      user_liked: comment.user_liked || false
-    };
-  });
-};
 
 // Common emojis for quick access
 const commonEmojis = ['😀', '😂', '😍', '😢', '😮', '😡', '👍', '👎', '❤️', '🔥', '💯', '🎉', '😎', '🤔', '😊', '💀', '🙄', '😱', '🤣', '🥺'];
@@ -128,8 +43,8 @@ function VideoComments({
   initialCommentCount, 
   onCommentCountChange 
 }: VideoCommentsProps) {
-  const { user } = useAuth();
-  const [comments, setComments] = React.useState<Comment[]>([]);
+  const { currentUser } = useAuth();
+  const [comments, setComments] = React.useState<CommentWithUser[]>([]);
   const [newComment, setNewComment] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -145,132 +60,139 @@ function VideoComments({
   const mountedRef = React.useRef(true);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const replyInputRef = React.useRef<HTMLInputElement>(null);
-  const loadedPostIdRef = React.useRef<string | null>(null);
 
   // Helper function to calculate total comments including replies
-  const calculateTotalComments = (commentsList: Comment[]): number => {
-    const countComments = (commentList: Comment[]): number => {
-      return commentList.reduce((count, comment) => {
+  const calculateTotalComments = (commentsList: CommentWithUser[]): number => {
+    const countComments = (list: CommentWithUser[]): number => {
+      return list.reduce((count, comment) => {
         return count + 1 + countComments(comment.replies || []);
       }, 0);
     };
     return countComments(commentsList);
   };
 
-  // Helper function to update comment in tree structure
-  const updateCommentInTree = React.useCallback((commentsList: Comment[], commentId: string, updates: Partial<Comment>): Comment[] => {
-    return commentsList.map(comment => {
-      if (comment.id === commentId) {
-        return { ...comment, ...updates };
-      }
-      if (comment.replies && comment.replies.length > 0) {
+  // Load comments
+  const loadComments = React.useCallback(async () => {
+    if (!postId) return;
+
+    try {
+      setLoading(true);
+      
+      // Get comments with user data
+      const { data: commentsData, error } = await supabase
+        .from('content_comments')
+        .select(`
+          *,
+          user:users(
+            id,
+            username,
+            display_name,
+            first_name,
+            last_name,
+            avatar_url,
+            profile_image_url
+          )
+        `)
+        .eq('video_id', postId)
+        .is('parent_comment_id', null)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Load replies for each comment
+      const commentsWithReplies = await Promise.all((commentsData || []).map(async (comment) => {
+        const { data: replies } = await supabase
+          .from('content_comments')
+          .select(`
+            *,
+            user:users(
+              id,
+              username,
+              display_name,
+              first_name,
+              last_name,
+              avatar_url,
+              profile_image_url
+            )
+          `)
+          .eq('parent_comment_id', comment.id)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: true });
+
+        // Check if current user has liked this comment
+        let userHasLiked = false;
+        if (currentUser) {
+          const { data: likeData } = await supabase
+            .from('content_interactions')
+            .select('id')
+            .eq('content_id', comment.id)
+            .eq('user_id', currentUser.id)
+            .eq('interaction_type', 'like')
+            .maybeSingle();
+          
+          userHasLiked = !!likeData;
+        }
+
         return {
           ...comment,
-          replies: updateCommentInTree(comment.replies, commentId, updates)
+          replies: replies || [],
+          user_has_liked: userHasLiked
         };
+      }));
+
+      setComments(commentsWithReplies);
+      const totalCount = calculateTotalComments(commentsWithReplies);
+      setCommentCount(totalCount);
+      
+      if (onCommentCountChange) {
+        onCommentCountChange(totalCount);
       }
-      return comment;
-    });
-  }, []);
-
-  // Reset mounted ref when component opens
-  React.useEffect(() => {
-    if (isOpen) {
-      mountedRef.current = true;
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load comments',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [isOpen]);
+  }, [postId, currentUser, onCommentCountChange]);
 
-  // Initial load and subscription setup
+  // Setup real-time subscription
   React.useEffect(() => {
     if (!isOpen || !postId) return;
 
-    // Prevent duplicate loads for same postId
-    if (loadedPostIdRef.current === postId) {
-      return;
-    }
+    loadComments();
 
-    loadedPostIdRef.current = postId;
-
-    // Load comments directly in effect to avoid dependencies
-    const loadCommentsInEffect = async () => {
-      try {
-        setLoading(true);
-        
-        // Use the new method that includes like status
-        const response = await WolfpackService.social.getCommentsWithLikes(postId);
-        
-        if (response.success && mountedRef.current) {
-          const commentsData = convertUnifiedComments(response.data || []);
-          setComments(commentsData);
-          const totalCount = calculateTotalComments(commentsData);
-          setCommentCount(totalCount);
-          if (onCommentCountChange) {
-            onCommentCountChange(totalCount);
+    // Setup real-time subscription
+    channelRef.current = supabase
+      .channel(`comments-${postId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_comments',
+          filter: `video_id=eq.${postId}`
+        },
+        () => {
+          // Reload comments on any change
+          if (mountedRef.current) {
+            loadComments();
           }
         }
-      } catch (error) {
-        console.error('❌ Error loading comments:', error);
-      } finally {
-        if (mountedRef.current) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Setup real-time subscription directly in effect
-    const setupSubscription = () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-      }
-
-      channelRef.current = supabase
-        .channel(`comments-${postId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'content_comments',
-            filter: `video_id=eq.${postId}`
-          },
-          () => {
-            // Simply reload comments on any change
-            if (mountedRef.current) {
-              setTimeout(() => loadCommentsInEffect(), 500);
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'wolfpack_comment_reactions'
-          },
-          () => {
-            // Reload comments when reactions change
-            if (mountedRef.current) {
-              setTimeout(() => loadCommentsInEffect(), 500);
-            }
-          }
-        )
-        .subscribe();
-    };
-
-    loadCommentsInEffect();
-    setupSubscription();
+      )
+      .subscribe();
 
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
         channelRef.current = null;
       }
-      // Reset loaded postId when closing
-      if (!isOpen) {
-        loadedPostIdRef.current = null;
-      }
     };
-  }, [isOpen, postId, onCommentCountChange]);
+  }, [isOpen, postId, loadComments]);
 
   // Cleanup on unmount
   React.useEffect(() => {
@@ -279,59 +201,49 @@ function VideoComments({
     };
   }, []);
 
-  // Close emoji pickers when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showEmojiPicker || showReplyEmojiPicker) {
-        const target = event.target as Element;
-        if (!target.closest('.emoji-picker') && !target.closest('button[data-emoji-trigger]')) {
-          setShowEmojiPicker(false);
-          setShowReplyEmojiPicker(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showEmojiPicker, showReplyEmojiPicker]);
-
   // Submit new comment
-  const handleSubmitComment = React.useCallback(async (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || submitting) return;
-
-    if (!user?.id) {
-      toast({
-        title: 'Authentication required',
-        description: 'Please sign in to comment',
-        variant: 'destructive'
-      });
-      return;
-    }
+    if (!newComment.trim() || submitting || !currentUser) return;
 
     try {
       setSubmitting(true);
 
-      const response = await WolfpackService.social.addComment(postId, newComment.trim());
-
-      if (response.success) {
-        setNewComment('');
-        toast({
-          title: 'Success',
-          description: 'Comment posted!',
+      const { error } = await supabase
+        .from('content_comments')
+        .insert({
+          video_id: postId,
+          user_id: currentUser.id,
+          content: newComment.trim(),
+          is_deleted: false,
+          is_edited: false,
+          is_pinned: false,
+          likes_count: 0
         });
 
-        // Comments will be updated via real-time subscription
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to post comment',
-          variant: 'destructive'
-        });
-      }
+      if (error) throw error;
+
+      // Update comment count on the post
+      const { error: updateError } = await supabase
+        .from('content_posts')
+        .update({ 
+          comments_count: commentCount + 1 
+        })
+        .eq('id', postId);
+
+      if (updateError) console.error('Error updating comment count:', updateError);
+
+      setNewComment('');
+      toast({
+        title: 'Success',
+        description: 'Comment posted!',
+      });
+
+      // Reload comments
+      loadComments();
 
     } catch (error: any) {
-      console.error('❌ Error submitting comment:', error);
+      console.error('Error submitting comment:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to post comment',
@@ -340,44 +252,41 @@ function VideoComments({
     } finally {
       setSubmitting(false);
     }
-  }, [newComment, submitting, user, postId]);
+  };
 
   // Submit reply
-  const handleSubmitReply = React.useCallback(async (e: React.FormEvent, parentCommentId: string) => {
+  const handleSubmitReply = async (e: React.FormEvent, parentCommentId: string) => {
     e.preventDefault();
-    if (!replyContent.trim() || submittingReply) return;
-
-    if (!user?.id) {
-      toast({
-        title: 'Authentication required',
-        description: 'Please sign in to reply',
-        variant: 'destructive'
-      });
-      return;
-    }
+    if (!replyContent.trim() || submittingReply || !currentUser) return;
 
     try {
       setSubmittingReply(true);
 
-      const response = await WolfpackService.social.addComment(postId, replyContent.trim(), parentCommentId);
-
-      if (response.success) {
-        setReplyContent('');
-        setReplyingTo(null);
-        
-        toast({
-          title: 'Success',
-          description: 'Reply posted!',
+      const { error } = await supabase
+        .from('content_comments')
+        .insert({
+          video_id: postId,
+          user_id: currentUser.id,
+          content: replyContent.trim(),
+          parent_comment_id: parentCommentId,
+          is_deleted: false,
+          is_edited: false,
+          is_pinned: false,
+          likes_count: 0
         });
 
-        // Comments will be updated via real-time subscription
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to post reply',
-          variant: 'destructive'
-        });
-      }
+      if (error) throw error;
+
+      setReplyContent('');
+      setReplyingTo(null);
+      
+      toast({
+        title: 'Success',
+        description: 'Reply posted!',
+      });
+
+      // Reload comments
+      loadComments();
 
     } catch (error: any) {
       console.error('Error submitting reply:', error);
@@ -389,11 +298,11 @@ function VideoComments({
     } finally {
       setSubmittingReply(false);
     }
-  }, [replyContent, submittingReply, user, postId]);
+  };
 
   // Handle like/unlike comment
-  const handleLikeComment = React.useCallback(async (commentId: string) => {
-    if (!user?.id) {
+  const handleLikeComment = async (commentId: string, currentLikeStatus: boolean) => {
+    if (!currentUser) {
       toast({
         title: 'Authentication required',
         description: 'Please sign in to like comments',
@@ -407,57 +316,63 @@ function VideoComments({
     try {
       setLikingCommentId(commentId);
 
-      // Find current comment to get its state
-      const findComment = (comments: Comment[], id: string): Comment | null => {
-        for (const comment of comments) {
-          if (comment.id === id) return comment;
-          if (comment.replies) {
-            const found = findComment(comment.replies, id);
-            if (found) return found;
-          }
+      if (currentLikeStatus) {
+        // Unlike - remove interaction
+        const { error } = await supabase
+          .from('content_interactions')
+          .delete()
+          .eq('content_id', commentId)
+          .eq('user_id', currentUser.id)
+          .eq('interaction_type', 'like');
+
+        if (error) throw error;
+
+        // Update likes count
+        const { data: commentData } = await supabase
+          .from('content_comments')
+          .select('likes_count')
+          .eq('id', commentId)
+          .single();
+
+        if (commentData) {
+          await supabase
+            .from('content_comments')
+            .update({ 
+              likes_count: Math.max(0, (commentData.likes_count || 1) - 1)
+            })
+            .eq('id', commentId);
         }
-        return null;
-      };
-
-      const currentComment = findComment(comments, commentId);
-      if (!currentComment) return;
-
-      // Optimistic update
-      const newLikedState = !currentComment.user_liked;
-      const newLikeCount = newLikedState 
-        ? (currentComment.like_count || 0) + 1 
-        : Math.max(0, (currentComment.like_count || 0) - 1);
-
-      setComments(prevComments => 
-        updateCommentInTree(prevComments, commentId, {
-          user_liked: newLikedState,
-          like_count: newLikeCount
-        })
-      );
-
-      // Call service to toggle like
-      const response = await WolfpackService.social.toggleCommentLike(commentId) as ServiceResponse<ToggleLikeResponse>;
-
-      if (response.success && response.data) {
-        // Update with actual server response
-        const { user_has_liked, new_like_count } = response.data;
-        setComments(prevComments => 
-          updateCommentInTree(prevComments, commentId, {
-            user_liked: user_has_liked,
-            like_count: new_like_count
-          })
-        );
       } else {
-        // Revert optimistic update on error
-        setComments(prevComments => 
-          updateCommentInTree(prevComments, commentId, {
-            user_liked: currentComment.user_liked,
-            like_count: currentComment.like_count
-          })
-        );
-        
-        throw new Error(response.error || 'Failed to toggle like');
+        // Like - add interaction
+        const { error } = await supabase
+          .from('content_interactions')
+          .insert({
+            content_id: commentId,
+            user_id: currentUser.id,
+            interaction_type: 'like'
+          });
+
+        if (error && error.code !== '23505') throw error; // Ignore duplicate key errors
+
+        // Update likes count
+        const { data: commentData } = await supabase
+          .from('content_comments')
+          .select('likes_count')
+          .eq('id', commentId)
+          .single();
+
+        if (commentData) {
+          await supabase
+            .from('content_comments')
+            .update({ 
+              likes_count: (commentData.likes_count || 0) + 1
+            })
+            .eq('id', commentId);
+        }
       }
+
+      // Reload comments to reflect changes
+      loadComments();
 
     } catch (error) {
       console.error('Error liking comment:', error);
@@ -469,36 +384,35 @@ function VideoComments({
     } finally {
       setLikingCommentId(null);
     }
-  }, [user, likingCommentId, comments, updateCommentInTree]);
+  };
 
-  const getDisplayName = React.useCallback((userInfo: Comment['user']) => {
-    if (!userInfo) return 'Anonymous';
+  const getDisplayName = (user?: User) => {
+    if (!user) return 'Anonymous';
     
-    if (userInfo.display_name) return userInfo.display_name;
-    if (userInfo.username) return `@${userInfo.username}`;
+    if (user.display_name) return user.display_name;
+    if (user.username) return `@${user.username}`;
     
-    const fullName = `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim();
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
     return fullName || 'Anonymous';
-  }, []);
+  };
 
-  const getAvatarUrl = React.useCallback((userInfo: Comment['user']) => {
-    if (!userInfo) return '/icons/wolf-icon.png';
-    return userInfo.avatar_url || '/icons/wolf-icon.png';
-  }, []);
+  const getAvatarUrl = (user?: User) => {
+    if (!user) return '/icons/wolf-icon.png';
+    return user.avatar_url || user.profile_image_url || '/icons/wolf-icon.png';
+  };
 
-  // Add emoji to comment
-  const addEmojiToComment = React.useCallback((emoji: string) => {
+  // Add emoji handlers
+  const addEmojiToComment = (emoji: string) => {
     setNewComment(prev => prev + emoji);
     setShowEmojiPicker(false);
     inputRef.current?.focus();
-  }, []);
+  };
 
-  // Add emoji to reply
-  const addEmojiToReply = React.useCallback((emoji: string) => {
+  const addEmojiToReply = (emoji: string) => {
     setReplyContent(prev => prev + emoji);
     setShowReplyEmojiPicker(false);
     replyInputRef.current?.focus();
-  }, []);
+  };
 
   if (!isOpen) return null;
 
@@ -518,7 +432,6 @@ function VideoComments({
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-800 rounded-full transition-colors"
-            aria-label="Close comments"
           >
             <XIcon className="h-5 w-5 text-white" />
           </button>
@@ -541,24 +454,19 @@ function VideoComments({
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                onLike={() => handleLikeComment(comment.id)}
-                onReply={() => {
-                  setReplyingTo(comment.id);
-                  setTimeout(() => replyInputRef.current?.focus(), 100);
-                }}
+                onLike={() => handleLikeComment(comment.id, comment.user_has_liked || false)}
+                onReply={() => setReplyingTo(comment.id)}
                 replyingTo={replyingTo}
                 replyContent={replyContent}
                 setReplyContent={setReplyContent}
                 onSubmitReply={handleSubmitReply}
                 submittingReply={submittingReply}
                 replyInputRef={replyInputRef}
-                currentUser={user}
                 isLiking={likingCommentId === comment.id}
                 getDisplayName={getDisplayName}
                 getAvatarUrl={getAvatarUrl}
                 handleLikeComment={handleLikeComment}
                 setReplyingTo={setReplyingTo}
-                likingCommentId={likingCommentId}
                 showReplyEmojiPicker={showReplyEmojiPicker}
                 setShowReplyEmojiPicker={setShowReplyEmojiPicker}
                 addEmojiToReply={addEmojiToReply}
@@ -567,73 +475,41 @@ function VideoComments({
           )}
         </div>
 
+        {/* Comment Input */}
         <div className="border-t border-gray-800 bg-gray-900/95 backdrop-blur-sm p-3 pb-safe">
-          {!user ? (
+          {!currentUser ? (
             <div className="text-center py-4">
               <p className="text-gray-400 mb-2">Sign in to comment</p>
               <button
-                type="button"
                 onClick={() => window.location.href = '/login'}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
               >
                 Sign In
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* Emoji Picker */}
-              {showEmojiPicker && (
-                <div className="emoji-picker bg-gray-800 border border-gray-600 rounded-lg p-3 max-h-32 overflow-y-auto">
-                  <div className="grid grid-cols-10 gap-1">
-                    {commonEmojis.map((emoji, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => addEmojiToComment(emoji)}
-                        className="text-lg hover:bg-gray-700 rounded p-1 transition-colors"
-                        aria-label={`Add ${emoji} emoji`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <form onSubmit={handleSubmitComment} className="flex gap-2">
-                <div className="flex-1 relative">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="w-full bg-gray-800 text-white px-3 py-2 pr-10 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
-                    disabled={submitting}
-                  />
-                  <button
-                    type="button"
-                    data-emoji-trigger
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors"
-                    aria-label="Add emoji"
-                  >
-                    <Smile className="h-4 w-4" />
-                  </button>
-                </div>
-                <button
-                  type="submit"
-                  disabled={!newComment.trim() || submitting}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  {submitting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </button>
-              </form>
-            </div>
+            <form onSubmit={handleSubmitComment} className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+                className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
+                disabled={submitting}
+              />
+              <button
+                type="submit"
+                disabled={!newComment.trim() || submitting}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                {submitting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </button>
+            </form>
           )}
         </div>
       </div>
@@ -641,8 +517,9 @@ function VideoComments({
   );
 }
 
+// Simplified CommentItem component
 interface CommentItemProps {
-  comment: Comment;
+  comment: CommentWithUser;
   onLike: () => void;
   onReply: () => void;
   replyingTo: string | null;
@@ -651,13 +528,11 @@ interface CommentItemProps {
   onSubmitReply: (e: React.FormEvent, parentCommentId: string) => void;
   submittingReply: boolean;
   replyInputRef: React.RefObject<HTMLInputElement>;
-  currentUser: User | null;
   isLiking: boolean;
-  getDisplayName: (user: Comment['user']) => string;
-  getAvatarUrl: (user: Comment['user']) => string;
-  handleLikeComment: (commentId: string) => void;
+  getDisplayName: (user?: User) => string;
+  getAvatarUrl: (user?: User) => string;
+  handleLikeComment: (id: string, currentStatus: boolean) => void;
   setReplyingTo: (id: string | null) => void;
-  likingCommentId: string | null;
   showReplyEmojiPicker: boolean;
   setShowReplyEmojiPicker: (show: boolean) => void;
   addEmojiToReply: (emoji: string) => void;
@@ -666,23 +541,17 @@ interface CommentItemProps {
 function CommentItem({ 
   comment, 
   onLike, 
-  onReply, 
+  onReply,
   replyingTo,
   replyContent,
   setReplyContent,
   onSubmitReply,
   submittingReply,
   replyInputRef,
-  currentUser,
   isLiking,
   getDisplayName,
   getAvatarUrl,
-  handleLikeComment,
-  setReplyingTo,
-  likingCommentId,
-  showReplyEmojiPicker,
-  setShowReplyEmojiPicker,
-  addEmojiToReply
+  setReplyingTo
 }: CommentItemProps) {
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -704,19 +573,17 @@ function CommentItem({
   return (
     <div className="space-y-2">
       <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700">
-            <Image
-              src={getAvatarUrl(comment.user)}
-              alt={getDisplayName(comment.user)}
-              width={32}
-              height={32}
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700">
+          <Image
+            src={getAvatarUrl(comment.user)}
+            alt={getDisplayName(comment.user)}
+            width={32}
+            height={32}
+            className="w-full h-full object-cover"
+          />
         </div>
         
-        <div className="flex-1 min-w-0">
+        <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-white text-sm">
               {getDisplayName(comment.user)}
@@ -726,139 +593,82 @@ function CommentItem({
             </span>
           </div>
           
-          <p className="text-gray-100 text-sm leading-relaxed break-words">
-            {comment.content}
-          </p>
+          <p className="text-gray-100 text-sm">{comment.content}</p>
           
           <div className="flex items-center gap-4 mt-2">
             <button
-              type="button"
               onClick={onLike}
               disabled={isLiking}
-              className={`flex items-center gap-1 text-xs transition-colors ${
-                comment.user_liked 
-                  ? 'text-red-500 hover:text-red-400' 
-                  : 'text-gray-400 hover:text-red-400'
-              } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
-              aria-label={comment.user_liked ? 'Unlike comment' : 'Like comment'}
+              className={`flex items-center gap-1 text-xs ${
+                comment.user_has_liked ? 'text-red-500' : 'text-gray-400'
+              } hover:text-red-400`}
             >
-              <Heart className={`h-4 w-4 ${comment.user_liked ? 'fill-current' : ''}`} />
-              {comment.like_count > 0 && (
-                <span>{comment.like_count}</span>
-              )}
+              <Heart className={`h-4 w-4 ${comment.user_has_liked ? 'fill-current' : ''}`} />
+              {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
             </button>
             
             <button
-              type="button"
               onClick={onReply}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-400 transition-colors"
-              aria-label="Reply to comment"
+              className="text-xs text-gray-400 hover:text-blue-400"
             >
-              <ReplyIcon className="h-4 w-4" />
+              <ReplyIcon className="h-4 w-4 inline mr-1" />
               Reply
             </button>
           </div>
           
           {/* Reply Input */}
           {replyingTo === comment.id && (
-            <div className="mt-3 space-y-2">
-              {/* Reply Emoji Picker */}
-              {showReplyEmojiPicker && (
-                <div className="emoji-picker bg-gray-800 border border-gray-600 rounded-lg p-2 max-h-24 overflow-y-auto">
-                  <div className="grid grid-cols-10 gap-1">
-                    {commonEmojis.map((emoji, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => addEmojiToReply(emoji)}
-                        className="text-sm hover:bg-gray-700 rounded p-1 transition-colors"
-                        aria-label={`Add ${emoji} emoji to reply`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <form 
-                onSubmit={(e) => onSubmitReply(e, comment.id)}
-                className="flex gap-2"
+            <form onSubmit={(e) => onSubmitReply(e, comment.id)} className="mt-3 flex gap-2">
+              <input
+                ref={replyInputRef}
+                type="text"
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder={`Reply to ${getDisplayName(comment.user)}...`}
+                className="flex-1 bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 text-sm"
+                disabled={submittingReply}
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={!replyContent.trim() || submittingReply}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm"
               >
-                <div className="flex-1 relative">
-                  <input
-                    ref={replyInputRef}
-                    type="text"
-                    value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                    placeholder={`Reply to ${getDisplayName(comment.user)}...`}
-                    className="w-full bg-gray-800 text-white px-3 py-2 pr-8 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
-                    disabled={submittingReply}
-                  />
-                  <button
-                    type="button"
-                    data-emoji-trigger
-                    onClick={() => setShowReplyEmojiPicker(!showReplyEmojiPicker)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors"
-                    aria-label="Add emoji to reply"
-                  >
-                    <Smile className="h-3 w-3" />
-                  </button>
-                </div>
-                <button
-                  type="submit"
-                  disabled={!replyContent.trim() || submittingReply}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors text-sm"
-                >
-                  {submittingReply ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    'Reply'
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReplyingTo(null);
-                    setShowReplyEmojiPicker(false);
-                  }}
-                  className="text-gray-400 hover:text-white px-2 py-2 transition-colors text-sm"
-                  aria-label="Cancel reply"
-                >
-                  Cancel
-                </button>
-              </form>
-            </div>
+                Reply
+              </button>
+              <button
+                type="button"
+                onClick={() => setReplyingTo(null)}
+                className="text-gray-400 hover:text-white px-2"
+              >
+                Cancel
+              </button>
+            </form>
           )}
           
           {/* Replies */}
           {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-3 space-y-2 border-l border-gray-700 pl-3">
+            <div className="mt-3 space-y-2 pl-4 border-l border-gray-700">
               {comment.replies.map((reply) => (
                 <CommentItem
                   key={reply.id}
                   comment={reply}
-                  onLike={() => handleLikeComment(reply.id)}
-                  onReply={() => {
-                    setReplyingTo(reply.id);
-                    setTimeout(() => replyInputRef.current?.focus(), 100);
-                  }}
+                  onLike={() => handleLikeComment(reply.id, reply.user_has_liked || false)}
+                  onReply={() => setReplyingTo(reply.id)}
                   replyingTo={replyingTo}
                   replyContent={replyContent}
                   setReplyContent={setReplyContent}
                   onSubmitReply={onSubmitReply}
                   submittingReply={submittingReply}
                   replyInputRef={replyInputRef}
-                  currentUser={currentUser}
-                  isLiking={likingCommentId === reply.id}
+                  isLiking={false}
                   getDisplayName={getDisplayName}
                   getAvatarUrl={getAvatarUrl}
                   handleLikeComment={handleLikeComment}
                   setReplyingTo={setReplyingTo}
-                  likingCommentId={likingCommentId}
-                  showReplyEmojiPicker={showReplyEmojiPicker}
-                  setShowReplyEmojiPicker={setShowReplyEmojiPicker}
-                  addEmojiToReply={addEmojiToReply}
+                  showReplyEmojiPicker={false}
+                  setShowReplyEmojiPicker={() => {}}
+                  addEmojiToReply={() => {}}
                 />
               ))}
             </div>

@@ -143,7 +143,7 @@ export interface WolfpackUserData {
  * - Must have status = 'active' (user status, not wolfpack_status)
  * - Must have wolfpack_status = 'active'
  */
-export function hasMemberAccess(status: WolfpackStatus): boolean {
+export function hasWolfpackAccess(status: WolfpackStatus): boolean {
   return status.status === "active" && status.isWolfpackMember === true;
 }
 
@@ -159,7 +159,7 @@ export function isLocationVerified(status: WolfpackStatus): boolean {
  * Check if user can join wolfpack
  * They can join if they're not already a member and not suspended
  */
-export function canJoinMembership(status: WolfpackStatus): boolean {
+export function canJoinWolfpack(status: WolfpackStatus): boolean {
   return (
     status.status === "not_member" ||
     status.status === "pending" ||
