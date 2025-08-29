@@ -241,62 +241,127 @@ export class WolfpackFeedService {
   static fetchFeedItems = withErrorHandling(async (
     options: FeedOptions = {},
   ): Promise<ServiceResponse<FeedItem[]>> => {
-    const { page, limit } = validatePagination(options.page, options.limit);
-    const offset = (page - 1) * limit;
+    const { page = 1, limit = 20 } = validatePagination(options.page, options.limit);
 
-    // Use the main wolfpack videos table
-    const query = supabase
-      .from("content_posts")
-      .select(
-        `
-        *,
-        user:users!content_posts_user_id_fkey(
-          id,
-          username,
-          display_name,
-          first_name,
-          last_name,
-          avatar_url,
-          profile_image_url
+    try {
+      // Get current user session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No authenticated session');
+      }
+
+      const edgeFunctionUrl = `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/FEED_PROCESSOR/get-feed`;
+      
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          page,
+          limit,
+          userId: options.userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`FEED_PROCESSOR error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Feed processing failed');
+      }
+
+      // Transform the response data to match expected format
+      const items: FeedItem[] = (result.data || []).map((video: any) => ({
+        id: video.id,
+        user_id: video.user_id || '',
+        username: video.username || 'Anonymous',
+        avatar_url: video.avatar_url || undefined,
+        caption: video.caption || '',
+        video_url: video.video_url || '',
+        thumbnail_url: video.thumbnail_url || undefined,
+        likes_count: video.likes_count || 0,
+        comments_count: video.comments_count || 0,
+        shares_count: video.shares_count || 0,
+        views_count: video.views_count || 0,
+        created_at: video.created_at || new Date().toISOString(),
+        updated_at: video.updated_at || video.created_at || new Date().toISOString(),
+        music_name: video.music_name || 'Original Sound',
+        hashtags: video.hashtags || [],
+        location_tag: video.location_tag || undefined,
+        user: video.user || {
+          id: video.user_id,
+          username: video.username,
+          display_name: video.username,
+          first_name: undefined,
+          last_name: undefined,
+          avatar_url: video.avatar_url,
+          profile_image_url: video.avatar_url,
+          wolf_emoji: '🐺',
+        },
+      }));
+
+      return createSuccessResponse(items);
+
+    } catch (error) {
+      console.error('FEED_PROCESSOR failed, using fallback:', error);
+      
+      // Fallback to direct Supabase query if edge function fails
+      const offset = (page - 1) * limit;
+      const query = supabase
+        .from("content_posts")
+        .select(
+          `
+          *,
+          user:users!content_posts_user_id_fkey(
+            id,
+            username,
+            display_name,
+            first_name,
+            last_name,
+            avatar_url,
+            profile_image_url
+          )
+        `,
+          { count: "exact" },
         )
-      `,
-        { count: "exact" },
-      )
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
 
-    const { data, error } = await query;
+      const { data, error: queryError } = await query;
 
-    if (error) throw error;
+      if (queryError) throw queryError;
 
-    // Ensure data is typed correctly
-    const content_posts = data as WolfpackVideoRow[] | null;
-    if (!content_posts) {
-      return createSuccessResponse([]);
+      const content_posts = data as WolfpackVideoRow[] | null;
+      if (!content_posts) {
+        return createSuccessResponse([]);
+      }
+
+      const items: FeedItem[] = content_posts.map((video) => {
+        const transformed = this.transformVideoRowToFeedItem(video);
+        const { user_liked, user_following, ...feedItem } = transformed;
+
+        return {
+          ...feedItem,
+          ...((user_liked || user_following) && { user_liked, user_following }),
+        } as FeedItem;
+      });
+
+      if (options.userId && options.userId !== options.currentUserId) {
+        const filteredItems = items.filter((item) =>
+          item.user_id === options.userId
+        );
+        return createSuccessResponse(filteredItems);
+      }
+
+      return createSuccessResponse(items);
     }
-
-    const items: FeedItem[] = content_posts.map((video) => {
-      const transformed = this.transformVideoRowToFeedItem(video);
-      // Return without user_liked and user_following at the root level
-      const { user_liked, user_following, ...feedItem } = transformed;
-
-      // Add interaction data as extended properties
-      return {
-        ...feedItem,
-        ...((user_liked || user_following) && { user_liked, user_following }),
-      } as FeedItem;
-    });
-
-    // For user-specific feeds, filter after fetching if needed
-    if (options.userId && options.userId !== options.currentUserId) {
-      const filteredItems = items.filter((item) =>
-        item.user_id === options.userId
-      );
-      return createSuccessResponse(filteredItems);
-    }
-
-    return createSuccessResponse(items);
   }, "WolfpackFeedService.fetchFeedItems");
 
   /**
