@@ -106,8 +106,7 @@ export default function OptimizedWolfpackFeedPage() {
     }
     
     if (!isAuthenticated) {
-      console.log('[FEED] Not authenticated, redirecting to login');
-      router.push('/login');
+      console.log('[FEED] Not authenticated, skipping feed load');
       return;
     }
 
@@ -157,9 +156,19 @@ export default function OptimizedWolfpackFeedPage() {
     }
   }, [isAuthenticated, authLoading, router, transformPost, videos]);
 
+  // Auth redirect check
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log('[FEED] User not authenticated, redirecting to login...');
+      router.push('/login');
+      return;
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   // Initial load - fixed dependency
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
+      console.log('[FEED] User authenticated, loading feed...');
       loadFeed(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
