@@ -2,12 +2,9 @@
 
 import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFeatureFlag } from '@/lib/hooks/useFeatureFlag';
-import { FEATURE_FLAGS } from '@/lib/services/feature-flags.service';
 
 export function FeatureFlagDebug() {
   const { user, currentUser } = useAuth();
-  const videoUploadFlag = useFeatureFlag(FEATURE_FLAGS.WOLFPACK_VIDEO_UPLOAD);
   
   if (!user) return null;
 
@@ -24,23 +21,7 @@ export function FeatureFlagDebug() {
         
         <hr className="my-2" />
         
-        <div><strong>Video Upload Flag:</strong></div>
-        <div>• Enabled: {videoUploadFlag.enabled ? '✅' : '❌'}</div>
-        <div>• Loading: {videoUploadFlag.loading ? '🔄' : '✅'}</div>
-        <div>• Reason: {videoUploadFlag.reason || 'N/A'}</div>
-        {videoUploadFlag.error && (
-          <div className="text-red-400">• Error: {videoUploadFlag.error.message}</div>
-        )}
-        
-        {videoUploadFlag.flag_details && (
-          <>
-            <hr className="my-2" />
-            <div><strong>Flag Details:</strong></div>
-            <div>• Globally Enabled: {videoUploadFlag.flag_details.globally_enabled ? '✅' : '❌'}</div>
-            <div>• User Role: {videoUploadFlag.flag_details.user_role || 'No role'}</div>
-            <div>• Enabled Roles: {videoUploadFlag.flag_details.enabled_roles?.join(', ') || 'None'}</div>
-          </>
-        )}
+        <div className="text-yellow-400">Feature flags disabled during cleanup</div>
       </div>
     </div>
   );

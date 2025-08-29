@@ -7,6 +7,12 @@
   },
   "scripts": {
     "dev": "next dev -p 3000",
+    "dev:docker": "docker-compose up --build",
+    "dev:docker:fast": "docker-compose up",
+    "dev:restart": "docker-compose restart",
+    "dev:logs": "docker-compose logs -f",
+    "dev:shell": "docker-compose exec app sh",
+    "dev:quick": "npm run dev",
     "dev:https": "node dev-https.js",
     "build": "next build",
     "build:analyze": "ANALYZE=true next build",

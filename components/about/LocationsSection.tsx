@@ -12,7 +12,7 @@ export function LocationsSection() {
       address: "145 Liberty St NE Suite #101",
       city: "Salem, OR 97301",
       phone: "503-585-7827",
-      image: "/icons/salem-location.jpg",
+      image: "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/salem-location.jpg",
       hours: {
         "Monday - Wednesday": "10:00 AM - 11:00 PM",
         "Thursday": "Closed",
@@ -26,7 +26,7 @@ export function LocationsSection() {
       address: "327 SW Morrison St",
       city: "Portland, OR 97204",
       phone: "503-XXX-XXXX", // Update when available
-      image: "/icons/portland-side-hustle.jpg",
+      image: "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/portland-side-hustle.jpg",
       hours: {
         "Monday - Wednesday": "10:00 AM - 11:00 PM",
         "Thursday": "10:00 AM - 1:00 AM",

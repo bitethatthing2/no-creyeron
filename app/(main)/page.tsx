@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Utensils, Star, Users, MapPin, Clock, RefreshCw } from "lucide-react";
 import { VideoBackground } from '@/components/shared/VideoBackground';
-import { FoodDrinkCarousel } from '@/components/shared/FoodDrinkCarousel';
+import SliderMenu from '@/components/menu/SliderMenu';
 import { Footer } from '@/components/shared/Footer';
 import { TopNav } from '@/components/shared/TopNav';
 import { getSmartCacheBustedUrl, clearBrowserImageCache } from '@/lib/utils/image-cache';
@@ -63,7 +63,7 @@ export default function Page() {
       <div className="relative h-screen w-full overflow-hidden mb-8 sm:mb-16">
         <div className="absolute inset-0 -top-14">
           <VideoBackground 
-            content_postsrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/main-page-only.mp4"
+            content_postsrc="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-videos/hero-video.mp4"
             overlayOpacity={0.4}
           />
         </div>
@@ -73,7 +73,7 @@ export default function Page() {
           {/* Logo - Even Lower */}
           <div className="mb-2 sm:mb-3 md:mb-4 mt-28 sm:mt-36 md:mt-44 animate-fade-in">
             <Image 
-              src={getSmartCacheBustedUrl('/icons/wolf-and-title.png')}
+              src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/wolf-and-title.png?v=20250825"
               alt="Side Hustle Bar"
               width={400}
               height={200}
@@ -227,7 +227,7 @@ export default function Page() {
             <div className="max-w-4xl mx-auto">
               <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <Image 
-                  src={getSmartCacheBustedUrl('/food-menu-images/variety.png')}
+                  src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/variety.png"
                   alt="Our Diverse Menu Selection"
                   width={1200}
                   height={600}
@@ -285,12 +285,17 @@ export default function Page() {
             </div>
           </div>
           
-          {/* Food & Drink Carousel - Menu Items */}
+          {/* Featured Menu Items - New Slider */}
           <div className="mb-16">
             <h3 className="text-xl sm:text-2xl md:text-3xl font-serif text-center mb-8 text-white">
-              Browse Our <span className="text-red-400">Full Menu</span>
+              Browse Our <span className="text-red-400">Featured Menu</span>
             </h3>
-            <FoodDrinkCarousel />
+            <SliderMenu 
+              className="max-w-6xl mx-auto"
+              initialType="all"
+              showSearch={false}
+              autoPlay={false}
+            />
           </div>
 
           {/* Text Content - Salem Flagship */}
@@ -311,10 +316,10 @@ export default function Page() {
                 </p>
               </div>
               <div className="lg:col-span-3 relative">
-                <div className="aspect-[4/3] lg:aspect-video rounded-xl overflow-hidden shadow-2xl bg-black relative">
+                <div className="aspect-[4/3] lg:aspect-video rounded-xl overflow-hidden shadow-2xl bg-black">
                   <VideoPlayer
-                    src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/entertainment-destination.mp4"
-                    className="absolute w-[105%] h-[105%] -left-[2.5%] -top-[2.5%] object-cover object-center scale-105"
+                    src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-videos/2nd-video.mp4"
+                    className="absolute inset-0 w-full h-full object-cover transform-gpu"
                   />
                 </div>
               </div>
@@ -365,7 +370,7 @@ export default function Page() {
               </div>
               <div className="relative h-[350px] rounded-xl overflow-hidden shadow-2xl">
                 <Image 
-                  src={getSmartCacheBustedUrl('/icons/ufc-section.jpeg')}
+                  src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-images/ufc-section.jpeg"
                   alt="UFC Night at Side Hustle Bar"
                   fill
                   className="object-cover"
@@ -399,7 +404,7 @@ export default function Page() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] rounded-xl overflow-hidden shadow-2xl bg-black">
               <VideoPlayer
-                src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/menu-videos/welcome-to%20-sidehustle.mp4"
+                src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/front-end-videos/3rd-video.mp4"
                 className="absolute inset-0 w-full h-full object-cover transform-gpu"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>

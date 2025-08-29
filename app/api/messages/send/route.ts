@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { notificationService } from "@/lib/services/unified-notification.service";
+// import { notificationService } from "@/lib/services/unified-notification.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -175,7 +175,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send notification to recipient
+    // Send notification to recipient - TODO: Implement when notification service is available
+    /*
     try {
       // Get sender's profile for notification
       const { data: senderProfile } = await supabase
@@ -201,6 +202,7 @@ export async function POST(request: NextRequest) {
       console.error("Error sending notification:", notificationError);
       // Don't fail the message send if notification fails
     }
+    */
 
     return NextResponse.json({ message });
   } catch (error) {

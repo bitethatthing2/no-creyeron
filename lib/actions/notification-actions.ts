@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 
 export interface NotificationData {
+  userId: string;
   conversationid: string;
   type: "info" | "warning" | "error";
   body: string;

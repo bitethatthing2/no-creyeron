@@ -258,6 +258,23 @@ export interface ServiceResponse<T = unknown> {
 }
 
 /**
+ * Success response type
+ */
+export interface SuccessResponse<T = unknown> extends ServiceResponse<T> {
+  success: true;
+  data: T;
+}
+
+/**
+ * Error response type
+ */
+export interface ErrorResponse extends ServiceResponse<never> {
+  success: false;
+  error: string;
+  code?: string;
+}
+
+/**
  * Pagination options
  */
 export interface PaginationOptions {
@@ -287,6 +304,156 @@ export interface SocialStats {
   posts: number;
   likes: number;
 }
+
+// Additional type exports for compatibility
+export interface WolfpackError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+export interface UserProfile extends WolfpackUser {
+  email?: string;
+  phone?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  social_stats?: SocialStats;
+}
+
+export interface WolfpackVideo extends FeedVideoItem {
+  // Extends FeedVideoItem with any additional properties if needed
+}
+
+export interface WolfpackComment {
+  id: string;
+  user_id: string;
+  video_id: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+  user?: WolfpackUser;
+  likes_count?: number;
+  user_liked?: boolean;
+}
+
+export interface WolfpackLike {
+  id: string;
+  user_id: string;
+  video_id: string;
+  created_at: string;
+}
+
+
+export interface EnrichedVideo extends FeedVideoItem {
+  comments?: WolfpackComment[];
+  likes?: WolfpackLike[];
+}
+
+export interface EnrichedComment extends WolfpackComment {
+  replies?: WolfpackComment[];
+}
+
+
+export interface PackMember extends WolfpackUser {
+  joined_at?: string;
+  location?: string;
+  stats?: SocialStats;
+}
+
+export interface LocationStats {
+  location_id: string;
+  member_count: number;
+  video_count: number;
+  event_count: number;
+}
+
+export interface FeedItem extends FeedVideoItem {
+  // Alias for FeedVideoItem
+}
+
+export interface GeolocationResult {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  timestamp?: string;
+}
+
+export interface CommentReaction {
+  id: string;
+  comment_id: string;
+  user_id: string;
+  reaction_type: string;
+  created_at: string;
+}
+
+export interface SortOptions {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+export interface SubscriptionOptions {
+  events: string[];
+  userId?: string;
+  callback?: (event: unknown) => void;
+}
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/**
+ * Wolfpack database tables
+ */
+export const WOLFPACK_TABLES = {
+  VIDEOS: 'wolfpack_videos',
+  POSTS: 'wolfpack_posts',
+  COMMENTS: 'wolfpack_comments',
+  LIKES: 'wolfpack_likes',
+  USERS: 'users',
+  NOTIFICATIONS: 'notifications',
+} as const;
+
+/**
+ * Side Hustle locations
+ */
+export const SIDE_HUSTLE_LOCATIONS = {
+  SALEM: {
+    id: 'salem',
+    name: 'Salem',
+    latitude: 44.9429,
+    longitude: -123.0351,
+  },
+  PORTLAND: {
+    id: 'portland',
+    name: 'Portland',
+    latitude: 45.5152,
+    longitude: -122.6784,
+  },
+} as const;
+
+/**
+ * Subscription events
+ */
+export const SUBSCRIPTION_EVENTS = {
+  VIDEO_CREATED: 'video_created',
+  VIDEO_LIKED: 'video_liked',
+  VIDEO_COMMENTED: 'video_commented',
+  USER_FOLLOWED: 'user_followed',
+  USER_MENTIONED: 'user_mentioned',
+} as const;
+
+/**
+ * Notification types
+ */
+export const NOTIFICATION_TYPES = {
+  LIKE: 'like',
+  COMMENT: 'comment',
+  FOLLOW: 'follow',
+  MENTION: 'mention',
+  NEW_VIDEO: 'new_video',
+  SYSTEM: 'system',
+} as const;
 
 // =============================================================================
 // TRANSFORMATION FUNCTIONS
