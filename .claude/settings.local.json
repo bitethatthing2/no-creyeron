@@ -99,7 +99,9 @@
       "Read(//mnt/c/Users/mkahl/Downloads/**)",
       "Bash(printenv)",
       "Bash(./node_modules/.bin/supabase:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Read(/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/**)",
+      "Bash(git remote set-url:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
