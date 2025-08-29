@@ -11,18 +11,18 @@ const config: Config = {
   darkMode: 'class',
   theme: {
     extend: {
-      // Custom border radius values for your Mexican-themed UI
+      // Custom border radius values
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-        // Add custom radius values for your wolfpack design
+        // Custom radius values for modern design
         '12': '0.75rem',
         '16': '1rem',
         '20': '1.25rem',
         '24': '1.5rem',
       },
-      // Your existing color scheme
+      // Core color scheme
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -64,35 +64,22 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))'
         },
-        // Add Mexican-inspired colors for your wolfpack theme
-        mexican: {
-          orange: 'hsl(var(--mexican-orange))',
-          red: 'hsl(var(--mexican-red))',
-          green: 'hsl(var(--mexican-green))',
-          yellow: 'hsl(var(--mexican-yellow))',
-          lime: 'hsl(var(--mexican-lime))',
-          coral: 'hsl(var(--mexican-coral))',
-          terracotta: 'hsl(var(--mexican-terracotta))',
-          turquoise: 'hsl(var(--mexican-turquoise))',
+        // Restaurant brand colors
+        margarita: {
+          green: 'hsl(142, 76%, 36%)',
+          lime: 'hsl(74, 100%, 50%)',
+          orange: 'hsl(24, 95%, 53%)',
+          coral: 'hsl(16, 100%, 66%)',
         }
       },
-      // Add custom animations for your wolfpack theme
+      // Essential animations
       animation: {
-        'wolfpack-spin': 'wolfpack-spin 1s linear infinite',
-        'wolfpack-pulse': 'wolfpack-pulse 2s infinite',
-        'wolfpack-fade-in': 'wolfpack-fade-in 0.5s ease-out',
-        'wolfpack-mexican-bounce': 'wolfpack-mexican-bounce 0.6s ease-in-out',
+        'fade-in': 'fade-in 0.5s ease-out',
+        'slide-up': 'slide-up 0.3s ease-out',
+        'pulse-soft': 'pulse-soft 2s infinite',
       },
       keyframes: {
-        'wolfpack-spin': {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' }
-        },
-        'wolfpack-pulse': {
-          '0%, 100%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.1)' }
-        },
-        'wolfpack-fade-in': {
+        'fade-in': {
           'from': {
             opacity: '0',
             transform: 'translateY(20px)'
@@ -102,34 +89,41 @@ const config: Config = {
             transform: 'translateY(0)'
           }
         },
-        'wolfpack-mexican-bounce': {
-          '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
-          '25%': { transform: 'translateY(-5px) rotate(2deg)' },
-          '75%': { transform: 'translateY(-2px) rotate(-1deg)' }
+        'slide-up': {
+          'from': {
+            transform: 'translateY(100%)'
+          },
+          'to': {
+            transform: 'translateY(0)'
+          }
+        },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' }
         }
       },
-      // Add custom spacing for your design
+      // Custom spacing values
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
         '128': '32rem',
       },
-      // Add custom font sizes
+      // Extended font sizes
       fontSize: {
         '2xs': '0.625rem',
         '3xl': '1.875rem',
         '4xl': '2.25rem',
         '5xl': '3rem',
       },
-      // Add custom shadows for depth
+      // Custom shadows
       boxShadow: {
-        'wolfpack-sm': '0 2px 8px rgba(0, 0, 0, 0.1)',
-        'wolfpack-md': '0 4px 16px rgba(0, 0, 0, 0.15)',
-        'wolfpack-lg': '0 8px 32px rgba(0, 0, 0, 0.2)',
-        'wolfpack-glow': '0 0 20px rgba(var(--primary), 0.3)',
-        'mexican-warm': '0 8px 32px rgba(var(--mexican-orange), 0.2)',
+        'soft-sm': '0 2px 8px rgba(0, 0, 0, 0.1)',
+        'soft-md': '0 4px 16px rgba(0, 0, 0, 0.15)',
+        'soft-lg': '0 8px 32px rgba(0, 0, 0, 0.2)',
+        'glow': '0 0 20px rgba(var(--primary), 0.3)',
+        'warm': '0 8px 32px rgba(24, 95%, 53%, 0.2)',
       },
-      // Ensure your custom classes work
+      // Extended screen sizes
       screens: {
         'xs': '475px',
       },

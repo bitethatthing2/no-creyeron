@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LogoutButton } from '@/components/auth/LogoutButton';
+import { DatabaseCleanup } from '@/components/admin/DatabaseCleanup';
+import { EdgeFunctionTestPanel } from '@/components/admin/EdgeFunctionTestPanel';
 // BroadcastArchiveManager removed - DJ system eliminated
 // NotificationTest removed - test component not needed
 
@@ -199,8 +201,15 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Broadcast Cleanup Management Section */}
-      {/* BroadcastCleanupManager removed - DJ system eliminated */}
+      {/* Database Cleanup Management Section */}
+      <div className="mt-8">
+        <DatabaseCleanup />
+      </div>
+
+      {/* Edge Function Test Panel */}
+      <div className="mt-8">
+        <EdgeFunctionTestPanel />
+      </div>
 
       {/* Push Notification Test Section - removed test component */}
     </div>

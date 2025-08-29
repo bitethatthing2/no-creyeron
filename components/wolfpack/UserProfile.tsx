@@ -32,11 +32,11 @@ interface UserStats {
 
 interface UserProfileProps {
   isOpen: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
  conversationid?: string;
 }
 
-export default function UserProfile({ isOpen, onClose,conversationid }: UserProfileProps) {
+export default function UserProfile({ isOpen, onCloseAction,conversationid }: UserProfileProps) {
   const { user } = useConsistentAuth();
   const [stats] = React.useState<UserStats>({
     followers: 1234,
@@ -109,7 +109,7 @@ export default function UserProfile({ isOpen, onClose,conversationid }: UserProf
           <Button
             variant="ghost"
             size="sm"
-            onClick={onClose}
+            onClick={onCloseAction}
             className="text-white hover:bg-gray-800 rounded-full p-2"
           >
             <X className="h-6 w-6" />
@@ -349,7 +349,7 @@ export default function UserProfile({ isOpen, onClose,conversationid }: UserProf
                   className="w-8 h-8"
                 />
               </div>
-              <p className="text-white text-lg mb-2">Share a fun video you've recorded recently</p>
+              <p className="text-white text-lg mb-2">Share a fun video you&#39;ve recorded recently</p>
               <Button className="bg-red-500 text-white hover:bg-red-600 rounded-lg px-8 py-3 mt-4">
                 Upload
               </Button>
