@@ -467,10 +467,10 @@ export default function OptimizedWolfpackFeedPage() {
       <TikTokStyleFeed
         content_posts={videos}
         currentUser={currentUser}
-        onLike={handleLike}
-        onComment={handleComment}
-        onShare={handleShare}
-        onFollow={handleFollow}
+        onLikeAction={handleLike}
+        onCommentAction={handleComment}
+        onShareAction={handleShare}
+        onFollowAction={handleFollow}
         onDelete={handleDelete}
         onCreatePost={() => setShowPostCreator(true)}
         onLoadMore={handleLoadMore}
