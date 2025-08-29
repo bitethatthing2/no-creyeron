@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {} from '@/components/shared/ImageWithFallback';
-import { ProfileImageUploaderWithHistory } from '@/components/shared/ImageHistoryViewer';
+import { ProfileImageUploader } from '@/components/shared/ImageHistoryViewer';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -421,7 +421,7 @@ export function WolfpackProfileManager() {
             {/* Avatar Section with History */}
             <div className="flex flex-col items-center space-y-4">
               {profileUserId ? (
-                <ProfileImageUploaderWithHistory
+                <ProfileImageUploader
                  conversationid={profileUserId}
                   currentImageUrl={avatarUrl}
                   displayName={formData.display_name}
