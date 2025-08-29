@@ -467,7 +467,10 @@ export default function OptimizedWolfpackFeedPage() {
           
           <div className="flex gap-3 justify-center">
             <button 
-              onClick={() => setShowPostCreator(true)}
+              onClick={() => {
+                console.log('[FEED] Empty state create post button clicked');
+                setShowPostCreator(true);
+              }}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm transition-colors"
             >
               📹 Create First Post

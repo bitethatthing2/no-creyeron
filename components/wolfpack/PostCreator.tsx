@@ -166,8 +166,11 @@ export function PostCreator({
 
   // Early return if modal is not open
   if (!isOpen) {
+    console.log('[POST_CREATOR] Modal not open, returning null');
     return null;
   }
+  
+  console.log('[POST_CREATOR] Rendering modal - isOpen:', isOpen);
 
   const isOnCameraStep = step === 'camera';
   const headerTitle = isOnCameraStep ? 'Create Post' : 'Add Caption';
