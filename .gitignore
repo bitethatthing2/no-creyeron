@@ -35,3 +35,20 @@ client_secret.json
 service_key.json
 public/food-menu-images/
 public/drink-menu-images/
+# Docker binaries and builds
+docker/docker
+docker/dockerd
+docker/docker-*
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Docker volumes
+docker/volumes/
+.docker/
+
+# Build artifacts  
+dist/
+build/
+*.log
