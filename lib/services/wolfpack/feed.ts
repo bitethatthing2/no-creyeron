@@ -283,6 +283,8 @@ export class WolfpackFeedService {
 
       const result = await response.json();
       console.log('[FEED_SERVICE] Edge function result:', result);
+      console.log('[FEED_SERVICE] Edge function data array length:', result.data?.length || 0);
+      console.log('[FEED_SERVICE] Edge function first item:', result.data?.[0] || 'No items');
       
       if (!result.success) {
         console.error('[FEED_SERVICE] Edge function returned failure:', result.error);

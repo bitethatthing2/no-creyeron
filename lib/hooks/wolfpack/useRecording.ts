@@ -24,24 +24,20 @@ interface UseRecordingReturn {
 }
 
 // Helper function to detect iOS
-const isIOS = () => {
+const isIOS = (): boolean => {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 };
 
 // Helper function to compress video blob for iOS
 const compressVideoBlob = async (blob: Blob): Promise<Blob> => {
-  // For iOS, we'll try to reduce file size by re-encoding if possible
-  // This is a simplified approach - in production you might want to use a library like ffmpeg.wasm
-
-  if (blob.size < 10 * 1024 * 1024) { // Less than 10MB, no compression needed
+  if (blob.size < 10 * 1024 * 1024) {
     return blob;
   }
 
-  console.log("🗜️ Compressing video for iOS, original size:", blob.size);
+  console.log("Compressing video for iOS, original size:", blob.size);
 
   try {
-    // Create a video element to re-encode the video
     const video = document.createElement("video");
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -50,26 +46,25 @@ const compressVideoBlob = async (blob: Blob): Promise<Blob> => {
 
     return new Promise((resolve) => {
       video.onloadedmetadata = () => {
-        canvas.width = Math.min(video.videoWidth, 1280); // Max width for iOS
-        canvas.height = Math.min(video.videoHeight, 720); // Max height for iOS
+        canvas.width = Math.min(video.videoWidth, 1280);
+        canvas.height = Math.min(video.videoHeight, 720);
 
-        const stream = canvas.captureStream(15); // 15 FPS for iOS
+        const stream = canvas.captureStream(15);
         const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "video/mp4", // iOS prefers mp4
-          videoBitsPerSecond: 1000000, // 1 Mbps for iOS
+          mimeType: "video/mp4",
+          videoBitsPerSecond: 1000000,
         });
 
         const chunks: Blob[] = [];
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const compressedBlob = new Blob(chunks, { type: "video/mp4" });
-          console.log("✅ Compressed video size:", compressedBlob.size);
+          console.log("Compressed video size:", compressedBlob.size);
           resolve(compressedBlob);
         };
 
         mediaRecorder.start();
 
-        // Draw frames to canvas for re-encoding
         const drawFrame = () => {
           if (!video.paused && !video.ended) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -97,20 +92,22 @@ export function useRecording(
   const { maxDuration: initialMaxDuration = 60, onMaxDurationReached } =
     options;
 
-  const [isRecording, setIsRecording] = React.useState(false);
-  const [recordingTime, setRecordingTime] = React.useState(0);
-  const [recordingProgress, setRecordingProgress] = React.useState(0);
+  const [isRecording, setIsRecording] = React.useState<boolean>(false);
+  const [recordingTime, setRecordingTime] = React.useState<number>(0);
+  const [recordingProgress, setRecordingProgress] = React.useState<number>(0);
   const [recordingMode, setRecordingMode] = React.useState<RecordingMode>(
     "video",
   );
-  const [maxDuration, setMaxDuration] = React.useState(initialMaxDuration);
+  const [maxDuration, setMaxDuration] = React.useState<number>(
+    initialMaxDuration,
+  );
   const [capturedMedia, setCapturedMedia] = React.useState<Blob | null>(null);
   const [mediaUrl, setMediaUrl] = React.useState<string>("");
 
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const resetMedia = React.useCallback(() => {
+  const resetMedia = React.useCallback((): void => {
     if (mediaUrl) {
       URL.revokeObjectURL(mediaUrl);
     }
@@ -120,38 +117,54 @@ export function useRecording(
     setRecordingProgress(0);
   }, [mediaUrl]);
 
-  const startRecording = React.useCallback((stream: MediaStream) => {
+  const stopRecording = React.useCallback((): void => {
+    if (mediaRecorderRef.current && isRecording) {
+      console.log("Stopping recording...");
+
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (error) {
+        console.error("Error stopping recording:", error);
+      }
+
+      setIsRecording(false);
+      setRecordingProgress(0);
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+  }, [isRecording]);
+
+  const startRecording = React.useCallback((stream: MediaStream): void => {
     if (!stream) return;
 
-    console.log("🎬 Starting recording...");
+    console.log("Starting recording...");
 
-    // iOS-specific MIME type selection
     const options: MediaRecorderOptions = {};
 
     if (isIOS()) {
-      console.log("📱 iOS detected, using iOS-compatible settings");
+      console.log("iOS detected, using iOS-compatible settings");
 
-      // iOS Safari supports these formats (in order of preference)
       const iosSupportedTypes = [
         "video/mp4",
         "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
-        "video/webm;codecs=vp8,opus", // Limited support
+        "video/webm;codecs=vp8,opus",
         "video/webm",
       ];
 
       for (const mimeType of iosSupportedTypes) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
           options.mimeType = mimeType;
-          console.log("🎥 iOS using MIME type:", mimeType);
+          console.log("iOS using MIME type:", mimeType);
           break;
         }
       }
 
-      // iOS-specific settings for better performance
-      options.videoBitsPerSecond = 2500000; // 2.5 Mbps for iOS
-      options.audioBitsPerSecond = 128000; // 128 kbps for iOS
+      options.videoBitsPerSecond = 2500000;
+      options.audioBitsPerSecond = 128000;
     } else {
-      // Non-iOS devices can use more formats
       const supportedTypes = [
         "video/webm;codecs=vp9,opus",
         "video/webm;codecs=vp8,opus",
@@ -163,7 +176,7 @@ export function useRecording(
       for (const mimeType of supportedTypes) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
           options.mimeType = mimeType;
-          console.log("🎥 Using MIME type:", mimeType);
+          console.log("Using MIME type:", mimeType);
           break;
         }
       }
@@ -182,16 +195,15 @@ export function useRecording(
       };
 
       mediaRecorder.onstop = async () => {
-        console.log("🛑 Recording stopped, processing...");
+        console.log("Recording stopped, processing...");
 
         if (chunks.length > 0) {
           let finalBlob = new Blob(chunks, {
             type: options.mimeType || "video/webm",
           });
 
-          // Compress video for iOS if needed
-          if (isIOS() && finalBlob.size > 5 * 1024 * 1024) { // 5MB threshold for iOS
-            console.log("🗜️ Compressing video for iOS...");
+          if (isIOS() && finalBlob.size > 5 * 1024 * 1024) {
+            console.log("Compressing video for iOS...");
             try {
               finalBlob = await compressVideoBlob(finalBlob);
             } catch (error) {
@@ -201,19 +213,19 @@ export function useRecording(
 
           setCapturedMedia(finalBlob);
           setMediaUrl(URL.createObjectURL(finalBlob));
-          console.log("✅ Recording processed, size:", finalBlob.size);
+          console.log("Recording processed, size:", finalBlob.size);
         }
       };
 
       mediaRecorder.onerror = (event) => {
-        console.error("❌ MediaRecorder error:", event);
+        console.error("MediaRecorder error:", event);
         setIsRecording(false);
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
         }
       };
 
-      mediaRecorder.start(isIOS() ? 1000 : undefined); // iOS benefits from timeslice
+      mediaRecorder.start(isIOS() ? 1000 : undefined);
       setIsRecording(true);
       setRecordingTime(0);
 
@@ -222,7 +234,6 @@ export function useRecording(
           const newTime = prev + 1;
           setRecordingProgress((newTime / maxDuration) * 100);
 
-          // Auto-stop when max duration reached
           if (newTime >= maxDuration) {
             stopRecording();
             onMaxDurationReached?.();
@@ -232,82 +243,61 @@ export function useRecording(
         });
       }, 1000);
     } catch (error) {
-      console.error("❌ Failed to start recording:", error);
+      console.error("Failed to start recording:", error);
       setIsRecording(false);
     }
-  }, [maxDuration, onMaxDurationReached]);
+  }, [maxDuration, onMaxDurationReached, stopRecording]);
 
-  const stopRecording = React.useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      console.log("🛑 Stopping recording...");
+  const takePhoto = React.useCallback(
+    (videoElement: HTMLVideoElement): void => {
+      if (!videoElement) return;
 
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (error) {
-        console.error("Error stopping recording:", error);
-      }
+      console.log("Taking photo...");
 
-      setIsRecording(false);
-      setRecordingProgress(0);
+      const canvas = document.createElement("canvas");
 
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-  }, [isRecording]);
+      if (isIOS()) {
+        const maxWidth = 1920;
+        const maxHeight = 1080;
+        const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
 
-  const takePhoto = React.useCallback((videoElement: HTMLVideoElement) => {
-    if (!videoElement) return;
-
-    console.log("📸 Taking photo...");
-
-    const canvas = document.createElement("canvas");
-
-    // iOS-specific photo settings
-    if (isIOS()) {
-      // Limit resolution for iOS to prevent memory issues
-      const maxWidth = 1920;
-      const maxHeight = 1080;
-
-      const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
-
-      if (videoElement.videoWidth > maxWidth) {
-        canvas.width = maxWidth;
-        canvas.height = maxWidth / aspectRatio;
-      } else if (videoElement.videoHeight > maxHeight) {
-        canvas.height = maxHeight;
-        canvas.width = maxHeight * aspectRatio;
+        if (videoElement.videoWidth > maxWidth) {
+          canvas.width = maxWidth;
+          canvas.height = maxWidth / aspectRatio;
+        } else if (videoElement.videoHeight > maxHeight) {
+          canvas.height = maxHeight;
+          canvas.width = maxHeight * aspectRatio;
+        } else {
+          canvas.width = videoElement.videoWidth;
+          canvas.height = videoElement.videoHeight;
+        }
       } else {
         canvas.width = videoElement.videoWidth;
         canvas.height = videoElement.videoHeight;
       }
-    } else {
-      canvas.width = videoElement.videoWidth;
-      canvas.height = videoElement.videoHeight;
-    }
 
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-      // iOS prefers JPEG with lower quality for smaller file sizes
-      const quality = isIOS() ? 0.8 : 0.9;
-      const format = "image/jpeg";
+        const quality = isIOS() ? 0.8 : 0.9;
+        const format = "image/jpeg";
 
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            setCapturedMedia(blob);
-            setMediaUrl(URL.createObjectURL(blob));
-            console.log("✅ Photo captured, size:", blob.size);
-          }
-        },
-        format,
-        quality,
-      );
-    }
-  }, []);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              setCapturedMedia(blob);
+              setMediaUrl(URL.createObjectURL(blob));
+              console.log("Photo captured, size:", blob.size);
+            }
+          },
+          format,
+          quality,
+        );
+      }
+    },
+    [],
+  );
 
   return {
     isRecording,

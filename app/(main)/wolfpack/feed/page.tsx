@@ -509,8 +509,8 @@ export default function OptimizedWolfpackFeedPage() {
       
       <PostCreator
         isOpen={showPostCreator}
-        onClose={() => setShowPostCreator(false)}
-        onSuccess={handlePostSuccess}
+        onCloseAction={() => setShowPostCreator(false)}
+        onSuccessAction={handlePostSuccess}
       />
       
       <ShareModal
