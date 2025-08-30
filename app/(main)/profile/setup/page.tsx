@@ -30,9 +30,9 @@ export default function ProfileSetupPage() {
     return null;
   }
 
-  // If user already has a profile, redirect to feed
+  // If user already has a profile, redirect to home
   if (currentUser?.displayName || currentUser?.username) {
-    router.push('/wolfpack/feed');
+    router.push('/');
     return null;
   }
 
@@ -51,10 +51,10 @@ export default function ProfileSetupPage() {
 
       toast({
         title: 'Profile created!',
-        description: 'Welcome to the Wolf Pack!',
+        description: 'Welcome! Your profile has been set up successfully.',
       });
 
-      router.push('/wolfpack/feed');
+      router.push('/');
     } catch (error) {
       console.error('Profile setup error:', error);
       toast({

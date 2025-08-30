@@ -3,20 +3,31 @@ import { createServerClient } from "@/lib/supabase/server";
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin if not already initialized
+let firebaseInitialized = false;
+
 if (!admin.apps.length) {
-  try {
-    // Use existing Firebase project config
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: 'sidehustle-22a6a',
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-    console.log('Firebase Admin initialized successfully');
-  } catch (error) {
-    console.error('Firebase admin initialization error:', error);
+  // Check if Firebase credentials are available
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    try {
+      // Use existing Firebase project config
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: 'sidehustle-22a6a',
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+      });
+      firebaseInitialized = true;
+      console.log('Firebase Admin initialized successfully');
+    } catch (error) {
+      console.error('Firebase admin initialization error:', error);
+    }
+  } else {
+    console.warn('Firebase credentials not configured - push notifications disabled');
   }
+} else {
+  // Firebase already initialized
+  firebaseInitialized = true;
 }
 
 export async function POST(request: NextRequest) {
@@ -61,6 +72,15 @@ export async function POST(request: NextRequest) {
 
     if (!tokens || tokens.length === 0) {
       return NextResponse.json({ error: 'No FCM tokens found for user' }, { status: 404 });
+    }
+
+    // Check if Firebase is initialized
+    if (!firebaseInitialized || !admin.apps.length) {
+      console.warn('Firebase not initialized - cannot send push notification');
+      return NextResponse.json({ 
+        error: 'Push notifications not configured',
+        message: 'Firebase credentials are missing' 
+      }, { status: 503 });
     }
 
     // Send notification to all user's devices
