@@ -292,6 +292,48 @@ export async function runAuthDiagnostics() {
   return results;
 }
 
+/**
+ * Test Supabase authentication setup
+ */
+export async function testSupabaseAuth(): Promise<{
+  success: boolean;
+  message: string;
+  details?: any;
+}> {
+  try {
+    // Test basic connection
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      return {
+        success: true,
+        message: 'Auth test successful - user is logged in',
+        details: { userId: session.user.id, email: session.user.email }
+      };
+    } else {
+      return {
+        success: true,
+        message: 'Auth test successful - no active session',
+        details: { hasSession: false }
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Auth test failed',
+      details: { error: error instanceof Error ? error.message : error }
+    };
+  }
+}
+
+/**
+ * Get error suggestions for auth issues
+ */
+export function getAuthErrorSuggestions(error: unknown): string[] {
+  const { suggestions } = getAuthErrorMessage(error);
+  return suggestions;
+}
+
 // Development-only auto-diagnostics
 if (process.env.NODE_ENV === "development") {
   if (typeof window !== "undefined") {

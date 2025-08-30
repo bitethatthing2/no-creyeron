@@ -32,3 +32,28 @@ export const LOCAL_VIDEOS = {
   "video-food": "/videos/video-food.mp4",
   "welcome-to-hustle": "/videos/welcome-to-hustle.mp4",
 } as const;
+
+/**
+ * Get menu item video URL from Supabase storage
+ */
+export function getMenuItemVideoUrl(itemName: string): string | null {
+  if (!itemName) return null;
+  
+  // Convert item name to slug format (lowercase, replace spaces with hyphens)
+  const slug = itemName.toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters except hyphens
+    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+    .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
+    .trim();
+  
+  // Check if we have a video for this item
+  const videoFileName = SUPABASE_MENU_VIDEOS[slug as keyof typeof SUPABASE_MENU_VIDEOS];
+  
+  if (videoFileName) {
+    // Return Supabase storage URL for the video
+    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tvnpgbjypnezoasbhbwx.supabase.co';
+    return `${baseUrl}/storage/v1/object/public/menu-videos/${videoFileName}`;
+  }
+  
+  return null;
+}
