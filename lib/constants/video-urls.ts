@@ -58,8 +58,6 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
     .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
     .trim();
   
-  console.log('[Video URL] Looking for video for:', itemName, 'Slug:', slug);
-  
   // Check if we have a video for this item
   const videoFileName = SUPABASE_MENU_VIDEOS[slug as keyof typeof SUPABASE_MENU_VIDEOS];
   
@@ -70,7 +68,6 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
     for (const key of keys) {
       if (slug.includes(key) || key.includes(slug.split('-')[0])) {
         const matchedVideo = SUPABASE_MENU_VIDEOS[key as keyof typeof SUPABASE_MENU_VIDEOS];
-        console.log('[Video URL] Found partial match:', key, 'for', slug);
         const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tvnpgbjypnezoasbhbwx.supabase.co';
         return `${baseUrl}/storage/v1/object/public/menu-videos/${matchedVideo}`;
       }
@@ -81,10 +78,8 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
     // Return Supabase storage URL for the video
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tvnpgbjypnezoasbhbwx.supabase.co';
     const url = `${baseUrl}/storage/v1/object/public/menu-videos/${videoFileName}`;
-    console.log('[Video URL] Found video URL:', url);
     return url;
   }
   
-  console.log('[Video URL] No video found for:', slug);
   return null;
 }

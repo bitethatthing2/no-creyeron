@@ -98,13 +98,6 @@ export default function SliderMenu({
     const processed = filtered.map((item): MenuItem => {
       const videoUrl = item.video_url || getMenuItemVideoUrl(item.name);
       
-      // Debug logging for video URLs
-      if (item.name.toLowerCase().includes('birria') || 
-          item.name.toLowerCase().includes('taco') || 
-          item.name.toLowerCase().includes('margarita')) {
-        console.log('[Menu] Item:', item.name, 'Video URL:', videoUrl);
-      }
-      
       return {
         ...item,
         image_url: item.image_url || getDefaultImage(item.category || '', item.name),
