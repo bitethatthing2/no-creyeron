@@ -2,11 +2,17 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect, useContext, createContext } from 'react';
+import React, { useState, useCallback, useEffect, useContext, createContext, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
-// Ultra-simplified database user type - matches backend
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
+
+/**
+ * Database user schema - matches your Supabase users table exactly
+ */
 interface DatabaseUser {
   id: string;
   email: string;
@@ -18,310 +24,504 @@ interface DatabaseUser {
   username: string | null;
   avatar_url: string | null;
   profile_image_url: string | null;
-  wolf_emoji: string | null;
-  bio: string | null;
-  verified: boolean | null;
-  wolfpack_status: string | null;
-  wolfpack_joined_at: string | null;
-  business_account: boolean | null;
-  artist_account: boolean | null;
-  location: string | null;
-  city: string | null;
-  state: string | null;
-  location_verified: boolean | null;
-  privacy_settings: any | null;
-  notification_preferences: any | null;
-  is_online: boolean | null;
-  last_seen_at: string | null;
+  phone: string | null;
+  account_status: 'active' | 'inactive' | 'pending' | 'suspended' | null;
+  settings: {
+    notifications?: {
+      push?: boolean;
+      email?: boolean;
+      sms?: boolean;
+      marketing?: boolean;
+      orderUpdates?: boolean;
+      socialUpdates?: boolean;
+    };
+    privacy?: {
+      profileVisible?: boolean;
+      showActivity?: boolean;
+      allowMessages?: boolean;
+    };
+    preferences?: {
+      theme?: 'light' | 'dark' | 'system';
+      language?: string;
+      timezone?: string;
+    };
+  } | null;
   created_at: string;
   updated_at: string;
-  is_wolfpack_member: boolean | null;
-  status: string | null;
-  loyalty_score: number | null;
-  pack_badges: any | null;
-  pack_achievements: any | null;
 }
 
-// Ultra-simplified user type - only admin and user roles
+/**
+ * Application user type - clean interface for frontend usage
+ */
 export interface CurrentUser {
+  // Core identity
   id: string;
   email: string;
   authId: string;
   role: 'admin' | 'user';
+  
+  // Profile information
   firstName?: string;
   lastName?: string;
   displayName?: string;
   username?: string;
   avatarUrl?: string;
-  profileImageUrl?: string;
-  wolfEmoji: string;
-  bio?: string;
-  verified: boolean;
-  wolfpackStatus: 'active' | 'pending' | 'inactive';
-  wolfpackJoinedAt?: string;
-  businessAccount: boolean;
-  artistAccount: boolean;
-  location?: string;
-  city?: string;
-  state?: string;
-  locationVerified: boolean;
-  privacySettings: {
-    acceptWinks: boolean;
-    showLocation: boolean;
-    acceptMessages: boolean;
-    profileVisible: boolean;
+  phone?: string;
+  
+  // Account status
+  accountStatus: 'active' | 'inactive' | 'pending' | 'suspended';
+  isAdmin: boolean;
+  
+  // Settings (stored as JSONB in database)
+  settings: {
+    notifications?: {
+      push?: boolean;
+      email?: boolean;
+      sms?: boolean;
+      marketing?: boolean;
+      orderUpdates?: boolean;
+      socialUpdates?: boolean;
+    };
+    privacy?: {
+      profileVisible?: boolean;
+      showActivity?: boolean;
+      allowMessages?: boolean;
+    };
+    preferences?: {
+      theme?: 'light' | 'dark' | 'system';
+      language?: string;
+      timezone?: string;
+    };
   };
-  notificationPreferences: {
-    events: boolean;
-    marketing: boolean;
-    announcements: boolean;
-    chatMessages: boolean;
-    orderUpdates: boolean;
-    memberActivity: boolean;
-    socialInteractions: boolean;
-  };
-  isOnline: boolean;
-  lastSeenAt?: string;
-  status: 'active' | 'inactive' | 'blocked';
-  loyaltyScore: number;
-  packBadges: any;
-  packAchievements: any;
+  
+  // Timestamps
   createdAt: string;
   updatedAt: string;
 }
 
+/**
+ * Auth context type with all methods and state
+ */
 interface AuthContextType {
+  // State
   user: User | null;
   session: Session | null;
-  loading: boolean;
   currentUser: CurrentUser | null;
-  userProfile: CurrentUser | null; // Alias for currentUser
+  loading: boolean;
   error: Error | null;
+  
+  // Methods
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>;
   signOut: () => Promise<void>;
-  refresh: () => Promise<void>;
-  refreshSession: () => Promise<void>; // Alias for refresh
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
   updateProfile: (updates: Partial<DatabaseUser>) => Promise<void>;
-  // Helper methods
+  refreshUser: () => Promise<void>;
+  clearError: () => void;
+  
+  // Computed helpers
   isAuthenticated: boolean;
+  isAdmin: boolean;
   hasProfile: boolean;
   isReady: boolean;
+  
+  // Guards
   requireAuth: () => { user: User; session: Session };
   requireProfile: () => CurrentUser;
+  requireAdmin: () => CurrentUser;
 }
 
-// Transform database user to app user
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Transform database user to application user format
+ */
 const transformDatabaseUser = (dbUser: DatabaseUser, authUser: User): CurrentUser => {
   return {
+    // Core identity
     id: dbUser.id,
     email: dbUser.email,
     authId: dbUser.auth_id || authUser.id,
     role: dbUser.role || 'user',
+    
+    // Profile information
     firstName: dbUser.first_name || undefined,
     lastName: dbUser.last_name || undefined,
     displayName: dbUser.display_name || undefined,
     username: dbUser.username || undefined,
-    avatarUrl: dbUser.avatar_url || undefined,
-    profileImageUrl: dbUser.profile_image_url || dbUser.avatar_url || undefined,
-    wolfEmoji: dbUser.wolf_emoji || '🐺',
-    bio: dbUser.bio || undefined,
-    verified: dbUser.verified || false,
-    wolfpackStatus: (dbUser.wolfpack_status as any) || 'pending',
-    wolfpackJoinedAt: dbUser.wolfpack_joined_at || undefined,
-    businessAccount: dbUser.business_account || false,
-    artistAccount: dbUser.artist_account || false,
-    location: dbUser.location || undefined,
-    city: dbUser.city || undefined,
-    state: dbUser.state || undefined,
-    locationVerified: dbUser.location_verified || false,
-    privacySettings: dbUser.privacy_settings || {
-      acceptWinks: true,
-      showLocation: true,
-      acceptMessages: true,
-      profileVisible: true
+    avatarUrl: dbUser.avatar_url || dbUser.profile_image_url || undefined,
+    phone: dbUser.phone || undefined,
+    
+    // Account status
+    accountStatus: dbUser.account_status || 'active',
+    isAdmin: dbUser.role === 'admin',
+    
+    // Settings with proper defaults
+    settings: {
+      notifications: {
+        push: true,
+        email: true,
+        sms: false,
+        marketing: false,
+        orderUpdates: true,
+        socialUpdates: true,
+        ...dbUser.settings?.notifications
+      },
+      privacy: {
+        profileVisible: true,
+        showActivity: true,
+        allowMessages: true,
+        ...dbUser.settings?.privacy
+      },
+      preferences: {
+        theme: 'system',
+        language: 'en',
+        timezone: 'America/Los_Angeles',
+        ...dbUser.settings?.preferences
+      }
     },
-    notificationPreferences: dbUser.notification_preferences || {
-      events: true,
-      marketing: false,
-      announcements: true,
-      chatMessages: true,
-      orderUpdates: true,
-      memberActivity: true,
-      socialInteractions: true
-    },
-    isOnline: dbUser.is_online || false,
-    lastSeenAt: dbUser.last_seen_at || undefined,
-    status: (dbUser.status as any) || 'active',
-    loyaltyScore: dbUser.loyalty_score || 0,
-    packBadges: dbUser.pack_badges || {},
-    packAchievements: dbUser.pack_achievements || {},
+    
+    // Timestamps
     createdAt: dbUser.created_at,
     updatedAt: dbUser.updated_at
   };
 };
 
+/**
+ * Create a default user profile for new signups
+ */
+const createDefaultProfile = (authUser: User): Partial<DatabaseUser> => {
+  return {
+    auth_id: authUser.id,
+    email: authUser.email!,
+    role: 'user', // Default to 'user' role for production
+    account_status: 'active',
+    settings: {
+      notifications: {
+        push: true,
+        email: true,
+        sms: false,
+        marketing: false,
+        orderUpdates: true,
+        socialUpdates: true
+      },
+      privacy: {
+        profileVisible: true,
+        showActivity: true,
+        allowMessages: true
+      },
+      preferences: {
+        theme: 'system',
+        language: 'en',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
+
+// ============================================================================
+// Context & Provider
+// ============================================================================
+
+/**
+ * Create the auth context with default values
+ */
 const AuthContext = createContext<AuthContextType>({
+  // State
   user: null,
   session: null,
-  loading: true,
   currentUser: null,
-  userProfile: null,
+  loading: true,
   error: null,
-  signOut: async () => {},
-  refresh: async () => {},
-  refreshSession: async () => {},
-  updateProfile: async () => {},
+  
+  // Methods (no-ops by default)
+  signIn: async () => { throw new Error('AuthProvider not mounted'); },
+  signUp: async () => { throw new Error('AuthProvider not mounted'); },
+  signOut: async () => { throw new Error('AuthProvider not mounted'); },
+  resetPassword: async () => { throw new Error('AuthProvider not mounted'); },
+  updatePassword: async () => { throw new Error('AuthProvider not mounted'); },
+  updateProfile: async () => { throw new Error('AuthProvider not mounted'); },
+  refreshUser: async () => { throw new Error('AuthProvider not mounted'); },
+  clearError: () => {},
+  
+  // Computed
   isAuthenticated: false,
+  isAdmin: false,
   hasProfile: false,
   isReady: false,
+  
+  // Guards
   requireAuth: () => { throw new Error('Not authenticated'); },
-  requireProfile: () => { throw new Error('No profile'); },
+  requireProfile: () => { throw new Error('No profile found'); },
+  requireAdmin: () => { throw new Error('Admin access required'); }
 });
 
+/**
+ * Auth Provider Component
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Core state
   const [session, setSession] = useState<Session | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
 
+  // ============================================================================
+  // User Profile Management
+  // ============================================================================
 
-  // Simplified, non-blocking user profile fetch
+  /**
+   * Fetch user profile from database
+   */
   const fetchUserProfile = useCallback(async (authUser: User): Promise<CurrentUser | null> => {
-    if (!authUser?.id) return null;
+    if (!authUser?.id) {
+      console.warn('[Auth] No auth user provided to fetchUserProfile');
+      return null;
+    }
 
     try {
-      // Skip profile creation for faster loading - just get existing profile
-      const { data: profile, error } = await supabase
+      // Try to fetch existing profile
+      const { data: profile, error: fetchError } = await supabase
         .from('users')
         .select('*')
         .eq('auth_id', authUser.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        // If no profile exists, create minimal one without blocking
-        if (error.code === 'PGRST116') {
-          console.log('[AUTH] Creating minimal profile for user');
-          const { data: newUser, error: insertError } = await supabase
-            .from('users')
-            .insert({
-              auth_id: authUser.id,
-              email: authUser.email!,
-              role: 'admin', // Set as admin for testing
-              wolfpack_status: 'active', // Set as active
-              account_status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('[AUTH] Error creating profile:', insertError);
-            // Return basic user object even if profile creation fails
-            return {
-              id: authUser.id,
-              email: authUser.email!,
-              authId: authUser.id,
-              role: 'user',
-              wolfEmoji: '🐺',
-              verified: false,
-              wolfpackStatus: 'pending',
-              businessAccount: false,
-              artistAccount: false,
-              locationVerified: false,
-              privacySettings: {
-                acceptWinks: true,
-                showLocation: true,
-                acceptMessages: true,
-                profileVisible: true
-              },
-              notificationPreferences: {
-                events: true,
-                marketing: false,
-                announcements: true,
-                chatMessages: true,
-                orderUpdates: true,
-                memberActivity: true,
-                socialInteractions: true
-              },
-              isOnline: false,
-              status: 'active',
-              loyaltyScore: 0,
-              packBadges: {},
-              packAchievements: {},
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            } as CurrentUser;
-          }
-          
-          // Fetch the newly created profile
-          const { data: newProfile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('auth_id', authUser.id)
-            .single();
-          
-          if (newProfile) {
-            return transformDatabaseUser(newProfile as DatabaseUser, authUser);
-          }
-        }
-        
-        console.error('[AUTH] Error fetching profile:', error);
-        return null;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('[Auth] Error fetching profile:', fetchError);
+        throw fetchError;
       }
 
-      return transformDatabaseUser(profile as DatabaseUser, authUser);
+      // If profile exists, transform and return it
+      if (profile) {
+        console.log('[Auth] Profile found for user:', authUser.email);
+        return transformDatabaseUser(profile as DatabaseUser, authUser);
+      }
+
+      // No profile exists, create one
+      console.log('[Auth] No profile found, creating new profile for:', authUser.email);
+      
+      const newProfileData = createDefaultProfile(authUser);
+      
+      const { data: newProfile, error: insertError } = await supabase
+        .from('users')
+        .insert(newProfileData)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[Auth] Error creating profile:', insertError);
+        throw insertError;
+      }
+
+      console.log('[Auth] Profile created successfully');
+      return transformDatabaseUser(newProfile as DatabaseUser, authUser);
+      
     } catch (err) {
-      console.error('[AUTH] Error in fetchUserProfile:', err);
-      return null;
+      console.error('[Auth] Error in fetchUserProfile:', err);
+      
+      // Return a minimal user object as fallback
+      return {
+        id: authUser.id,
+        email: authUser.email!,
+        authId: authUser.id,
+        role: 'user',
+        accountStatus: 'active',
+        isAdmin: false,
+        settings: {
+          notifications: {},
+          privacy: {},
+          preferences: {}
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
     }
   }, []);
 
-  const signOut = async () => {
-    try {
-      await supabase.rpc('handle_user_logout');
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      localStorage.removeItem('user_profile');
-      localStorage.removeItem('fcm_token');
-      sessionStorage.clear();
-    } catch (error) {
-      console.error('Logout failed:', error);
-      throw error;
-    }
-  };
+  // ============================================================================
+  // Authentication Methods
+  // ============================================================================
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  /**
+   * Sign in with email and password
+   */
+  const signIn = useCallback(async (email: string, password: string) => {
     setError(null);
+    setLoading(true);
     
     try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      if (authError) throw authError;
+      if (error) throw error;
       
-      if (!authUser) {
-        setCurrentUser(null);
-        return;
-      }
-
-      const profile = await fetchUserProfile(authUser);
-      setCurrentUser(profile);
+      // Profile will be fetched automatically via auth state change listener
+      console.log('[Auth] Sign in successful');
     } catch (err) {
-      if (err instanceof Error && err.message !== 'Auth session missing!') {
-        console.error('[AUTH] Error refreshing user:', err);
-        setError(err as Error);
-      }
-      setCurrentUser(null);
+      console.error('[Auth] Sign in failed:', err);
+      setError(err as Error);
+      throw err;
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  /**
+   * Sign up with email and password
+   */
+  const signUp = useCallback(async (
+    email: string, 
+    password: string, 
+    metadata?: Record<string, unknown>
+  ) => {
+    setError(null);
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      });
+      
+      if (error) throw error;
+      
+      console.log('[Auth] Sign up successful');
+      // Profile will be created automatically via auth state change listener
+    } catch (err) {
+      console.error('[Auth] Sign up failed:', err);
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Sign out the current user
+   */
+  const signOut = useCallback(async () => {
+    setError(null);
+    
+    try {
+      // Call logout RPC if it exists (for cleanup)
+      try {
+        await supabase.rpc('handle_user_logout');
+      } catch {
+        // Ignore RPC errors - function might not exist
+      }
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear local storage
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('fcm_token');
+      sessionStorage.clear();
+      
+      // Clear state
+      setSession(null);
+      setCurrentUser(null);
+      
+      console.log('[Auth] Sign out successful');
+    } catch (err) {
+      console.error('[Auth] Sign out failed:', err);
+      setError(err as Error);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Send password reset email
+   */
+  const resetPassword = useCallback(async (email: string) => {
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      });
+      
+      if (error) throw error;
+      console.log('[Auth] Password reset email sent');
+    } catch (err) {
+      console.error('[Auth] Password reset failed:', err);
+      setError(err as Error);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Update user password
+   */
+  const updatePassword = useCallback(async (newPassword: string) => {
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      console.log('[Auth] Password updated successfully');
+    } catch (err) {
+      console.error('[Auth] Password update failed:', err);
+      setError(err as Error);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Refresh user session and profile
+   */
+  const refreshUser = useCallback(async () => {
+    setError(null);
+    
+    try {
+      // Get fresh session
+      const { data: { session: freshSession }, error: sessionError } = 
+        await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      
+      setSession(freshSession);
+      
+      if (freshSession?.user) {
+        const profile = await fetchUserProfile(freshSession.user);
+        setCurrentUser(profile);
+      } else {
+        setCurrentUser(null);
+      }
+      
+      console.log('[Auth] User refreshed');
+    } catch (err) {
+      console.error('[Auth] Refresh failed:', err);
+      setError(err as Error);
+      setCurrentUser(null);
+    }
   }, [fetchUserProfile]);
 
+  /**
+   * Update user profile in database
+   */
   const updateProfile = useCallback(async (updates: Partial<DatabaseUser>) => {
-    if (!currentUser) throw new Error('No user logged in');
-
+    if (!currentUser) {
+      throw new Error('No user logged in');
+    }
+    
+    setError(null);
+    
     try {
       const { error } = await supabase
         .from('users')
@@ -332,136 +532,294 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', currentUser.id);
 
       if (error) throw error;
-      await refresh();
+      
+      // Refresh the user profile
+      await refreshUser();
+      console.log('[Auth] Profile updated successfully');
     } catch (err) {
-      console.error('[AUTH] Error updating profile:', err);
+      console.error('[Auth] Profile update failed:', err);
+      setError(err as Error);
       throw err;
     }
-  }, [currentUser, refresh]);
+  }, [currentUser, refreshUser]);
 
-  // Fast, non-blocking auth initialization
+  /**
+   * Clear any auth errors
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  // ============================================================================
+  // Auth State Initialization & Listeners
+  // ============================================================================
+
   useEffect(() => {
     let mounted = true;
 
-    const quickAuthCheck = async () => {
+    // Initialize auth state
+    const initializeAuth = async () => {
       try {
-        console.log('[AUTH] Quick auth check starting...');
+        console.log('[Auth] Initializing auth state...');
         
-        // Fast session check
-        const { data: { session } } = await supabase.auth.getSession();
+        // Get initial session
+        const { data: { session: initialSession }, error: sessionError } = 
+          await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('[Auth] Session error:', sessionError);
+          throw sessionError;
+        }
         
         if (!mounted) return;
-
-        setSession(session);
-        setLoading(false);
-        setIsReady(true);
-        setAuthChecked(true);
-
-        // If there's a session, fetch profile in background (non-blocking)
-        if (session?.user) {
-          console.log('[AUTH] User found, fetching profile in background...');
-          fetchUserProfile(session.user).then(profile => {
-            if (mounted) {
-              setCurrentUser(profile);
-            }
-          }).catch(err => {
-            console.error('[AUTH] Background profile fetch failed:', err);
-            // Don't block the UI for profile fetch errors
-          });
+        
+        setSession(initialSession);
+        
+        // If we have a session, fetch the user profile
+        if (initialSession?.user) {
+          console.log('[Auth] Session found, fetching profile...');
+          const profile = await fetchUserProfile(initialSession.user);
+          
+          if (!mounted) return;
+          
+          setCurrentUser(profile);
         } else {
-          console.log('[AUTH] No session found');
+          console.log('[Auth] No session found');
           setCurrentUser(null);
         }
+        
       } catch (err) {
-        console.error('[AUTH] Quick auth check failed:', err);
+        console.error('[Auth] Initialization error:', err);
         if (mounted) {
           setError(err as Error);
+        }
+      } finally {
+        if (mounted) {
           setLoading(false);
           setIsReady(true);
+          console.log('[Auth] Initialization complete');
         }
       }
     };
 
-    quickAuthCheck();
+    // Run initialization
+    initializeAuth();
 
-    // Listen for auth changes
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[AUTH] Auth state change:', event, !!session);
+      async (event, newSession) => {
+        console.log('[Auth] Auth state changed:', event);
         
         if (!mounted) return;
-
-        setSession(session);
+        
+        setSession(newSession);
         setError(null);
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Non-blocking profile fetch
-          fetchUserProfile(session.user).then(profile => {
-            if (mounted) setCurrentUser(profile);
-          });
-        } else if (event === 'SIGNED_OUT') {
-          setCurrentUser(null);
+        switch (event) {
+          case 'SIGNED_IN':
+          case 'TOKEN_REFRESHED':
+            if (newSession?.user) {
+              const profile = await fetchUserProfile(newSession.user);
+              if (mounted) {
+                setCurrentUser(profile);
+              }
+            }
+            break;
+            
+          case 'SIGNED_OUT':
+            setCurrentUser(null);
+            break;
+            
+          case 'USER_UPDATED':
+            if (newSession?.user) {
+              const profile = await fetchUserProfile(newSession.user);
+              if (mounted) {
+                setCurrentUser(profile);
+              }
+            }
+            break;
+        }
+        
+        if (mounted) {
+          setLoading(false);
         }
       }
     );
 
+    // Cleanup
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
   }, [fetchUserProfile]);
 
-  // Simplified ready state - no complex dependencies
-  useEffect(() => {
-    if (!loading && isReady) {
-      console.log('[AUTH] Auth system ready');
-    }
-  }, [loading, isReady]);
+  // ============================================================================
+  // Computed Values & Guards
+  // ============================================================================
 
   const user = session?.user ?? null;
   const isAuthenticated = !!user && !!session;
+  const isAdmin = currentUser?.role === 'admin';
   const hasProfile = !!currentUser;
 
+  /**
+   * Require authenticated user
+   */
   const requireAuth = useCallback(() => {
-    if (!isAuthenticated) {
-      throw new Error('User must be authenticated');
+    if (!isAuthenticated || !user || !session) {
+      throw new Error('Authentication required');
     }
-    return { user: user!, session: session! };
+    return { user, session };
   }, [isAuthenticated, user, session]);
 
+  /**
+   * Require user with profile
+   */
   const requireProfile = useCallback(() => {
-    if (!isAuthenticated || !hasProfile) {
-      throw new Error('User must be authenticated with a complete profile');
+    if (!isAuthenticated || !hasProfile || !currentUser) {
+      throw new Error('User profile required');
     }
-    return currentUser!;
+    return currentUser;
   }, [isAuthenticated, hasProfile, currentUser]);
-  
-  const value = {
+
+  /**
+   * Require admin user
+   */
+  const requireAdmin = useCallback(() => {
+    if (!isAuthenticated || !hasProfile || !currentUser || !isAdmin) {
+      throw new Error('Admin access required');
+    }
+    return currentUser;
+  }, [isAuthenticated, hasProfile, currentUser, isAdmin]);
+
+  // ============================================================================
+  // Context Value
+  // ============================================================================
+
+  const contextValue = useMemo<AuthContextType>(() => ({
+    // State
     user,
     session,
-    loading,
     currentUser,
-    userProfile: currentUser, // Alias for currentUser
+    loading,
     error,
+    
+    // Methods
+    signIn,
+    signUp,
     signOut,
-    refresh,
-    refreshSession: refresh, // Alias for refresh
+    resetPassword,
+    updatePassword,
     updateProfile,
+    refreshUser,
+    clearError,
+    
+    // Computed
     isAuthenticated,
+    isAdmin,
+    hasProfile,
+    isReady,
+    
+    // Guards
+    requireAuth,
+    requireProfile,
+    requireAdmin
+  }), [
+    user,
+    session,
+    currentUser,
+    loading,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    updatePassword,
+    updateProfile,
+    refreshUser,
+    clearError,
+    isAuthenticated,
+    isAdmin,
     hasProfile,
     isReady,
     requireAuth,
     requireProfile,
-  };
+    requireAdmin
+  ]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
+// ============================================================================
+// Hook Export
+// ============================================================================
+
+/**
+ * Hook to use auth context
+ * @throws {Error} If used outside of AuthProvider
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
-    // ✅ A more descriptive error message
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
+};
+
+// ============================================================================
+// Utility Hooks
+// ============================================================================
+
+/**
+ * Hook that throws if user is not authenticated
+ */
+export const useRequireAuth = () => {
+  const { requireAuth } = useAuth();
+  return requireAuth();
+};
+
+/**
+ * Hook that throws if user doesn't have a profile
+ */
+export const useRequireProfile = () => {
+  const { requireProfile } = useAuth();
+  return requireProfile();
+};
+
+/**
+ * Hook that throws if user is not an admin
+ */
+export const useRequireAdmin = () => {
+  const { requireAdmin } = useAuth();
+  return requireAdmin();
+};
+
+/**
+ * Hook to check if user has a specific role
+ */
+export const useHasRole = (role: 'admin' | 'user') => {
+  const { currentUser } = useAuth();
+  return currentUser?.role === role;
+};
+
+/**
+ * Hook to get user display name
+ */
+export const useUserDisplayName = () => {
+  const { currentUser } = useAuth();
+  
+  if (!currentUser) return null;
+  
+  return (
+    currentUser.displayName || 
+    currentUser.username || 
+    `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() ||
+    currentUser.email.split('@')[0]
+  );
 };
