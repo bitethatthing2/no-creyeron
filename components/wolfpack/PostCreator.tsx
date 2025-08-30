@@ -76,15 +76,24 @@ export function PostCreator({
    * Reset component state when modal opens/closes
    */
   React.useEffect(() => {
+    console.log('[PostCreator] Modal state changed, isOpen:', isOpen);
     if (isOpen) {
+      console.log('[PostCreator] Modal opened - resetting state and starting camera');
       setStep('camera');
       setCaption('');
       resetMedia();
+      // Auto-start camera when modal opens
+      startCamera().then(() => {
+        console.log('[PostCreator] Camera started successfully');
+      }).catch((err) => {
+        console.error('[PostCreator] Failed to start camera:', err);
+      });
     } else {
+      console.log('[PostCreator] Modal closed - stopping camera');
       stopCamera();
       resetMedia();
     }
-  }, [isOpen, stopCamera, resetMedia]);
+  }, [isOpen, stopCamera, resetMedia, startCamera]);
 
   /**
    * Update step when media is captured
@@ -165,13 +174,29 @@ export function PostCreator({
     onClose();
   }, [posting, onClose]);
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[PostCreator] Component render:', {
+      isOpen,
+      step,
+      hasStream,
+      cameraStatus,
+      errorMessage,
+      capturedMedia: !!capturedMedia,
+      mediaUrl: !!mediaUrl
+    });
+  }, [isOpen, step, hasStream, cameraStatus, errorMessage, capturedMedia, mediaUrl]);
+
   // Early return if modal is not open
   if (!isOpen) {
+    console.log('[PostCreator] Not rendering - modal is closed');
     return null;
   }
 
   const isOnCameraStep = step === 'camera';
   const headerTitle = isOnCameraStep ? 'Create Post' : 'Add Caption';
+
+  console.log('[PostCreator] Rendering modal with step:', step);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center">
