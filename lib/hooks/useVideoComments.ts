@@ -120,18 +120,18 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
       const { data, error: fetchError } = await supabase
         .from("content_comments")
         .select(`
-         *,
-         user:users!content_comments_user_id_fkey (
-           id,
-           email,
-           first_name,
-           last_name,
-           display_name,
-           username,
-           avatar_url,
-           profile_image_url
-         )
-       `)
+          *,
+          user:users!content_comments_user_id_fkey (
+            id,
+            email,
+            first_name,
+            last_name,
+            display_name,
+            username,
+            avatar_url,
+            profile_image_url
+          )
+        `)
         .eq("video_id", videoId)
         .eq("is_deleted", false)
         .is("parent_comment_id", null) // Top-level comments only
@@ -149,18 +149,18 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
           const { data: replies } = await supabase
             .from("content_comments")
             .select(`
-             *,
-             user:users!content_comments_user_id_fkey (
-               id,
-               email,
-               first_name,
-               last_name,
-               display_name,
-               username,
-               avatar_url,
-               profile_image_url
-             )
-           `)
+              *,
+              user:users!content_comments_user_id_fkey (
+                id,
+                email,
+                first_name,
+                last_name,
+                display_name,
+                username,
+                avatar_url,
+                profile_image_url
+              )
+            `)
             .eq("parent_comment_id", comment.id)
             .eq("is_deleted", false)
             .order("created_at", { ascending: true });
@@ -289,18 +289,18 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
       const { data: newComment } = await supabase
         .from("content_comments")
         .select(`
-         *,
-         user:users!content_comments_user_id_fkey (
-           id,
-           email,
-           first_name,
-           last_name,
-           display_name,
-           username,
-           avatar_url,
-           profile_image_url
-         )
-       `)
+          *,
+          user:users!content_comments_user_id_fkey (
+            id,
+            email,
+            first_name,
+            last_name,
+            display_name,
+            username,
+            avatar_url,
+            profile_image_url
+          )
+        `)
         .eq("id", data.comment_id)
         .single();
 
@@ -589,30 +589,32 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
           filter: `video_id=eq.${videoId}`,
         },
         async (
-          payload: RealtimePostgresChangesPayload<VideoComment>,
+          payload: RealtimePostgresChangesPayload<Record<string, unknown>>,
         ) => {
+          const newRecord = payload.new;
+
           // Don't add if it's from current user (already optimistically added)
-          if (
-            "user_id" in payload.new && payload.new.user_id === currentUser?.id
-          ) return;
+          if ((newRecord as { user_id?: string }).user_id === currentUser?.id) {
+            return;
+          }
 
           // Fetch full comment with user data
           const { data } = await supabase
             .from("content_comments")
             .select(`
-             *,
-             user:users!content_comments_user_id_fkey (
-               id,
-               email,
-               first_name,
-               last_name,
-               display_name,
-               username,
-               avatar_url,
-               profile_image_url
-             )
-           `)
-            .eq("id", "id" in payload.new ? payload.new.id : "")
+              *,
+              user:users!content_comments_user_id_fkey (
+                id,
+                email,
+                first_name,
+                last_name,
+                display_name,
+                username,
+                avatar_url,
+                profile_image_url
+              )
+            `)
+            .eq("id", (newRecord as Record<string, string>).id)
             .single();
 
           if (data) {
@@ -649,24 +651,21 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
           table: "content_comments",
           filter: `video_id=eq.${videoId}`,
         },
-        (payload: RealtimePostgresChangesPayload<VideoComment>) => {
-          const updatedComment = payload.new;
-          const updatedCommentId = "id" in updatedComment ? updatedComment.id : null;
-          
-          if (!updatedCommentId) return;
-          
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          const updatedRecord = payload.new as VideoComment;
+
           setState((prev) => ({
             ...prev,
             comments: prev.comments.map((comment) => {
-              if (comment.id === updatedCommentId) {
-                return { ...comment, ...updatedComment };
+              if (comment.id === updatedRecord.id) {
+                return { ...comment, ...updatedRecord };
               }
               if (comment.replies) {
                 return {
                   ...comment,
                   replies: comment.replies.map((reply) =>
-                    reply.id === updatedCommentId
-                      ? { ...reply, ...updatedComment }
+                    reply.id === updatedRecord.id
+                      ? { ...reply, ...updatedRecord }
                       : reply
                   ),
                 };
@@ -700,10 +699,18 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
     }
   }, [state.hasMore, loadComments]);
 
-  // Initial load
+  // Initial load - using a ref to track if we've already loaded
+  const hasLoadedRef = React.useRef(false);
   React.useEffect(() => {
-    loadComments(true);
-  }, [videoId]); // Only depend on videoId, not loadComments
+    if (videoId && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      loadComments(true);
+    }
+
+    return () => {
+      hasLoadedRef.current = false;
+    };
+  }, [videoId, loadComments]);
 
   // Set up subscription
   React.useEffect(() => {

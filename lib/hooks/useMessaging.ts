@@ -888,10 +888,13 @@ export function useMessaging(): UseMessagingReturn {
         if (existing) {
           for (const participation of existing) {
             // The conversation is a single object, not an array
-            const conv = participation.conversation as {
-              id: string;
-              conversation_type: string;
-            } | null;
+            let conv = participation.conversation as
+              | { id: string; conversation_type: string }
+              | { id: string; conversation_type: string }[]
+              | null;
+            if (Array.isArray(conv)) {
+              conv = conv[0] || null;
+            }
             console.log("🔍 Checking participation:", {
               conversation_id: participation.conversation_id,
               has_conversation: !!conv,
@@ -1328,10 +1331,7 @@ export function useMessaging(): UseMessagingReturn {
       try {
         // Filter out computed fields
         const {
-          unread_count,
-          participant_count,
-          participants,
-          other_participant,
+          // other_participant is intentionally omitted to avoid unused variable error
           ...dbUpdates
         } = updates;
 

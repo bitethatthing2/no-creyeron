@@ -1,5 +1,5 @@
 // Edge Function Monitoring Hook
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface EdgeFunctionStatus {
   isAvailable: boolean;
@@ -30,7 +30,9 @@ export const useEdgeFunctionMonitor = (options: MonitoringOptions = {}) => {
 
   const [loading, setLoading] = useState(false);
 
-  const checkStatus = async () => {
+  // removed duplicate import of useCallback
+
+  const checkStatus = useCallback(async () => {
     setLoading(true);
     const start = Date.now();
     
@@ -100,13 +102,13 @@ export const useEdgeFunctionMonitor = (options: MonitoringOptions = {}) => {
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'edge_function_health_check', {
           status: 'error',
-          error: newStatus.error
+          error: newStatus.error ?? ''
         });
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [logToConsole]);
 
   useEffect(() => {
     // Check immediately on mount
@@ -118,7 +120,7 @@ export const useEdgeFunctionMonitor = (options: MonitoringOptions = {}) => {
     const interval = setInterval(checkStatus, checkInterval);
     
     return () => clearInterval(interval);
-  }, [checkInterval, enableAutoCheck]);
+  }, [checkInterval, enableAutoCheck, checkStatus]);
 
   // Manual refresh function
   const refresh = async () => {

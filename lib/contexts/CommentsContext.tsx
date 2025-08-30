@@ -1,29 +1,27 @@
 'use client';
-
 import * as React from 'react';
-import { ReactNode } from 'react';
 
-interface content_commentsContextType {
-  iscontent_commentsOpen: boolean;
-  setIscontent_commentsOpen: (open: boolean) => void;
+interface CommentsUIContextType {
+  isCommentsOpen: boolean;
+  setIsCommentsOpen: (open: boolean) => void;
 }
 
-const content_commentsContext = React.createContext<content_commentsContextType | undefined>(undefined);
+const CommentsUIContext = React.createContext<CommentsUIContextType | undefined>(undefined);
 
-export function WolfpackCommentsProvider({ children }: { children: ReactNode }) {
-  const [iscontent_commentsOpen, setIscontent_commentsOpen] = React.useState(false);
-
+export function CommentsUIProvider({ children }: { children: React.ReactNode }) {
+  const [isCommentsOpen, setIsCommentsOpen] = React.useState(false);
+  
   return (
-    <content_commentsContext.Provider value={{ iscontent_commentsOpen, setIscontent_commentsOpen }}>
+    <CommentsUIContext.Provider value={{ isCommentsOpen, setIsCommentsOpen }}>
       {children}
-    </content_commentsContext.Provider>
+    </CommentsUIContext.Provider>
   );
 }
 
-export function useWolfpackComments() {
-  const context = React.useContext(content_commentsContext);
-  if (context === undefined) {
-    throw new Error('useWolfpackComments must be used within a WolfpackCommentsProvider');
+export function useCommentsUI() {
+  const context = React.useContext(CommentsUIContext);
+  if (!context) {
+    throw new Error('useCommentsUI must be used within CommentsUIProvider');
   }
   return context;
 }

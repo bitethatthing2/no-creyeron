@@ -1,9 +1,9 @@
 /**
  * Centralized Z-Index Constants
- * 
- * This file defines all z-index values used throughout the application
- * to prevent overlay conflicts and maintain a consistent layering hierarchy.
- * 
+ *
+ * Defines all z-index values used throughout the application
+ * to prevent overlay conflicts and maintain consistent layering.
+ *
  * Hierarchy (from lowest to highest):
  * 1. Base content: 0-9
  * 2. Dropdowns/Tooltips: 10-19
@@ -14,92 +14,112 @@
  * 7. Notifications: 60-69
  * 8. Critical alerts: 70-79
  * 9. Debug overlays: 80-89
- * 10. Max priority: 90-99
+ * 10. Emergency: 90-99
  */
 
 export const Z_INDEX = {
   // Base content (0-9)
   BASE: 0,
   CONTENT: 1,
-  
+
   // Dropdowns and tooltips (10-19)
   DROPDOWN: 10,
   TOOLTIP: 15,
-  
+
   // Fixed navigation (20-29)
-  BOTTOM_NAV: 100, // Increased to ensure it's always on top
-  HEADER: 25,
-  
+  HEADER: 20,
+  BOTTOM_NAV: 25,
+
   // Sticky elements (30-39)
   STICKY_ELEMENT: 30,
   CHAT_INPUT: 35,
-  
+
   // Chat overlays (40-49)
   CHAT_TOAST: 40,
-  MEMBER_POSITION: 45,
-  MEMBER_POSITION_HOVER: 46,
-  MEMBER_POSITION_ACTIVE: 47,
-  
+  MEMBER_POSITION: 42,
+  MEMBER_POSITION_HOVER: 43,
+  MEMBER_POSITION_ACTIVE: 44,
+  MESSAGE_BUBBLE: 45,
+
   // Modals and dialogs (50-59)
   MODAL_BACKDROP: 50,
   MODAL_CONTENT: 51,
-  PROFILE_POPUP: 55,
-  USER_PROFILE_MODAL: 58,
-  
+  PROFILE_POPUP: 52,
+  USER_PROFILE_MODAL: 55,
+
   // Notifications (60-69)
   NOTIFICATION: 60,
   TOAST: 65,
-  
+
   // Critical alerts (70-79)
   ALERT: 70,
-  
+  CRITICAL_OVERLAY: 75,
+
   // Debug overlays (80-89)
   DEBUG: 80,
-  
-  // Chat elements (90-99)
-  MESSAGE_BUBBLE: 90,
-  
-  // Max priority (100-999)
-  CRITICAL_OVERLAY: 100,
-  USER_PROFILE_MODAL_OVERRIDE: 999,
-  EMERGENCY: 9999
+
+  // Emergency (90-99)
+  EMERGENCY: 99,
 } as const;
+
+// Type for z-index keys
+export type ZIndexKey = keyof typeof Z_INDEX;
 
 // CSS custom properties for use in CSS files
-export const Z_INDEX_CSS_VARS = {
-  '--z-base': Z_INDEX.BASE.toString(),
-  '--z-content': Z_INDEX.CONTENT.toString(),
-  '--z-dropdown': Z_INDEX.DROPDOWN.toString(),
-  '--z-tooltip': Z_INDEX.TOOLTIP.toString(),
-  '--z-bottom-nav': Z_INDEX.BOTTOM_NAV.toString(),
-  '--z-header': Z_INDEX.HEADER.toString(),
-  '--z-sticky-element': Z_INDEX.STICKY_ELEMENT.toString(),
-  '--z-chat-input': Z_INDEX.CHAT_INPUT.toString(),
-  '--z-chat-toast': Z_INDEX.CHAT_TOAST.toString(),
-  '--z-member-position': Z_INDEX.MEMBER_POSITION.toString(),
-  '--z-member-position-hover': Z_INDEX.MEMBER_POSITION_HOVER.toString(),
-  '--z-member-position-active': Z_INDEX.MEMBER_POSITION_ACTIVE.toString(),
-  '--z-modal-backdrop': Z_INDEX.MODAL_BACKDROP.toString(),
-  '--z-modal-content': Z_INDEX.MODAL_CONTENT.toString(),
-  '--z-profile-popup': Z_INDEX.PROFILE_POPUP.toString(),
-  '--z-notification': Z_INDEX.NOTIFICATION.toString(),
-  '--z-toast': Z_INDEX.TOAST.toString(),
-  '--z-alert': Z_INDEX.ALERT.toString(),
-  '--z-debug': Z_INDEX.DEBUG.toString(),
-  '--z-message-bubble': Z_INDEX.MESSAGE_BUBBLE.toString(),
-  '--z-critical-overlay': Z_INDEX.CRITICAL_OVERLAY.toString(),
-  '--z-emergency': Z_INDEX.EMERGENCY.toString()
-} as const;
+export const Z_INDEX_CSS_VARS = Object.entries(Z_INDEX).reduce(
+  (acc, [key, value]) => {
+    const cssVarName = `--z-${key.toLowerCase().replace(/_/g, "-")}`;
+    acc[cssVarName] = value.toString();
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // Utility functions
-export const getZIndex = (layer: keyof typeof Z_INDEX): number => {
+export const getZIndex = (layer: ZIndexKey): number => {
   return Z_INDEX[layer];
 };
 
-export const getZIndexStyle = (layer: keyof typeof Z_INDEX): { zIndex: number } => {
+export const getZIndexStyle = (layer: ZIndexKey): React.CSSProperties => {
   return { zIndex: Z_INDEX[layer] };
 };
 
-export const getZIndexClass = (layer: keyof typeof Z_INDEX): string => {
+// For Tailwind CSS arbitrary values
+export const getZIndexClass = (layer: ZIndexKey): string => {
   return `z-[${Z_INDEX[layer]}]`;
+};
+
+// Apply all CSS variables to root element
+export const applyZIndexCSSVars = (): void => {
+  if (typeof document !== "undefined") {
+    const root = document.documentElement;
+    Object.entries(Z_INDEX_CSS_VARS).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+  }
+};
+
+// Check for z-index conflicts in development
+export const checkZIndexConflicts = (): void => {
+  if (process.env.NODE_ENV === "development") {
+    const values = Object.values(Z_INDEX);
+    const duplicates = values.filter((value, index) =>
+      values.indexOf(value) !== index
+    );
+
+    if (duplicates.length > 0) {
+      console.warn("Z-Index conflicts detected:", duplicates);
+
+      // Find which keys have duplicate values
+      const conflicts = Object.entries(Z_INDEX)
+        .filter(([, value]) => duplicates.includes(value))
+        .reduce((acc, [key, value]) => {
+          if (!acc[value]) acc[value] = [];
+          acc[value].push(key);
+          return acc;
+        }, {} as Record<number, string[]>);
+
+      console.warn("Conflicting keys:", conflicts);
+    }
+  }
 };

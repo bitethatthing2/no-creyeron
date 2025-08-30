@@ -1,23 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { supabase } from '@/lib/supabase'; // Use shared instance
+import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/database.types';
 
 /**
- * Notification interface matching your fetch_notifications function return type
+ * Notification type from database
  */
-interface Notification {
-  id: string;
-  recipient_id: string;
-  type: string;
-  title: string;
-  message: string;
-  link: string | null;
-  read: boolean;
-  data: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
-}
+type Notification = Database['public']['Tables']['notifications']['Row'];
 
 /**
  * Notification context interface
@@ -28,6 +18,7 @@ interface NotificationContextType {
   isLoading: boolean;
   refreshNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   dismissNotification: (id: string) => Promise<void>;
   dismissAllNotifications: () => Promise<void>;
 }
@@ -42,14 +33,13 @@ const NotificationContext = React.createContext<NotificationContextType | null>(
  */
 interface NotificationProviderProps {
   children: React.ReactNode;
-  recipientId?: string;
 }
 
 /**
  * Notification provider component
  * Provides notification state and actions to child components
  */
-export function NotificationProvider({ children, recipientId }: NotificationProviderProps) {
+export function NotificationProvider({ children }: NotificationProviderProps) {
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -57,18 +47,41 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   const fetchNotifications = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('fetch_notifications', {
-        p_user_id: null,
-        p_limit: 50,
-        p_offset: 0
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No authenticated user for notifications');
+        setNotifications([]);
+        return;
+      }
+
+      // Get the public user profile
+      const { data: publicUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (!publicUser) {
+        console.log('No public user profile found');
+        setNotifications([]);
+        return;
+      }
+
+      // Fetch notifications directly from the table
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('recipient_id', publicUser.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) {
         console.error('Error fetching notifications:', error);
         return;
       }
 
-      setNotifications((data as unknown as Notification[]) || []);
+      setNotifications(data || []);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
     } finally {
@@ -79,51 +92,161 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   // Mark notification as read
   const markAsRead = React.useCallback(async (notificationId: string) => {
     try {
-      const { error } = await supabase.rpc('mark_notification_read', {
-        p_notification_id: notificationId
-      });
+      // First, call the RPC function if it exists
+      let rpcError: unknown = null;
+      try {
+        const { error } = await supabase.rpc('mark_notification_read', {
+          notification_id: notificationId
+        });
+        rpcError = error;
+      } catch (e) {
+        rpcError = e;
+      }
 
-      if (error) {
-        console.error('Failed to mark notification as read:', error);
-        return;
+      if (rpcError) {
+        // Try direct update as fallback
+        const { error: updateError } = await supabase
+          .from('notifications')
+          .update({
+            is_read: true,
+            read_at: new Date().toISOString(),
+            status: 'read',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', notificationId);
+
+        if (updateError) {
+          console.error('Failed to mark notification as read:', updateError);
+          return;
+        }
       }
 
       // Update local state
       setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        prev.map(n => n.id === notificationId 
+          ? { 
+              ...n, 
+              is_read: true, 
+              read_at: new Date().toISOString(),
+              status: 'read' 
+            } 
+          : n
+        )
       );
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
     }
   }, []);
 
-  // Dismiss notification (same as mark as read)
-  const dismissNotification = React.useCallback(async (notificationId: string) => {
-    await markAsRead(notificationId);
-  }, [markAsRead]);
-
   // Mark all notifications as read
-  const dismissAllNotifications = React.useCallback(async () => {
+  const markAllAsRead = React.useCallback(async () => {
     try {
-      // Mark all unread notifications as read one by one
-      const unreadNotifications = notifications.filter(n => !n.read);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      for (const notification of unreadNotifications) {
-        const { error } = await supabase.rpc('mark_notification_read', {
-          p_notification_id: notification.id
-        });
-        
-        if (error) {
-          console.error('Failed to mark notification as read:', error);
-        }
+      if (!user) return;
+
+      // Get the public user profile
+      const { data: publicUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (!publicUser) return;
+
+      // Update all unread notifications
+      const { error } = await supabase
+        .from('notifications')
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString(),
+          status: 'read',
+          updated_at: new Date().toISOString()
+        })
+        .eq('recipient_id', publicUser.id)
+        .eq('is_read', false);
+
+      if (error) {
+        console.error('Failed to mark all notifications as read:', error);
+        return;
       }
 
       // Update local state
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ 
+        ...n, 
+        is_read: true,
+        read_at: new Date().toISOString(),
+        status: 'read'
+      })));
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
+  }, []);
+
+  // Dismiss notification (mark as dismissed status)
+  const dismissNotification = React.useCallback(async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({
+          status: 'dismissed',
+          is_read: true,
+          read_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Failed to dismiss notification:', error);
+        return;
+      }
+
+      // Remove from local state
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (err) {
+      console.error('Failed to dismiss notification:', err);
+    }
+  }, []);
+
+  // Dismiss all notifications
+  const dismissAllNotifications = React.useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      // Get the public user profile
+      const { data: publicUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (!publicUser) return;
+
+      // Update all notifications to dismissed
+      const { error } = await supabase
+        .from('notifications')
+        .update({
+          status: 'dismissed',
+          is_read: true,
+          read_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('recipient_id', publicUser.id)
+        .in('status', ['unread', 'read']);
+
+      if (error) {
+        console.error('Failed to dismiss all notifications:', error);
+        return;
+      }
+
+      // Clear local state
+      setNotifications([]);
     } catch (err) {
       console.error('Failed to dismiss all notifications:', err);
     }
-  }, [notifications]);
+  }, []);
 
   // Refresh notifications
   const refreshNotifications = React.useCallback(async () => {
@@ -131,12 +254,73 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
   }, [fetchNotifications]);
 
   // Calculate unread count
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = React.useMemo(() => {
+    return notifications.filter(n => !n.is_read && n.status === 'unread').length;
+  }, [notifications]);
 
   // Load notifications on mount
   React.useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Set up real-time subscription for notifications
+  React.useEffect(() => {
+    let subscription: ReturnType<typeof supabase['channel']> | null = null;
+
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      // Get the public user profile
+      const { data: publicUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (!publicUser) return;
+
+      // Subscribe to changes in notifications table
+      subscription = supabase
+        .channel('notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `recipient_id=eq.${publicUser.id}`
+          },
+          (payload) => {
+            console.log('Notification change:', payload);
+            
+            if (payload.eventType === 'INSERT') {
+              // Add new notification to the beginning of the list
+              setNotifications(prev => [payload.new as Notification, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              // Update existing notification
+              setNotifications(prev => 
+                prev.map(n => n.id === payload.new.id ? payload.new as Notification : n)
+              );
+            } else if (payload.eventType === 'DELETE') {
+              // Remove deleted notification
+              setNotifications(prev => prev.filter(n => n.id !== payload.old.id));
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    setupSubscription();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, []);
 
   // Context value
   const contextValue: NotificationContextType = {
@@ -145,6 +329,7 @@ export function NotificationProvider({ children, recipientId }: NotificationProv
     isLoading,
     refreshNotifications,
     markAsRead,
+    markAllAsRead,
     dismissNotification,
     dismissAllNotifications,
   };
@@ -175,6 +360,47 @@ export function useNotifications() {
 export function useSafeNotifications() {
   const context = React.useContext(NotificationContext);
   return context;
+}
+
+// Helper function to create a notification
+export async function createNotification(
+  recipientId: string,
+  notification: {
+    type: string;
+    title?: string;
+    message: string;
+    action_url?: string;
+    content_type?: string;
+    content_id?: string;
+    related_user_id?: string;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+    data?: Record<string, unknown>;
+  }
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        recipient_id: recipientId,
+        type: notification.type,
+        title: notification.title || null,
+        message: notification.message,
+        action_url: notification.action_url || null,
+        content_type: notification.content_type || null,
+        content_id: notification.content_id || null,
+        related_user_id: notification.related_user_id || null,
+        priority: notification.priority || 'normal',
+        data: notification.data || {},
+        status: 'unread',
+        is_read: false,
+      });
+
+    if (error) {
+      console.error('Failed to create notification:', error);
+    }
+  } catch (err) {
+    console.error('Error creating notification:', err);
+  }
 }
 
 export default NotificationProvider;
