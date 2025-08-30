@@ -92,7 +92,7 @@ export function useTypingIndicators(
       delete newState[userId];
       return newState;
     });
-    debugLog.info("User stopped typing", { userId, conversationId });
+    debugLog.messaging("User stopped typing", { conversationId });
   }, [conversationId, clearUserTypingTimeout]);
 
   // Add or update user in typing state
@@ -112,21 +112,53 @@ export function useTypingIndicators(
     }, timeoutMs);
 
     typingTimeoutRef.current.set(user.userId, timeout);
-    debugLog.info("User started typing", {
-      userId: user.userId,
-      displayName: user.displayName,
+    debugLog.messaging("User started typing", {
       conversationId,
     });
   }, [conversationId, timeoutMs, clearUserTypingTimeout, removeUserFromTyping]);
 
+  // Internal function to actually send the typing indicator
+  const sendTypingIndicator = React.useCallback((isTyping: boolean) => {
+    if (!channelRef.current || !currentUser?.id) return;
+
+    const payload: TypingUser = {
+      userId: currentUser.id,
+      displayName: currentUser.displayName ||
+        `${currentUser.firstName || ""} ${currentUser.lastName || ""}`
+          .trim() ||
+        currentUser.username ||
+        "User",
+      username: currentUser.username || undefined,
+      avatarUrl: currentUser.avatarUrl || currentUser.profileImageUrl ||
+        undefined,
+      timestamp: Date.now(),
+    };
+
+    channelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: {
+        ...payload,
+        isTyping,
+      },
+    }).then(() => {
+      lastTypingSentRef.current = Date.now();
+      debugLog.success("Sent typing indicator", { isTyping, conversationId });
+    }).catch((error) => {
+      debugLog.error("Failed to send typing indicator", error, {});
+    });
+  }, [currentUser, conversationId]);
+
   // Send typing indicator
   const sendTyping = React.useCallback((isTyping: boolean) => {
     if (!channelRef.current || !conversationId || !currentUser?.id) {
-      debugLog.warning("Cannot send typing indicator", {
-        hasChannel: !!channelRef.current,
-        conversationId,
-        userId: currentUser?.id,
-      });
+      debugLog.error(
+        "Cannot send typing indicator",
+        new Error("Cannot send typing indicator"),
+        {
+          userId: currentUser?.id,
+        },
+      );
       return;
     }
 
@@ -159,40 +191,7 @@ export function useTypingIndicators(
       // Always send stop typing immediately
       sendTypingIndicator(false);
     }
-  }, [conversationId, currentUser, debounceMs]);
-
-  // Internal function to actually send the typing indicator
-  const sendTypingIndicator = React.useCallback((isTyping: boolean) => {
-    if (!channelRef.current || !currentUser?.id) return;
-
-    const payload: TypingUser = {
-      userId: currentUser.id,
-      displayName: currentUser.display_name ||
-        `${currentUser.first_name || ""} ${currentUser.last_name || ""}`
-          .trim() ||
-        currentUser.username ||
-        "User",
-      username: currentUser.username,
-      avatarUrl: currentUser.avatar_url || currentUser.profile_image_url,
-      timestamp: Date.now(),
-    };
-
-    channelRef.current.send({
-      type: "broadcast",
-      event: "typing",
-      payload: {
-        ...payload,
-        isTyping,
-      },
-    }).then(() => {
-      lastTypingSentRef.current = Date.now();
-      debugLog.success("Sent typing indicator", { isTyping, conversationId });
-    }).catch((error) => {
-      debugLog.error("Failed to send typing indicator", error, {
-        conversationId,
-      });
-    });
-  }, [currentUser, conversationId]);
+  }, [conversationId, currentUser, debounceMs, sendTypingIndicator]);
 
   // Clear typing state for current user
   const clearTyping = React.useCallback(() => {
@@ -207,9 +206,16 @@ export function useTypingIndicators(
   // Set up broadcast channel
   React.useEffect(() => {
     if (!conversationId) {
-      debugLog.warning("No conversation ID provided for typing indicators");
+      debugLog.error(
+        "No conversation ID provided for typing indicators",
+        new Error("No conversation ID"),
+        {},
+      );
       return;
     }
+
+    // Copy ref value to local variable to avoid stale closure issues in cleanup
+    const initialTimeouts = new Map(typingTimeoutRef.current);
 
     const startTime = performanceLog.start("setupTypingChannel");
 
@@ -266,12 +272,14 @@ export function useTypingIndicators(
         debugLog.error(
           "Failed to connect to typing indicators",
           new Error("Channel subscription failed"),
-          { conversationId, status },
+          {},
         );
       } else if (status === "TIMED_OUT") {
-        debugLog.warning("Typing indicator channel timed out", {
-          conversationId,
-        });
+        debugLog.error(
+          "Typing indicator channel timed out",
+          new Error("Channel timed out"),
+          {},
+        );
       }
     });
 
@@ -279,9 +287,9 @@ export function useTypingIndicators(
 
     // Cleanup function
     return () => {
-      // Clear all timeouts
-      typingTimeoutRef.current.forEach((timeout) => clearTimeout(timeout));
-      typingTimeoutRef.current.clear();
+      // Use the local copy of timeouts to avoid stale closure issues
+      initialTimeouts.forEach((timeout) => clearTimeout(timeout));
+      initialTimeouts.clear();
 
       // Clear debounce timeout
       if (typingDebounceRef.current) {
@@ -291,7 +299,19 @@ export function useTypingIndicators(
 
       // Send stop typing if we were typing
       if (isTypingRef.current && currentUser?.id) {
-        sendTypingIndicator(false);
+        // Direct send without using sendTypingIndicator to avoid dependency issues
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "typing",
+            payload: {
+              userId: currentUser.id,
+              displayName: currentUser.displayName || "User",
+              isTyping: false,
+              timestamp: Date.now(),
+            },
+          });
+        }
       }
 
       // Unsubscribe from channel
@@ -303,7 +323,7 @@ export function useTypingIndicators(
       // Clear state
       setTypingState({});
 
-      debugLog.info("Cleaned up typing indicators", { conversationId });
+      debugLog.messaging("Cleaned up typing indicators", { conversationId });
     };
   }, [
     conversationId,
@@ -311,7 +331,7 @@ export function useTypingIndicators(
     addUserToTyping,
     removeUserFromTyping,
     currentUser?.id,
-    sendTypingIndicator,
+    currentUser?.displayName,
   ]);
 
   // Auto-clear typing on unmount

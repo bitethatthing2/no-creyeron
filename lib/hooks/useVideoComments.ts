@@ -650,30 +650,23 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
           filter: `video_id=eq.${videoId}`,
         },
         (payload: RealtimePostgresChangesPayload<VideoComment>) => {
+          const updatedComment = payload.new;
+          const updatedCommentId = "id" in updatedComment ? updatedComment.id : null;
+          
+          if (!updatedCommentId) return;
+          
           setState((prev) => ({
             ...prev,
             comments: prev.comments.map((comment) => {
-              if (
-                comment &&
-                typeof comment === "object" &&
-                "id" in comment &&
-                typeof (comment as VideoComment).id === "string" &&
-                (comment as VideoComment).id === payload.new.id
-              ) {
-                return { ...(comment as VideoComment), ...payload.new };
+              if (comment.id === updatedCommentId) {
+                return { ...comment, ...updatedComment };
               }
-              if (
-                comment && typeof comment === "object" &&
-                "replies" in comment &&
-                Array.isArray((comment as VideoComment).replies)
-              ) {
+              if (comment.replies) {
                 return {
-                  ...(comment as VideoComment),
-                  replies: (comment as VideoComment).replies!.map((reply) =>
-                    reply && typeof reply === "object" && "id" in reply &&
-                      typeof reply.id === "string" &&
-                      reply.id === payload.new.id
-                      ? { ...(reply as VideoComment), ...payload.new }
+                  ...comment,
+                  replies: comment.replies.map((reply) =>
+                    reply.id === updatedCommentId
+                      ? { ...reply, ...updatedComment }
                       : reply
                   ),
                 };
