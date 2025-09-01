@@ -52,7 +52,8 @@ function SocialFeedContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLikes, setUserLikes] = useState(new Set<string>());
-  const hasMore = false; // Pagination not currently supported
+  const [hasMore, setHasMore] = useState(true);
+  const [lastCreatedAt, setLastCreatedAt] = useState<string | null>(null);
 
   // Modal states
   const [showPostCreator, setShowPostCreator] = useState(false);
@@ -73,52 +74,54 @@ function SocialFeedContent() {
 
   // Load feed from service
   const loadFeed = useCallback(async (loadMore = false) => {
-    console.log('[FEED] loadFeed called:', { authLoading, isAuthenticated, loadMore });
-    
-    if (authLoading) {
-      console.log('[FEED] Auth still loading...');
-      return;
-    }
-    
-    if (!isAuthenticated) {
-      console.log('[FEED] Not authenticated, skipping feed load');
+    if (authLoading || !isAuthenticated) {
       return;
     }
 
     try {
       if (!loadMore) {
         setLoading(true);
-        console.log('[FEED] Starting fresh feed load...');
       }
       setError(null);
-      
-      console.log('[FEED] Fetching feed from content_posts directly...');
-      
-      // Get current user session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('[FEED] Session status:', session ? 'Found' : 'None', session?.user?.id || 'No user');
-      
-      if (!session) {
-        console.warn('[FEED] No authenticated session, cannot access feed');
-        setError('Authentication required to load feed');
-        return;
-      }
 
-      // Query content_posts directly with user data
-      const { data: posts, error: postsError } = await supabase
+      // Query content_posts directly with only needed fields
+      let query = supabase
         .from('content_posts')
         .select(`
-          *,
-          user:users!user_id(*)
+          id,
+          user_id,
+          caption,
+          video_url,
+          thumbnail_url,
+          content_type,
+          likes_count,
+          comments_count,
+          shares_count,
+          views_count,
+          created_at,
+          is_active,
+          user:users!user_id(
+            id,
+            username,
+            display_name,
+            first_name,
+            last_name,
+            avatar_url,
+            profile_image_url
+          )
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(10);
 
-      console.log('[FEED] Direct query result:', { posts, postsError });
+      // Add pagination for load more
+      if (loadMore && lastCreatedAt) {
+        query = query.lt('created_at', lastCreatedAt);
+      }
+
+      const { data: posts, error: postsError } = await query;
 
       if (postsError) {
-        console.error('[FEED] Database query error:', postsError);
         throw new Error(`Database query failed: ${postsError.message}`);
       }
 
@@ -126,109 +129,86 @@ function SocialFeedContent() {
       const transformedVideos: FeedVideoItem[] = (posts || []).map((post) => 
         transformToFeedVideoItem(post)
       );
-      console.log('[FEED] Transformed videos from direct query:', transformedVideos);
+      
+      // Update hasMore based on returned count
+      setHasMore(transformedVideos.length === 10);
+      
+      // Update lastCreatedAt for pagination
+      if (transformedVideos.length > 0) {
+        const lastPost = transformedVideos[transformedVideos.length - 1];
+        setLastCreatedAt(lastPost.created_at);
+      }
       
       if (loadMore) {
-        // If service doesn't support pagination, don't add duplicates
+        // Add new videos to existing ones
         const existingIds = new Set(videos.map(v => v.id));
         const newVideos = transformedVideos.filter(v => !existingIds.has(v.id));
         setVideos(prev => [...prev, ...newVideos]);
-        console.log(`[FEED] Added ${newVideos.length} new videos (total: ${videos.length + newVideos.length})`);
       } else {
+        // Replace videos for fresh load
         setVideos(transformedVideos);
-        console.log(`[FEED] Set ${transformedVideos.length} videos`);
       }
       
     } catch (err) {
       console.error('[FEED] Error loading videos:', err);
-      console.error('[FEED] Error details:', err instanceof Error ? err.stack : err);
       setError(`Failed to load videos: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
-      console.log('[FEED] Loading finished');
     }
   }, [isAuthenticated, authLoading]);
 
-  // Auth redirect check
+  // Auth redirect and initial load
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      console.log('[FEED] User not authenticated, redirecting to login...');
+    if (authLoading) return;
+    
+    if (!isAuthenticated) {
       router.push('/login');
       return;
     }
-  }, [authLoading, isAuthenticated, router]);
-
-  // Initial load
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      console.log('[FEED] User authenticated, loading feed...');
-      loadFeed(false);
-    }
+    
+    // Load feed immediately when authenticated
+    loadFeed(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, router]);
 
   // Handle pagination
   const handleLoadMore = useCallback(async (): Promise<TikTokVideoItem[]> => {
-    // Since pagination might not be supported, return empty array
-    return [];
-  }, []);
+    if (!hasMore) return [];
+    
+    try {
+      await loadFeed(true);
+      return []; // Return empty since loadFeed handles the state
+    } catch (error) {
+      console.error('Error loading more videos:', error);
+      return [];
+    }
+  }, [hasMore, loadFeed]);
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions (only for first 5 videos to reduce load)
   useEffect(() => {
-    const videoIds = videos.map(v => v.id);
+    const videoIds = videos.slice(0, 5).map(v => v.id);
     if (videoIds.length === 0) return;
     
-    // Subscribe to comment count updates
+    // Subscribe to comment count updates for visible posts only
     const channel = supabase
       .channel('feed-updates')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'content_comments',
           filter: `video_id=in.(${videoIds.join(',')})`
         },
         (payload) => {
-          if (payload.eventType === 'INSERT' && payload.new) {
+          if (payload.new) {
             const newComment = payload.new as CommentPayload;
             setVideos(prev => prev.map(video => 
               video.id === newComment.video_id 
                 ? { ...video, comments_count: video.comments_count + 1 }
                 : video
             ));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            const oldComment = payload.old as CommentPayload;
-            setVideos(prev => prev.map(video => 
-              video.id === oldComment.video_id 
-                ? { ...video, comments_count: Math.max(0, video.comments_count - 1) }
-                : video
-            ));
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'content_posts',
-          filter: `id=in.(${videoIds.join(',')})`
-        },
-        (payload) => {
-          // Update video stats when content_posts is updated
-          const updatedPost = payload.new as PostUpdatePayload;
-          setVideos(prev => prev.map(video => 
-            video.id === updatedPost.id 
-              ? {
-                  ...video,
-                  likes_count: updatedPost.likes_count ?? updatedPost.like_count ?? video.likes_count,
-                  comments_count: updatedPost.comments_count ?? updatedPost.comment_count ?? video.comments_count,
-                  views_count: updatedPost.views_count ?? updatedPost.view_count ?? video.views_count,
-                  shares_count: updatedPost.shares_count ?? updatedPost.share_count ?? video.shares_count,
-                }
-              : video
-          ));
         }
       )
       .subscribe();
