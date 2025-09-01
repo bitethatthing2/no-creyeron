@@ -9,7 +9,8 @@ import { transformToFeedVideoItem } from '@/lib/services/social/types';
 import TikTokStyleFeed from '@/components/social/feed/TikTokStyleFeed';
 import { PostCreator } from '@/components/social/PostCreator';
 import ShareModal from '@/components/social/ShareModal';
-import VideoComments from '@/components/social/VideoComments';
+import VideoComments from '@/components/social/VideoCommentsOptimized';
+import CameraTest from '@/components/CameraTest';
 import { Loader2, Sparkles } from 'lucide-react';
 import type { SocialVideoItem as TikTokVideoItem } from '@/components/social/feed/TikTokStyleFeed';
 
@@ -63,6 +64,7 @@ export default function OptimizedSocialFeedPage() {
   } | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const [showCameraTest, setShowCameraTest] = useState(false);
 
   // Debug showPostCreator state changes
   useEffect(() => {
@@ -452,6 +454,12 @@ export default function OptimizedSocialFeedPage() {
             >
               🔄 Refresh Feed
             </button>
+            <button 
+              onClick={() => setShowCameraTest(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm transition-colors"
+            >
+              🎥 Test Camera
+            </button>
           </div>
         </div>
       </div>
@@ -518,6 +526,8 @@ export default function OptimizedSocialFeedPage() {
           }}
         />
       )}
+
+      {showCameraTest && <CameraTest />}
     </>
   );
 }

@@ -269,7 +269,7 @@ export class WolfpackFeedServiceEnhanced {
     userId?: string,
   ): Promise<SharePostResponse> {
     try {
-      const shareUrl = `${window.location.origin}/wolfpack/video/${postId}`;
+      const shareUrl = `${window.location.origin}/social/feed?videoId=${postId}`;
 
       // Track share if user is authenticated
       if (userId) {

@@ -106,7 +106,7 @@ export function PostCreator({
       setStep('camera');
       setCaption('');
       resetRecording();
-      // Auto-start camera when modal opens
+      // Auto-start camera when modal opens - don't include startCamera in deps to avoid loop
       startCamera().catch((err) => {
         console.error('[PostCreator] Failed to start camera:', err);
       });
@@ -115,7 +115,8 @@ export function PostCreator({
       stopCamera();
       resetRecording();
     }
-  }, [isOpen, stopCamera, resetRecording, startCamera]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, stopCamera, resetRecording]); // Removed startCamera from deps to prevent infinite loop
 
   /**
    * Update step when media is captured

@@ -2,10 +2,13 @@
 
 import React from 'react';
 
+// Corrected interface to match your database schema
 interface Reaction {
   id: string;
-  emoji: string;
+  reaction: string;  // Changed from 'emoji' to match DB column name
   user_id: string;
+  message_id?: string;  // Optional since it's passed separately
+  created_at?: string;  // Optional for potential display use
 }
 
 interface ReactionData {
@@ -42,13 +45,16 @@ export function ReactionButtons({
   // Group reactions by emoji and calculate user interaction data
   const groupedReactions: Record<string, ReactionData> = reactions.reduce((acc, reaction) => {
     const isCurrentUserReaction = reaction.user_id === currentUserId;
-    if (!acc[reaction.emoji]) {
-      acc[reaction.emoji] = { count: 0, userReacted: false };
+    // Use 'reaction' field instead of 'emoji'
+    const emoji = reaction.reaction;
+    
+    if (!acc[emoji]) {
+      acc[emoji] = { count: 0, userReacted: false };
     }
-    acc[reaction.emoji].count += 1;
+    acc[emoji].count += 1;
     if (isCurrentUserReaction) {
-      acc[reaction.emoji].userReacted = true;
-      acc[reaction.emoji].reactionId = reaction.id;
+      acc[emoji].userReacted = true;
+      acc[emoji].reactionId = reaction.id;
     }
     return acc;
   }, {} as Record<string, ReactionData>);

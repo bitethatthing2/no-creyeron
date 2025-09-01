@@ -163,7 +163,7 @@ export default function UserProfilePage() {
 
   const handlePostClick = (postId: string) => {
     // Navigate to the TikTok-style feed focused on this video
-    router.push(`/wolfpack/feed?videoId=${postId}`);
+    router.push(`/social/feed?videoId=${postId}`);
   };
 
   if (loading) {
@@ -180,7 +180,7 @@ export default function UserProfilePage() {
         <div className="text-center">
           <h2 className="text-xl font-bold mb-4">{error || 'Profile not found'}</h2>
           <button 
-            onClick={() => router.push('/wolfpack/feed')}
+            onClick={() => router.push('/social/feed')}
             className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
           >
             Go Back
@@ -205,7 +205,7 @@ export default function UserProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
         <button 
-          onClick={() => router.push('/wolfpack/feed')}
+          onClick={() => router.push('/social/feed')}
           className="flex items-center gap-2 text-white hover:text-red-400"
         >
           <ArrowLeft className="h-5 w-5" />

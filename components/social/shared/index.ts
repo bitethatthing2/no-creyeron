@@ -1,9 +1,12 @@
-// components/chat/index.ts
+"use client"; // ADD THIS LINE - Required when re-exporting client components
 
 // Export all chat-related components
 export { MessageItem } from "./MessageItem";
 export { ChatInput } from "./ChatInput";
 export { ReactionButtons } from "./ReactionButtons";
+
+// Type exports (if needed)
+export type { MessageItemProps, MessageWithDetails } from "./MessageItem";
 
 // If you have other chat components, add them here:
 // export { ChatHeader } from './ChatHeader';

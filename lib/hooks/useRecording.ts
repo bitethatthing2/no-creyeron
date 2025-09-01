@@ -41,9 +41,24 @@ export function useRecording() {
 
       chunksRef.current = [];
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9' // Fallback to vp8 if needed
-      });
+      // Try different mimeTypes in order of preference
+      let options: MediaRecorderOptions | undefined;
+      const mimeTypes = [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4',
+        '' // No specific mimeType (browser default)
+      ];
+
+      for (const mimeType of mimeTypes) {
+        if (!mimeType || MediaRecorder.isTypeSupported(mimeType)) {
+          options = mimeType ? { mimeType } : undefined;
+          break;
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options);
 
       mediaRecorderRef.current = mediaRecorder;
 
@@ -54,7 +69,8 @@ export function useRecording() {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        const detectedMimeType = mediaRecorder.mimeType || 'video/webm';
+        const blob = new Blob(chunksRef.current, { type: detectedMimeType });
         setState(prev => ({
           ...prev,
           isRecording: false,

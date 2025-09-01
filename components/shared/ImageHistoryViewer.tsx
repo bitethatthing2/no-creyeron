@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Camera, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadImage } from '@/lib/storage/uploadHelpers';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface ProfileImageUploaderProps {
   userId: string;

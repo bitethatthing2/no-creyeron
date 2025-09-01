@@ -66,21 +66,21 @@ self.addEventListener('notificationclick', function(event) {
   
   // Navigate to specific page based on notification type
   if (notificationData?.type === 'wolfpack_message') {
-    urlToOpen = '/wolfpack/feed';
+    urlToOpen = '/social/feed';
   } else if (notificationData?.type === 'order_update') {
     urlToOpen = '/orders';
   } else if (notificationData?.type === 'wolfpack_post') {
-    urlToOpen = '/wolfpack/feed';
+    urlToOpen = '/social/feed';
   } else if (notificationData?.type === 'wolfpack_like') {
-    urlToOpen = notificationData?.videoId ? `/wolfpack/video/${notificationData.videoId}` : '/wolfpack/feed';
+    urlToOpen = notificationData?.videoId ? `/social/feed?videoId=${notificationData.videoId}` : '/social/feed';
   } else if (notificationData?.type === 'wolfpack_comment') {
-    urlToOpen = notificationData?.videoId ? `/wolfpack/video/${notificationData.videoId}` : '/wolfpack/feed';
+    urlToOpen = notificationData?.videoId ? `/social/feed?videoId=${notificationData.videoId}` : '/social/feed';
   } else if (notificationData?.type === 'wolfpack_follow') {
-    urlToOpen = '/wolfpack/feed';
+    urlToOpen = '/social/feed';
   } else if (notificationData?.type === 'wolfpack_mention') {
-    urlToOpen = notificationData?.videoId ? `/wolfpack/video/${notificationData.videoId}` : '/wolfpack/feed';
+    urlToOpen = notificationData?.videoId ? `/social/feed?videoId=${notificationData.videoId}` : '/social/feed';
   } else if (notificationData?.type === 'wolfpack_new_video') {
-    urlToOpen = notificationData?.videoId ? `/wolfpack/video/${notificationData.videoId}` : '/wolfpack/feed';
+    urlToOpen = notificationData?.videoId ? `/social/feed?videoId=${notificationData.videoId}` : '/social/feed';
   } else if (notificationData?.link) {
     urlToOpen = notificationData.link;
   }
