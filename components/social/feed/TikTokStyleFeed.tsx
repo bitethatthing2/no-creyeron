@@ -699,7 +699,9 @@ export default function TikTokStyleFeed({
             setCurrentCommentVideo(null);
           }}
           initialCommentCount={loadedVideos.find(v => v.id === currentCommentVideo)?.comments_count || 0}
-          onCommentCountChange={handleCommentCountChange}
+          onCommentCountChange={(count: number) => {
+            handleCommentCountChange(currentCommentVideo, count);
+          }}
         />
       )}
 

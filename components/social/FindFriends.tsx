@@ -327,7 +327,7 @@ export default function FindFriends({ onCloseAction }: FindFriendsProps) {
                         (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : null) ||
                         user.username || 
                         'Anonymous User';
-    const avatarUrl = user.avatar_url || user.profile_image_url || '/icons/wolf-icon.png';
+    const avatarUrl = user.avatar_url || user.profile_image_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
     const isFollowing = user.is_following || followingMap.has(user.id);
     
     return (
@@ -342,7 +342,7 @@ export default function FindFriends({ onCloseAction }: FindFriendsProps) {
                 height={48}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/icons/wolf-icon.png';
+                  (e.target as HTMLImageElement).src = 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
                 }}
               />
             </div>
@@ -397,7 +397,7 @@ export default function FindFriends({ onCloseAction }: FindFriendsProps) {
           </button>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <Image
-              src="/icons/wolf-icon.png"
+              src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png"
               alt="Wolf"
               width={32}
               height={32}

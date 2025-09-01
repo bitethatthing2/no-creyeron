@@ -272,7 +272,7 @@ export async function GET() {
             conversation_type: conversation.conversation_type,
             name: conversation.name || "Unnamed Conversation",
             description: conversation.description,
-            avatar_url: conversation.avatar_url || "/icons/wolf-icon.png",
+            avatar_url: conversation.avatar_url || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
             last_message_at: lastMessage?.created_at ||
               conversation.last_message_at || null,
             last_message_preview: lastMessage?.content ||
@@ -339,7 +339,7 @@ export async function GET() {
                     display_name: displayName,
                     username: otherUser.username,
                     avatar_url: otherUser.avatar_url ||
-                      otherUser.profile_image_url || "/icons/wolf-icon.png",
+                      otherUser.profile_image_url || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
                     is_online: isOnline,
                   };
 
@@ -393,7 +393,7 @@ export async function GET() {
                     display_name: displayName,
                     username: user.username,
                     avatar_url: user.avatar_url || user.profile_image_url ||
-                      "/icons/wolf-icon.png",
+                      "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
                   };
                 })
                 .filter((p): p is NonNullable<typeof p> => p !== null);

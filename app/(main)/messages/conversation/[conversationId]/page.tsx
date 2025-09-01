@@ -206,7 +206,7 @@ export default function ConversationPage() {
           
           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800">
             <Image
-              src="/icons/wolf-icon.png"
+              src="https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png"
               alt={getDisplayName()}
               width={40}
               height={40}
@@ -254,7 +254,7 @@ export default function ConversationPage() {
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
                       {showAvatar ? (
                         <Image
-                          src={message.sender_avatar_url || '/icons/wolf-icon.png'}
+                          src={message.sender_avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png'}
                           alt={message.sender_display_name || 'User'}
                           width={32}
                           height={32}

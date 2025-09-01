@@ -402,7 +402,7 @@ export default function MessagesInboxPage() {
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">
                       <Image
-                        src={user.avatarUrl || user.avatar_url || '/icons/wolf-icon.png'}
+                        src={user.avatarUrl || user.avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png'}
                         alt={user.displayName || user.display_name || user.username || 'Wolf Pack Member'}
                         width={48}
                         height={48}
@@ -465,7 +465,7 @@ export default function MessagesInboxPage() {
           ) : (
             <div className="divide-y divide-gray-800">
               {filteredConversations.map((conversation) => {
-                const avatarUrl = conversation.other_user_avatar || conversation.avatar_url || '/icons/wolf-icon.png';
+                const avatarUrl = conversation.other_user_avatar || conversation.avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
                 const lastMessage = conversation.last_message_preview || conversation.last_message || '';
                 const lastMessageTime = conversation.last_message_at || conversation.last_message_time;
                 const isOnline = conversation.other_user_is_online || conversation.is_online || false;

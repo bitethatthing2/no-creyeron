@@ -191,7 +191,7 @@ export default function UserProfilePage() {
   }
 
   const displayName = profile.display_name || profile.username || `${profile.first_name} ${profile.last_name}`.trim() || 'Anonymous';
-  const avatarUrl = profile.avatar_url || profile.profile_image_url || '/icons/wolf-icon.png';
+  const avatarUrl = profile.avatar_url || profile.profile_image_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
 
   // Debug logging for edit button visibility
   console.log('Profile page debug:', {

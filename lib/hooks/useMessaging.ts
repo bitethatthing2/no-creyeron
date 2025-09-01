@@ -382,7 +382,7 @@ async function showBrowserNotification(
   if (Notification.permission === "granted") {
     const notif = new Notification(notification.title, {
       body: notification.body,
-      icon: notification.icon || "/icons/wolf-icon.png",
+      icon: notification.icon || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
       badge: notification.badge || "/icons/badge.png",
       tag: notification.data?.messageId || "message",
       data: notification.data,
@@ -572,7 +572,7 @@ export function useMessaging(): UseMessagingReturn {
         body: message.message_type === "text"
           ? message.content
           : `Sent a ${message.message_type}`,
-        icon: sender?.avatar_url || "/icons/wolf-icon.png",
+        icon: sender?.avatar_url || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
         sound: settings?.sound || "default",
         data: {
           conversationId: message.conversation_id,

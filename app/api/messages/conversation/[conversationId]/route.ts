@@ -332,7 +332,7 @@ export async function GET(request: NextRequest, { params }: Params) {
           status: msg.status,
           // Sender information
           sender_avatar_url: sender?.profile_image_url || sender?.avatar_url ||
-            "/icons/wolf-icon.png",
+            "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
           sender_display_name: senderDisplayName,
           sender_first_name: sender?.first_name || null,
           sender_last_name: sender?.last_name || null,
