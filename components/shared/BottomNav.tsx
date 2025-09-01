@@ -72,7 +72,7 @@ export const BottomNav = () => {
     if (canCheckout) {
       const items: NavItem[] = [
         { id: 'home', href: '/', icon: Home, label: 'Home' },
-        { id: 'wolfpack', href: '/wolfpack', icon: Shield, label: 'WOLFPACK' },
+        { id: 'social', href: '/social/feed', icon: Shield, label: 'SOCIAL' },
         { id: 'booking', href: '/book', icon: Calendar, label: 'Booking' },
       ];
 
@@ -92,7 +92,7 @@ export const BottomNav = () => {
     // If logged in but not Wolf Pack member, show join option
     if (user) {
       basicItems.push(
-        { id: 'join-pack', href: '/wolfpack', icon: Shield, label: 'Join the Pack' }
+        { id: 'join-social', href: '/social/feed', icon: Shield, label: 'Join Social' }
       );
     } else {
       // Only show login if NOT logged in
@@ -115,15 +115,15 @@ export const BottomNav = () => {
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.href;
     const Icon = item.icon;
-    const isJoinPack = item.id === 'join-pack';
+    const isJoinSocial = item.id === 'join-social';
     const isAdminItem = item.id === 'admin';
-    const isWolfpackItem = item.id === 'wolfpack';
+    const isSocialItem = item.id === 'social';
 
     const linkClasses = cn(
       "flex flex-col items-center justify-center p-2 rounded-md transition-all duration-200 min-w-0 flex-1 relative",
-      isWolfpackItem
+      isSocialItem
         ? "text-yellow-400 bg-gradient-to-r from-yellow-400/20 to-yellow-600/20 hover:from-yellow-400/30 hover:to-yellow-600/30 shadow-lg shadow-yellow-400/25"
-        : isJoinPack
+        : isJoinSocial
           ? "text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/25"
           : isAdminItem
             ? "text-white bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg shadow-red-500/25"
@@ -141,19 +141,19 @@ export const BottomNav = () => {
         <Icon className={cn(
           "h-5 w-5 transition-all duration-200",
           isActive && "drop-shadow-sm",
-          isWolfpackItem && "animate-pulse drop-shadow-lg",
-          isJoinPack && "animate-pulse",
+          isSocialItem && "animate-pulse drop-shadow-lg",
+          isJoinSocial && "animate-pulse",
           isAdminItem && "animate-pulse"
         )} />
         <span className={cn(
           "text-[10px] mt-1 font-medium",
           "truncate w-full text-center",
-          isWolfpackItem && "font-bold text-yellow-400",
-          (isJoinPack || isAdminItem) && "font-bold"
+          isSocialItem && "font-bold text-yellow-400",
+          (isJoinSocial || isAdminItem) && "font-bold"
         )}>
           {item.label}
         </span>
-        {isWolfpackItem && (
+        {isSocialItem && (
           <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
         )}
       </Link>
@@ -179,9 +179,9 @@ export const BottomNav = () => {
 
   // Hide BottomNav on chat pages, feed page, main page, and when content_comments are open
   const shouldHideBottomNav = pathname === '/' || 
-                             pathname.startsWith('/wolfpack/chat') || 
-                             pathname === '/wolfpack/feed' || 
-                             pathname.includes('/wolfpack/feed');
+                             pathname.startsWith('/social/chat') || 
+                             pathname === '/social/feed' || 
+                             pathname.includes('/social/feed');
   
   if (shouldHideBottomNav) {
     console.log('BottomNav hidden for pathname:', pathname);
@@ -189,7 +189,7 @@ export const BottomNav = () => {
   }
   
   // Debug: Log current pathname
-  if (pathname.includes('wolfpack')) {
+  if (pathname.includes('social')) {
     console.log('BottomNav showing for pathname:', pathname);
   }
 

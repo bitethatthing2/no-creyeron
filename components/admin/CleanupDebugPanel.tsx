@@ -23,7 +23,17 @@ export function CleanupDebugPanel() {
   const user = useUser();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [testResult, setTestResult] = useState<any>(null);
+  type TestResult = {
+    status: number;
+    statusText: string;
+    success: boolean;
+    elapsed?: string;
+    data?: unknown;
+    error?: string;
+    timestamp: string;
+  } | null;
+
+  const [testResult, setTestResult] = useState<TestResult>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [copied, setCopied] = useState(false);
 

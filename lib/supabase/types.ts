@@ -7,1597 +7,1885 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)";
+  };
   public: {
     Tables: {
-      users: {
+      app_config: {
         Row: {
-          id: string;
-          email: string;
-          first_name: string | null;
-          last_name: string | null;
+          created_at: string | null;
+          encrypted: boolean | null;
+          key: string;
+          updated_at: string | null;
+          value: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          encrypted?: boolean | null;
+          key: string;
+          updated_at?: string | null;
+          value?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          encrypted?: boolean | null;
+          key?: string;
+          updated_at?: string | null;
+          value?: string | null;
+        };
+        Relationships: [];
+      };
+      chat_conversations: {
+        Row: {
           avatar_url: string | null;
-          role: string | null;
-          location_id: string | null;
-          created_at: string;
-          updated_at: string;
-          permissions: Json | null;
-          last_login: string | null;
-          is_approved: boolean | null;
-          password_hash: string | null;
-          auth_id: string | null;
-          deleted_at: string | null;
-          sensitive_data_encrypted: Json | null;
-          status: string | null;
-          blocked_at: string | null;
-          blocked_by: string | null;
-          block_reason: string | null;
-          notes: string | null;
-          avatar_id: string | null;
-          wolfpack_status: string | null;
-          wolfpack_joined_at: string | null;
-          wolfpack_tier: string | null;
-          location_permissions_granted: boolean | null;
-          phone: string | null;
-          phone_verified: boolean | null;
-          privacy_settings: Json | null;
-          notification_preferences: Json | null;
-          session_id: string | null;
-          last_activity: string | null;
-          is_online: boolean | null;
-          display_name: string | null;
-          wolf_emoji: string | null;
-          bio: string | null;
-          favorite_drink: string | null;
-          vibe_status: string | null;
-          profile_pic_url: string | null;
-          instagram_handle: string | null;
-          favorite_song: string | null;
-          looking_for: string | null;
-          is_profile_visible: boolean | null;
-          profile_last_seen_at: string | null;
-          custom_avatar_id: string | null;
-          gender: string | null;
-          pronouns: string | null;
-          daily_customization: Json | null;
-          profile_image_url: string | null;
-          allow_messages: boolean | null;
-          favorite_bartender: string | null;
-          last_seen_at: string | null;
-          has_open_tab: boolean | null;
-          is_side_hustle: boolean | null;
-          card_on_file: boolean | null;
-          city: string | null;
-          state: string | null;
-          location_verified: boolean | null;
-          verified_region: string | null;
-          email_normalized: string | null;
-          full_name_normalized: string | null;
-          phone_number: string | null;
-          phone_normalized: string | null;
-          id_verified: boolean | null;
-          id_verification_method: string | null;
-          verified_by: string | null;
-          verified_at: string | null;
-          occupation: string | null;
-          loyalty_score: number | null;
-          leader_rank: string | null;
-          pack_badges: Json | null;
-          pack_achievements: Json | null;
-          wolfpack_bio: string | null;
-          wolfpack_interests: string[] | null;
-          wolfpack_skills: string[] | null;
-          wolfpack_availability_status: string | null;
-          last_location_update: string | null;
-          preferred_pack_activities: string[] | null;
-          wolfpack_social_links: Json | null;
-          username: string | null;
-          location: string | null;
-          business_account: boolean | null;
-          artist_account: boolean | null;
-          verified: boolean | null;
-          is_vip: boolean | null;
-          last_location_check: string | null;
-          location_accuracy: number | null;
-          last_known_lat: number | null;
-          last_known_lng: number | null;
-          location_verification_status: string | null;
-          location_verification_date: string | null;
-          location_verification_method: string | null;
-          location_report_count: number | null;
-          location_last_reported: string | null;
-          is_wolfpack_member: boolean | null;
-          website: string | null;
-        };
-        Insert: {
-          id?: string;
-          email: string;
-          first_name?: string | null;
-          last_name?: string | null;
-          avatar_url?: string | null;
-          role?: string | null;
-          location_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          permissions?: Json | null;
-          last_login?: string | null;
-          is_approved?: boolean | null;
-          password_hash?: string | null;
-          auth_id?: string | null;
-          deleted_at?: string | null;
-          sensitive_data_encrypted?: Json | null;
-          status?: string | null;
-          blocked_at?: string | null;
-          blocked_by?: string | null;
-          block_reason?: string | null;
-          notes?: string | null;
-          avatar_id?: string | null;
-          wolfpack_status?: string | null;
-          wolfpack_joined_at?: string | null;
-          wolfpack_tier?: string | null;
-          location_permissions_granted?: boolean | null;
-          phone?: string | null;
-          phone_verified?: boolean | null;
-          privacy_settings?: Json | null;
-          notification_preferences?: Json | null;
-          session_id?: string | null;
-          last_activity?: string | null;
-          is_online?: boolean | null;
-          display_name?: string | null;
-          wolf_emoji?: string | null;
-          bio?: string | null;
-          favorite_drink?: string | null;
-          vibe_status?: string | null;
-          profile_pic_url?: string | null;
-          instagram_handle?: string | null;
-          favorite_song?: string | null;
-          looking_for?: string | null;
-          is_profile_visible?: boolean | null;
-          profile_last_seen_at?: string | null;
-          custom_avatar_id?: string | null;
-          gender?: string | null;
-          pronouns?: string | null;
-          daily_customization?: Json | null;
-          profile_image_url?: string | null;
-          allow_messages?: boolean | null;
-          favorite_bartender?: string | null;
-          last_seen_at?: string | null;
-          has_open_tab?: boolean | null;
-          is_side_hustle?: boolean | null;
-          card_on_file?: boolean | null;
-          city?: string | null;
-          state?: string | null;
-          location_verified?: boolean | null;
-          verified_region?: string | null;
-          email_normalized?: string | null;
-          full_name_normalized?: string | null;
-          phone_number?: string | null;
-          phone_normalized?: string | null;
-          id_verified?: boolean | null;
-          id_verification_method?: string | null;
-          verified_by?: string | null;
-          verified_at?: string | null;
-          occupation?: string | null;
-          loyalty_score?: number | null;
-          leader_rank?: string | null;
-          pack_badges?: Json | null;
-          pack_achievements?: Json | null;
-          wolfpack_bio?: string | null;
-          wolfpack_interests?: string[] | null;
-          wolfpack_skills?: string[] | null;
-          wolfpack_availability_status?: string | null;
-          last_location_update?: string | null;
-          preferred_pack_activities?: string[] | null;
-          wolfpack_social_links?: Json | null;
-          username?: string | null;
-          location?: string | null;
-          business_account?: boolean | null;
-          artist_account?: boolean | null;
-          verified?: boolean | null;
-          is_vip?: boolean | null;
-          last_location_check?: string | null;
-          location_accuracy?: number | null;
-          last_known_lat?: number | null;
-          last_known_lng?: number | null;
-          location_verification_status?: string | null;
-          location_verification_date?: string | null;
-          location_verification_method?: string | null;
-          location_report_count?: number | null;
-          location_last_reported?: string | null;
-          is_wolfpack_member?: boolean | null;
-          website?: string | null;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          first_name?: string | null;
-          last_name?: string | null;
-          avatar_url?: string | null;
-          role?: string | null;
-          location_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          permissions?: Json | null;
-          last_login?: string | null;
-          is_approved?: boolean | null;
-          password_hash?: string | null;
-          auth_id?: string | null;
-          deleted_at?: string | null;
-          sensitive_data_encrypted?: Json | null;
-          status?: string | null;
-          blocked_at?: string | null;
-          blocked_by?: string | null;
-          block_reason?: string | null;
-          notes?: string | null;
-          avatar_id?: string | null;
-          wolfpack_status?: string | null;
-          wolfpack_joined_at?: string | null;
-          wolfpack_tier?: string | null;
-          location_permissions_granted?: boolean | null;
-          phone?: string | null;
-          phone_verified?: boolean | null;
-          privacy_settings?: Json | null;
-          notification_preferences?: Json | null;
-          session_id?: string | null;
-          last_activity?: string | null;
-          is_online?: boolean | null;
-          display_name?: string | null;
-          wolf_emoji?: string | null;
-          bio?: string | null;
-          favorite_drink?: string | null;
-          vibe_status?: string | null;
-          profile_pic_url?: string | null;
-          instagram_handle?: string | null;
-          favorite_song?: string | null;
-          looking_for?: string | null;
-          is_profile_visible?: boolean | null;
-          profile_last_seen_at?: string | null;
-          custom_avatar_id?: string | null;
-          gender?: string | null;
-          pronouns?: string | null;
-          daily_customization?: Json | null;
-          profile_image_url?: string | null;
-          allow_messages?: boolean | null;
-          favorite_bartender?: string | null;
-          last_seen_at?: string | null;
-          has_open_tab?: boolean | null;
-          is_side_hustle?: boolean | null;
-          card_on_file?: boolean | null;
-          city?: string | null;
-          state?: string | null;
-          location_verified?: boolean | null;
-          verified_region?: string | null;
-          email_normalized?: string | null;
-          full_name_normalized?: string | null;
-          phone_number?: string | null;
-          phone_normalized?: string | null;
-          id_verified?: boolean | null;
-          id_verification_method?: string | null;
-          verified_by?: string | null;
-          verified_at?: string | null;
-          occupation?: string | null;
-          loyalty_score?: number | null;
-          leader_rank?: string | null;
-          pack_badges?: Json | null;
-          pack_achievements?: Json | null;
-          wolfpack_bio?: string | null;
-          wolfpack_interests?: string[] | null;
-          wolfpack_skills?: string[] | null;
-          wolfpack_availability_status?: string | null;
-          last_location_update?: string | null;
-          preferred_pack_activities?: string[] | null;
-          wolfpack_social_links?: Json | null;
-          username?: string | null;
-          location?: string | null;
-          business_account?: boolean | null;
-          artist_account?: boolean | null;
-          verified?: boolean | null;
-          is_vip?: boolean | null;
-          last_location_check?: string | null;
-          location_accuracy?: number | null;
-          last_known_lat?: number | null;
-          last_known_lng?: number | null;
-          location_verification_status?: string | null;
-          location_verification_date?: string | null;
-          location_verification_method?: string | null;
-          location_report_count?: number | null;
-          location_last_reported?: string | null;
-          is_wolfpack_member?: boolean | null;
-          website?: string | null;
-        };
-      };
-      locations: {
-        Row: {
-          id: string;
-          name: string;
-          address: string | null;
-          city: string | null;
-          state: string | null;
-          zip: string | null;
-          latitude: number;
-          longitude: number;
-          radius_miles: number | null;
-          phone: string | null;
-          email: string | null;
-          website: string | null;
-          hours: Json | null;
-          venue_type: string | null;
-          venue_capacity: number | null;
-          venue_amenities: string[] | null;
-          venue_metadata: Json | null;
-          timezone: string | null;
-          is_active: boolean | null;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          address?: string | null;
-          city?: string | null;
-          state?: string | null;
-          zip?: string | null;
-          latitude: number;
-          longitude: number;
-          radius_miles?: number | null;
-          phone?: string | null;
-          email?: string | null;
-          website?: string | null;
-          hours?: Json | null;
-          venue_type?: string | null;
-          venue_capacity?: number | null;
-          venue_amenities?: string[] | null;
-          venue_metadata?: Json | null;
-          timezone?: string | null;
-          is_active?: boolean | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          address?: string | null;
-          city?: string | null;
-          state?: string | null;
-          zip?: string | null;
-          latitude?: number;
-          longitude?: number;
-          radius_miles?: number | null;
-          phone?: string | null;
-          email?: string | null;
-          website?: string | null;
-          hours?: Json | null;
-          venue_type?: string | null;
-          venue_capacity?: number | null;
-          venue_amenities?: string[] | null;
-          venue_metadata?: Json | null;
-          timezone?: string | null;
-          is_active?: boolean | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-      };
-      content_posts: {
-        Row: {
-          id: string;
-          user_id: string;
-          upload_id: string | null;
-          title: string | null;
+          conversation_type: string;
+          created_at: string | null;
+          created_by: string | null;
           description: string | null;
-          status: string | null;
-          privacy: string | null;
-          category: string | null;
-          tags: string[] | null;
-          metadata: Json | null;
-          analytics_data: Json | null;
-          is_featured: boolean | null;
-          featured_at: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-          deleted_at: string | null;
-          latitude: number | null;
-          longitude: number | null;
-          location_name: string | null;
-          location_id: string | null;
-          hashtags: string[] | null;
-          is_nsfw: boolean | null;
-          featured_by: string | null;
-          trending_score: number | null;
-          order_index: number | null;
-          featured_until: string | null;
-          caption: string | null;
-          song_id: string | null;
-          is_private: boolean | null;
-          allow_content_comments: boolean | null;
-          allow_downloads: boolean | null;
-          processed_at: string | null;
-          processing_attempts: number | null;
-          last_processing_error: string | null;
-          original_width: number | null;
-          original_height: number | null;
-          original_duration: number | null;
-          processed_qualities: string[] | null;
-          cdn_url: string | null;
-          view_count: number | null;
-          like_count: number | null;
-          comment_count: number | null;
-          share_count: number | null;
-          wolfpack_ingestion_status: string | null;
-          content_moderation_status: string | null;
-          moderation_notes: string | null;
-          is_local_content: boolean | null;
-          source_platform: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          upload_id?: string | null;
-          title?: string | null;
-          description?: string | null;
-          status?: string | null;
-          privacy?: string | null;
-          category?: string | null;
-          tags?: string[] | null;
-          metadata?: Json | null;
-          analytics_data?: Json | null;
-          is_featured?: boolean | null;
-          featured_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-          latitude?: number | null;
-          longitude?: number | null;
-          location_name?: string | null;
-          location_id?: string | null;
-          hashtags?: string[] | null;
-          is_nsfw?: boolean | null;
-          featured_by?: string | null;
-          trending_score?: number | null;
-          order_index?: number | null;
-          featured_until?: string | null;
-          caption?: string | null;
-          song_id?: string | null;
-          is_private?: boolean | null;
-          allow_content_comments?: boolean | null;
-          allow_downloads?: boolean | null;
-          processed_at?: string | null;
-          processing_attempts?: number | null;
-          last_processing_error?: string | null;
-          original_width?: number | null;
-          original_height?: number | null;
-          original_duration?: number | null;
-          processed_qualities?: string[] | null;
-          cdn_url?: string | null;
-          view_count?: number | null;
-          like_count?: number | null;
-          comment_count?: number | null;
-          share_count?: number | null;
-          wolfpack_ingestion_status?: string | null;
-          content_moderation_status?: string | null;
-          moderation_notes?: string | null;
-          is_local_content?: boolean | null;
-          source_platform?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          upload_id?: string | null;
-          title?: string | null;
-          description?: string | null;
-          status?: string | null;
-          privacy?: string | null;
-          category?: string | null;
-          tags?: string[] | null;
-          metadata?: Json | null;
-          analytics_data?: Json | null;
-          is_featured?: boolean | null;
-          featured_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-          latitude?: number | null;
-          longitude?: number | null;
-          location_name?: string | null;
-          location_id?: string | null;
-          hashtags?: string[] | null;
-          is_nsfw?: boolean | null;
-          featured_by?: string | null;
-          trending_score?: number | null;
-          order_index?: number | null;
-          featured_until?: string | null;
-          caption?: string | null;
-          song_id?: string | null;
-          is_private?: boolean | null;
-          allow_content_comments?: boolean | null;
-          allow_downloads?: boolean | null;
-          processed_at?: string | null;
-          processing_attempts?: number | null;
-          last_processing_error?: string | null;
-          original_width?: number | null;
-          original_height?: number | null;
-          original_duration?: number | null;
-          processed_qualities?: string[] | null;
-          cdn_url?: string | null;
-          view_count?: number | null;
-          like_count?: number | null;
-          comment_count?: number | null;
-          share_count?: number | null;
-          wolfpack_ingestion_status?: string | null;
-          content_moderation_status?: string | null;
-          moderation_notes?: string | null;
-          is_local_content?: boolean | null;
-          source_platform?: string | null;
-        };
-      };
-      content_posts: {
-        Row: {
           id: string;
-          user_id: string;
-          content: string | null;
-          media_urls: string[] | null;
-          video_id: string | null;
-          location_id: string | null;
-          location_name: string | null;
-          latitude: number | null;
-          longitude: number | null;
-          visibility: string | null;
-          hashtags: string[] | null;
-          mentioned_users: string[] | null;
+          is_active: boolean | null;
+          is_archived: boolean | null;
+          is_group: boolean | null;
           is_pinned: boolean | null;
-          pinned_at: string | null;
-          like_count: number | null;
-          comment_count: number | null;
-          share_count: number | null;
-          view_count: number | null;
-          trending_score: number | null;
-          engagement_rate: number | null;
-          is_featured: boolean | null;
-          featured_at: string | null;
-          featured_by: string | null;
-          featured_until: string | null;
-          created_at: string | null;
+          last_message_at: string | null;
+          last_message_preview: string | null;
+          last_message_sender_id: string | null;
+          message_count: number | null;
+          metadata: Json | null;
+          name: string | null;
+          participant_count: number | null;
+          settings: Json | null;
+          slug: string | null;
           updated_at: string | null;
-          deleted_at: string | null;
-          metadata: Json | null;
-          post_type: string | null;
-          reply_to_post_id: string | null;
-          is_repost: boolean | null;
-          original_post_id: string | null;
-          poll_options: Json | null;
-          poll_end_time: string | null;
-          event_date: string | null;
-          event_location: string | null;
-          media_type: string | null;
-          content_warning: string | null;
-          is_sponsored: boolean | null;
-          sponsor_info: Json | null;
         };
         Insert: {
-          id?: string;
-          user_id: string;
-          content?: string | null;
-          media_urls?: string[] | null;
-          video_id?: string | null;
-          location_id?: string | null;
-          location_name?: string | null;
-          latitude?: number | null;
-          longitude?: number | null;
-          visibility?: string | null;
-          hashtags?: string[] | null;
-          mentioned_users?: string[] | null;
-          is_pinned?: boolean | null;
-          pinned_at?: string | null;
-          like_count?: number | null;
-          comment_count?: number | null;
-          share_count?: number | null;
-          view_count?: number | null;
-          trending_score?: number | null;
-          engagement_rate?: number | null;
-          is_featured?: boolean | null;
-          featured_at?: string | null;
-          featured_by?: string | null;
-          featured_until?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-          metadata?: Json | null;
-          post_type?: string | null;
-          reply_to_post_id?: string | null;
-          is_repost?: boolean | null;
-          original_post_id?: string | null;
-          poll_options?: Json | null;
-          poll_end_time?: string | null;
-          event_date?: string | null;
-          event_location?: string | null;
-          media_type?: string | null;
-          content_warning?: string | null;
-          is_sponsored?: boolean | null;
-          sponsor_info?: Json | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          content?: string | null;
-          media_urls?: string[] | null;
-          video_id?: string | null;
-          location_id?: string | null;
-          location_name?: string | null;
-          latitude?: number | null;
-          longitude?: number | null;
-          visibility?: string | null;
-          hashtags?: string[] | null;
-          mentioned_users?: string[] | null;
-          is_pinned?: boolean | null;
-          pinned_at?: string | null;
-          like_count?: number | null;
-          comment_count?: number | null;
-          share_count?: number | null;
-          view_count?: number | null;
-          trending_score?: number | null;
-          engagement_rate?: number | null;
-          is_featured?: boolean | null;
-          featured_at?: string | null;
-          featured_by?: string | null;
-          featured_until?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-          metadata?: Json | null;
-          post_type?: string | null;
-          reply_to_post_id?: string | null;
-          is_repost?: boolean | null;
-          original_post_id?: string | null;
-          poll_options?: Json | null;
-          poll_end_time?: string | null;
-          event_date?: string | null;
-          event_location?: string | null;
-          media_type?: string | null;
-          content_warning?: string | null;
-          is_sponsored?: boolean | null;
-          sponsor_info?: Json | null;
-        };
-      };
-      wolfpack_interactions: {
-        Row: {
-          id: string;
-          conversation_id: string;
-          receiver_id: string;
-          interaction_type: string;
-          metadata: Json | null;
-          created_at: string | null;
-          expires_at: string | null;
-          status: string | null;
-          response: string | null;
-          responded_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          conversation_id: string;
-          receiver_id: string;
-          interaction_type: string;
-          metadata?: Json | null;
-          created_at?: string | null;
-          expires_at?: string | null;
-          status?: string | null;
-          response?: string | null;
-          responded_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          conversation_id?: string;
-          receiver_id?: string;
-          interaction_type?: string;
-          metadata?: Json | null;
-          created_at?: string | null;
-          expires_at?: string | null;
-          status?: string | null;
-          response?: string | null;
-          responded_at?: string | null;
-        };
-      };
-      social_follows: {
-        Row: {
-          id: string;
-          follower_id: string;
-          following_id: string;
-          created_at: string | null;
-          is_mutual: boolean | null;
-          notification_sent: boolean | null;
-        };
-        Insert: {
-          id?: string;
-          follower_id: string;
-          following_id: string;
-          created_at?: string | null;
-          is_mutual?: boolean | null;
-          notification_sent?: boolean | null;
-        };
-        Update: {
-          id?: string;
-          follower_id?: string;
-          following_id?: string;
-          created_at?: string | null;
-          is_mutual?: boolean | null;
-          notification_sent?: boolean | null;
-        };
-      };
-      wolfpack_chat_messages: {
-        Row: {
-          id: string;
-          user_id: string;
-          session_id: string;
-          content: string;
-          message_type: string;
-          display_name: string;
-          avatar_url: string | null;
-          image_url: string | null;
-          reply_to_message_id: string | null;
-          thread_id: string | null;
-          is_deleted: boolean | null;
-          is_flagged: boolean | null;
-          edited_at: string | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          session_id: string;
-          content: string;
-          message_type?: string;
-          display_name?: string;
           avatar_url?: string | null;
-          image_url?: string | null;
-          reply_to_message_id?: string | null;
-          thread_id?: string | null;
-          is_deleted?: boolean | null;
-          is_flagged?: boolean | null;
-          edited_at?: string | null;
+          conversation_type?: string;
           created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_archived?: boolean | null;
+          is_group?: boolean | null;
+          is_pinned?: boolean | null;
+          last_message_at?: string | null;
+          last_message_preview?: string | null;
+          last_message_sender_id?: string | null;
+          message_count?: number | null;
+          metadata?: Json | null;
+          name?: string | null;
+          participant_count?: number | null;
+          settings?: Json | null;
+          slug?: string | null;
+          updated_at?: string | null;
         };
         Update: {
-          id?: string;
-          user_id?: string;
-          session_id?: string;
-          content?: string;
-          message_type?: string;
-          display_name?: string;
           avatar_url?: string | null;
-          image_url?: string | null;
-          reply_to_message_id?: string | null;
-          thread_id?: string | null;
-          is_deleted?: boolean | null;
-          is_flagged?: boolean | null;
-          edited_at?: string | null;
+          conversation_type?: string;
           created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          is_archived?: boolean | null;
+          is_group?: boolean | null;
+          is_pinned?: boolean | null;
+          last_message_at?: string | null;
+          last_message_preview?: string | null;
+          last_message_sender_id?: string | null;
+          message_count?: number | null;
+          metadata?: Json | null;
+          name?: string | null;
+          participant_count?: number | null;
+          settings?: Json | null;
+          slug?: string | null;
+          updated_at?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey";
+            columns: ["last_message_sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey";
+            columns: ["last_message_sender_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_message_reactions: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          message_id: string | null;
+          reaction: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          message_id?: string | null;
+          reaction: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          message_id?: string | null;
+          reaction?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages_with_reactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_message_reactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_message_reactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_message_receipts: {
+        Row: {
+          created_at: string | null;
+          delivered_at: string | null;
+          id: string;
+          message_id: string | null;
+          read_at: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          delivered_at?: string | null;
+          id?: string;
+          message_id?: string | null;
+          read_at?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          delivered_at?: string | null;
+          id?: string;
+          message_id?: string | null;
+          read_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_receipts_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_message_receipts_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages_with_reactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_message_receipts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_message_receipts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       chat_messages: {
         Row: {
-          id: string;
-          conversation_id: string;
-          recipient_id: string;
+          attachments: Json | null;
           content: string;
-          is_read: boolean | null;
-          read_at: string | null;
-          metadata: Json | null;
+          conversation_id: string;
           created_at: string | null;
-          updated_at: string | null;
           deleted_at: string | null;
           deleted_by: string | null;
+          edited_at: string | null;
+          id: string;
+          is_deleted: boolean | null;
+          is_edited: boolean | null;
+          media_duration: number | null;
+          media_metadata: Json | null;
+          media_size: number | null;
+          media_thumbnail_url: string | null;
+          media_type: string | null;
+          media_url: string | null;
+          message_type: string | null;
+          metadata: Json | null;
+          reply_count: number | null;
+          reply_to_id: string | null;
+          sender_id: string;
         };
         Insert: {
-          id?: string;
-          conversation_id: string;
-          recipient_id: string;
+          attachments?: Json | null;
           content: string;
-          is_read?: boolean | null;
-          read_at?: string | null;
-          metadata?: Json | null;
+          conversation_id: string;
           created_at?: string | null;
-          updated_at?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          is_deleted?: boolean | null;
+          is_edited?: boolean | null;
+          media_duration?: number | null;
+          media_metadata?: Json | null;
+          media_size?: number | null;
+          media_thumbnail_url?: string | null;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_type?: string | null;
+          metadata?: Json | null;
+          reply_count?: number | null;
+          reply_to_id?: string | null;
+          sender_id: string;
         };
         Update: {
-          id?: string;
-          conversation_id?: string;
-          recipient_id?: string;
+          attachments?: Json | null;
           content?: string;
-          is_read?: boolean | null;
-          read_at?: string | null;
-          metadata?: Json | null;
+          conversation_id?: string;
           created_at?: string | null;
-          updated_at?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
-        };
-      };
-      wolfpack_activity_notifications: {
-        Row: {
-          id: string;
-          recipient_id: string;
-          type: string;
-          title: string | null;
-          message: string;
-          link: string | null;
-          related_user_id: string | null;
-          related_video_id: string | null;
-          metadata: Json | null;
-          status: string;
-          notification_type: string | null;
-          data: Json | null;
-          created_at: string;
-          updated_at: string | null;
-        };
-        Insert: {
+          edited_at?: string | null;
           id?: string;
-          recipient_id: string;
-          type?: string;
-          title?: string | null;
-          message: string;
-          link?: string | null;
-          related_user_id?: string | null;
-          related_video_id?: string | null;
+          is_deleted?: boolean | null;
+          is_edited?: boolean | null;
+          media_duration?: number | null;
+          media_metadata?: Json | null;
+          media_size?: number | null;
+          media_thumbnail_url?: string | null;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_type?: string | null;
           metadata?: Json | null;
-          status?: string;
-          notification_type?: string | null;
-          data?: Json | null;
-          created_at?: string;
-          updated_at?: string | null;
+          reply_count?: number | null;
+          reply_to_id?: string | null;
+          sender_id?: string;
         };
-        Update: {
-          id?: string;
-          recipient_id?: string;
-          type?: string;
-          title?: string | null;
-          message?: string;
-          link?: string | null;
-          related_user_id?: string | null;
-          related_video_id?: string | null;
-          metadata?: Json | null;
-          status?: string;
-          notification_type?: string | null;
-          data?: Json | null;
-          created_at?: string;
-          updated_at?: string | null;
-        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey";
+            columns: ["deleted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey";
+            columns: ["deleted_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey";
+            columns: ["reply_to_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey";
+            columns: ["reply_to_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages_with_reactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      dj_broadcasts: {
+      chat_participants: {
         Row: {
+          conversation_id: string;
           id: string;
-          dj_id: string | null;
-          location_id: string | null;
-          message: string;
-          title: string;
-          subtitle: string | null;
-          broadcast_type: string | null;
-          background_color: string | null;
-          text_color: string | null;
-          accent_color: string | null;
-          animation_type: string | null;
-          emoji_burst: string[] | null;
-          interaction_config: Json | null;
-          duration_seconds: number | null;
-          auto_close: boolean | null;
-          priority: string | null;
-          status: string | null;
-          sent_at: string | null;
-          expires_at: string | null;
-          closed_at: string | null;
-          view_count: number | null;
-          interaction_count: number | null;
-          unique_participants: number | null;
-          tags: string[] | null;
-          category: string | null;
-          session_id: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          dj_id?: string | null;
-          location_id?: string | null;
-          message: string;
-          title: string;
-          subtitle?: string | null;
-          broadcast_type?: string | null;
-          background_color?: string | null;
-          text_color?: string | null;
-          accent_color?: string | null;
-          animation_type?: string | null;
-          emoji_burst?: string[] | null;
-          interaction_config?: Json | null;
-          duration_seconds?: number | null;
-          auto_close?: boolean | null;
-          priority?: string | null;
-          status?: string | null;
-          sent_at?: string | null;
-          expires_at?: string | null;
-          closed_at?: string | null;
-          view_count?: number | null;
-          interaction_count?: number | null;
-          unique_participants?: number | null;
-          tags?: string[] | null;
-          category?: string | null;
-          session_id?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          dj_id?: string | null;
-          location_id?: string | null;
-          message?: string;
-          title?: string;
-          subtitle?: string | null;
-          broadcast_type?: string | null;
-          background_color?: string | null;
-          text_color?: string | null;
-          accent_color?: string | null;
-          animation_type?: string | null;
-          emoji_burst?: string[] | null;
-          interaction_config?: Json | null;
-          duration_seconds?: number | null;
-          auto_close?: boolean | null;
-          priority?: string | null;
-          status?: string | null;
-          sent_at?: string | null;
-          expires_at?: string | null;
-          closed_at?: string | null;
-          view_count?: number | null;
-          interaction_count?: number | null;
-          unique_participants?: number | null;
-          tags?: string[] | null;
-          category?: string | null;
-          session_id?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-      };
-      dj_events: {
-        Row: {
-          id: string;
-          dj_id: string | null;
-          location_id: string | null;
-          event_type: string;
-          title: string;
-          description: string | null;
-          status: string | null;
-          voting_ends_at: string | null;
-          created_at: string | null;
-          started_at: string | null;
-          ended_at: string | null;
-          winner_id: string | null;
-          winner_data: Json | null;
-          event_config: Json | null;
-          voting_format: string | null;
-          options: Json | null;
-          start_time: string | null;
-        };
-        Insert: {
-          id?: string;
-          dj_id?: string | null;
-          location_id?: string | null;
-          event_type: string;
-          title: string;
-          description?: string | null;
-          status?: string | null;
-          voting_ends_at?: string | null;
-          created_at?: string | null;
-          started_at?: string | null;
-          ended_at?: string | null;
-          winner_id?: string | null;
-          winner_data?: Json | null;
-          event_config?: Json | null;
-          voting_format?: string | null;
-          options?: Json | null;
-          start_time?: string | null;
-        };
-        Update: {
-          id?: string;
-          dj_id?: string | null;
-          location_id?: string | null;
-          event_type?: string;
-          title?: string;
-          description?: string | null;
-          status?: string | null;
-          voting_ends_at?: string | null;
-          created_at?: string | null;
-          started_at?: string | null;
-          ended_at?: string | null;
-          winner_id?: string | null;
-          winner_data?: Json | null;
-          event_config?: Json | null;
-          voting_format?: string | null;
-          options?: Json | null;
-          start_time?: string | null;
-        };
-      };
-      food_drink_categories: {
-        Row: {
-          id: string;
-          name: string;
-          type: string;
-          description: string | null;
-          display_order: number | null;
           is_active: boolean | null;
-          created_at: string | null;
+          joined_at: string | null;
+          last_read_at: string | null;
+          left_at: string | null;
+          notification_settings: Json | null;
+          role: string | null;
           updated_at: string | null;
-          created_by: string | null;
-          icon: string | null;
-          color: string | null;
+          user_id: string;
         };
         Insert: {
+          conversation_id: string;
           id?: string;
-          name: string;
-          type: string;
-          description?: string | null;
-          display_order?: number | null;
           is_active?: boolean | null;
-          created_at?: string | null;
+          joined_at?: string | null;
+          last_read_at?: string | null;
+          left_at?: string | null;
+          notification_settings?: Json | null;
+          role?: string | null;
           updated_at?: string | null;
-          created_by?: string | null;
-          icon?: string | null;
-          color?: string | null;
+          user_id: string;
         };
         Update: {
+          conversation_id?: string;
           id?: string;
-          name?: string;
-          type?: string;
-          description?: string | null;
-          display_order?: number | null;
           is_active?: boolean | null;
-          created_at?: string | null;
+          joined_at?: string | null;
+          last_read_at?: string | null;
+          left_at?: string | null;
+          notification_settings?: Json | null;
+          role?: string | null;
           updated_at?: string | null;
-          created_by?: string | null;
-          icon?: string | null;
-          color?: string | null;
+          user_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      food_drink_items: {
+      cleanup_logs: {
         Row: {
-          id: string;
-          category_id: string | null;
-          name: string;
-          description: string | null;
-          price: number;
-          image_url: string | null;
-          image_id: string | null;
-          display_order: number | null;
-          is_available: boolean | null;
           created_at: string | null;
-          updated_at: string | null;
-          created_by: string | null;
+          error: string | null;
+          executed_at: string | null;
+          id: string;
+          response_id: number | null;
+          results: Json | null;
+          status: string | null;
         };
         Insert: {
-          id?: string;
-          category_id?: string | null;
-          name: string;
-          description?: string | null;
-          price: number;
-          image_url?: string | null;
-          image_id?: string | null;
-          display_order?: number | null;
-          is_available?: boolean | null;
           created_at?: string | null;
-          updated_at?: string | null;
-          created_by?: string | null;
+          error?: string | null;
+          executed_at?: string | null;
+          id?: string;
+          response_id?: number | null;
+          results?: Json | null;
+          status?: string | null;
         };
         Update: {
-          id?: string;
-          category_id?: string | null;
-          name?: string;
-          description?: string | null;
-          price?: number;
-          image_url?: string | null;
-          image_id?: string | null;
-          display_order?: number | null;
-          is_available?: boolean | null;
           created_at?: string | null;
-          updated_at?: string | null;
-          created_by?: string | null;
-        };
-      };
-      images: {
-        Row: {
-          id: string;
-          name: string;
-          url: string;
-          storage_path: string | null;
-          mime_type: string | null;
-          size: number | null;
-          replacement_type: string | null;
-          uploaded_by: string | null;
-          metadata: Json | null;
-          created_at: string | null;
-          updated_at: string | null;
-          deleted_at: string | null;
-        };
-        Insert: {
+          error?: string | null;
+          executed_at?: string | null;
           id?: string;
-          name: string;
-          url: string;
-          storage_path?: string | null;
-          mime_type?: string | null;
-          size?: number | null;
-          replacement_type?: string | null;
-          uploaded_by?: string | null;
-          metadata?: Json | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
+          response_id?: number | null;
+          results?: Json | null;
+          status?: string | null;
         };
-        Update: {
-          id?: string;
-          name?: string;
-          url?: string;
-          storage_path?: string | null;
-          mime_type?: string | null;
-          size?: number | null;
-          replacement_type?: string | null;
-          uploaded_by?: string | null;
-          metadata?: Json | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-        };
+        Relationships: [];
       };
       content_comments: {
         Row: {
-          id: string;
-          post_id: string | null;
-          video_id: string | null;
-          user_id: string;
           content: string;
-          parent_comment_id: string | null;
-          like_count: number | null;
-          reply_count: number | null;
-          is_edited: boolean | null;
-          edited_at: string | null;
+          created_at: string | null;
+          id: string;
           is_deleted: boolean | null;
-          deleted_at: string | null;
-          deleted_by: string | null;
-          mentioned_users: string[] | null;
-          created_at: string | null;
+          is_edited: boolean | null;
+          is_pinned: boolean | null;
+          likes_count: number | null;
+          parent_comment_id: string | null;
           updated_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          post_id?: string | null;
-          video_id?: string | null;
           user_id: string;
+          video_id: string;
+        };
+        Insert: {
           content: string;
-          parent_comment_id?: string | null;
-          like_count?: number | null;
-          reply_count?: number | null;
-          is_edited?: boolean | null;
-          edited_at?: string | null;
-          is_deleted?: boolean | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
-          mentioned_users?: string[] | null;
           created_at?: string | null;
+          id?: string;
+          is_deleted?: boolean | null;
+          is_edited?: boolean | null;
+          is_pinned?: boolean | null;
+          likes_count?: number | null;
+          parent_comment_id?: string | null;
           updated_at?: string | null;
+          user_id: string;
+          video_id: string;
         };
         Update: {
-          id?: string;
-          post_id?: string | null;
-          video_id?: string | null;
-          user_id?: string;
           content?: string;
-          parent_comment_id?: string | null;
-          like_count?: number | null;
-          reply_count?: number | null;
-          is_edited?: boolean | null;
-          edited_at?: string | null;
-          is_deleted?: boolean | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
-          mentioned_users?: string[] | null;
           created_at?: string | null;
+          id?: string;
+          is_deleted?: boolean | null;
+          is_edited?: boolean | null;
+          is_pinned?: boolean | null;
+          likes_count?: number | null;
+          parent_comment_id?: string | null;
           updated_at?: string | null;
+          user_id?: string;
+          video_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "content_comments_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_comments_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      feature_flags: {
+      content_interactions: {
         Row: {
-          id: string;
-          flag_name: string;
-          description: string | null;
-          is_enabled: boolean | null;
-          enabled_for_roles: string[] | null;
-          enabled_for_users: string[] | null;
+          content_id: string;
           created_at: string | null;
+          id: string;
+          interaction_type: string;
+          user_id: string;
+        };
+        Insert: {
+          content_id: string;
+          created_at?: string | null;
+          id?: string;
+          interaction_type: string;
+          user_id: string;
+        };
+        Update: {
+          content_id?: string;
+          created_at?: string | null;
+          id?: string;
+          interaction_type?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "content_interactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_interactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      content_posts: {
+        Row: {
+          algorithm_boost: number | null;
+          allow_comments: boolean | null;
+          allow_duets: boolean | null;
+          allow_stitches: boolean | null;
+          aspect_ratio: string | null;
+          caption: string | null;
+          comments_count: number | null;
+          created_at: string | null;
+          description: string | null;
+          duration_seconds: number | null;
+          effect_id: string | null;
+          effect_name: string | null;
+          featured_at: string | null;
+          id: string;
+          images: string[] | null;
+          ingested_content_id: string | null;
+          is_active: boolean | null;
+          is_ad: boolean | null;
+          is_featured: boolean | null;
+          likes_count: number | null;
+          location_lat: number | null;
+          location_lng: number | null;
+          location_tag: string | null;
+          metadata: Json | null;
+          music_id: string | null;
+          music_name: string | null;
+          post_type: string | null;
+          processing_status: string | null;
+          seo_description: string | null;
+          shares_count: number | null;
+          slug: string | null;
+          source: string | null;
+          tags: string[] | null;
+          thumbnail_url: string | null;
+          title: string | null;
+          trending_score: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+          video_url: string | null;
+          views_count: number | null;
+          visibility: string | null;
+        };
+        Insert: {
+          algorithm_boost?: number | null;
+          allow_comments?: boolean | null;
+          allow_duets?: boolean | null;
+          allow_stitches?: boolean | null;
+          aspect_ratio?: string | null;
+          caption?: string | null;
+          comments_count?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          duration_seconds?: number | null;
+          effect_id?: string | null;
+          effect_name?: string | null;
+          featured_at?: string | null;
+          id?: string;
+          images?: string[] | null;
+          ingested_content_id?: string | null;
+          is_active?: boolean | null;
+          is_ad?: boolean | null;
+          is_featured?: boolean | null;
+          likes_count?: number | null;
+          location_lat?: number | null;
+          location_lng?: number | null;
+          location_tag?: string | null;
+          metadata?: Json | null;
+          music_id?: string | null;
+          music_name?: string | null;
+          post_type?: string | null;
+          processing_status?: string | null;
+          seo_description?: string | null;
+          shares_count?: number | null;
+          slug?: string | null;
+          source?: string | null;
+          tags?: string[] | null;
+          thumbnail_url?: string | null;
+          title?: string | null;
+          trending_score?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          video_url?: string | null;
+          views_count?: number | null;
+          visibility?: string | null;
+        };
+        Update: {
+          algorithm_boost?: number | null;
+          allow_comments?: boolean | null;
+          allow_duets?: boolean | null;
+          allow_stitches?: boolean | null;
+          aspect_ratio?: string | null;
+          caption?: string | null;
+          comments_count?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          duration_seconds?: number | null;
+          effect_id?: string | null;
+          effect_name?: string | null;
+          featured_at?: string | null;
+          id?: string;
+          images?: string[] | null;
+          ingested_content_id?: string | null;
+          is_active?: boolean | null;
+          is_ad?: boolean | null;
+          is_featured?: boolean | null;
+          likes_count?: number | null;
+          location_lat?: number | null;
+          location_lng?: number | null;
+          location_tag?: string | null;
+          metadata?: Json | null;
+          music_id?: string | null;
+          music_name?: string | null;
+          post_type?: string | null;
+          processing_status?: string | null;
+          seo_description?: string | null;
+          shares_count?: number | null;
+          slug?: string | null;
+          source?: string | null;
+          tags?: string[] | null;
+          thumbnail_url?: string | null;
+          title?: string | null;
+          trending_score?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          video_url?: string | null;
+          views_count?: number | null;
+          visibility?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "content_posts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_posts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      menu_categories: {
+        Row: {
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          display_order: number | null;
+          icon: string | null;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          type: string;
           updated_at: string | null;
         };
         Insert: {
-          id?: string;
-          flag_name: string;
-          description?: string | null;
-          is_enabled?: boolean | null;
-          enabled_for_roles?: string[] | null;
-          enabled_for_users?: string[] | null;
+          color?: string | null;
           created_at?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          type: string;
           updated_at?: string | null;
         };
         Update: {
-          id?: string;
-          flag_name?: string;
-          description?: string | null;
-          is_enabled?: boolean | null;
-          enabled_for_roles?: string[] | null;
-          enabled_for_users?: string[] | null;
+          color?: string | null;
           created_at?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          icon?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          type?: string;
           updated_at?: string | null;
         };
+        Relationships: [];
+      };
+      menu_items: {
+        Row: {
+          allergens: string[] | null;
+          category_id: string | null;
+          content_postsrc: string | null;
+          created_at: string | null;
+          description: string | null;
+          display_order: number | null;
+          has_video: boolean | null;
+          id: string;
+          image_id: string | null;
+          image_url: string | null;
+          is_active: boolean | null;
+          is_available: boolean | null;
+          is_featured: boolean | null;
+          name: string;
+          prep_time_minutes: number | null;
+          price: number;
+          spice_level: number | null;
+          storage_path: string | null;
+          updated_at: string | null;
+          video_thumbnail_url: string | null;
+          video_url: string | null;
+        };
+        Insert: {
+          allergens?: string[] | null;
+          category_id?: string | null;
+          content_postsrc?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          has_video?: boolean | null;
+          id?: string;
+          image_id?: string | null;
+          image_url?: string | null;
+          is_active?: boolean | null;
+          is_available?: boolean | null;
+          is_featured?: boolean | null;
+          name: string;
+          prep_time_minutes?: number | null;
+          price: number;
+          spice_level?: number | null;
+          storage_path?: string | null;
+          updated_at?: string | null;
+          video_thumbnail_url?: string | null;
+          video_url?: string | null;
+        };
+        Update: {
+          allergens?: string[] | null;
+          category_id?: string | null;
+          content_postsrc?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          display_order?: number | null;
+          has_video?: boolean | null;
+          id?: string;
+          image_id?: string | null;
+          image_url?: string | null;
+          is_active?: boolean | null;
+          is_available?: boolean | null;
+          is_featured?: boolean | null;
+          name?: string;
+          prep_time_minutes?: number | null;
+          price?: number;
+          spice_level?: number | null;
+          storage_path?: string | null;
+          updated_at?: string | null;
+          video_thumbnail_url?: string | null;
+          video_url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "menu_categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "menu_items_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "v_menu_full";
+            referencedColumns: ["category_id"];
+          },
+        ];
+      };
+      notification_topics: {
+        Row: {
+          created_at: string | null;
+          default_enabled: boolean | null;
+          description: string | null;
+          id: string;
+          is_active: boolean | null;
+          topic_key: string;
+          topic_name: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          default_enabled?: boolean | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          topic_key: string;
+          topic_name: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          default_enabled?: boolean | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          topic_key?: string;
+          topic_name?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          action_url: string | null;
+          content_id: string | null;
+          content_type: string | null;
+          created_at: string;
+          data: Json | null;
+          expires_at: string | null;
+          id: string;
+          is_push_sent: boolean | null;
+          is_read: boolean | null;
+          message: string;
+          priority: string | null;
+          push_sent_at: string | null;
+          read_at: string | null;
+          recipient_id: string;
+          related_user_id: string | null;
+          status: string;
+          title: string | null;
+          type: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          action_url?: string | null;
+          content_id?: string | null;
+          content_type?: string | null;
+          created_at?: string;
+          data?: Json | null;
+          expires_at?: string | null;
+          id?: string;
+          is_push_sent?: boolean | null;
+          is_read?: boolean | null;
+          message: string;
+          priority?: string | null;
+          push_sent_at?: string | null;
+          read_at?: string | null;
+          recipient_id: string;
+          related_user_id?: string | null;
+          status?: string;
+          title?: string | null;
+          type?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          action_url?: string | null;
+          content_id?: string | null;
+          content_type?: string | null;
+          created_at?: string;
+          data?: Json | null;
+          expires_at?: string | null;
+          id?: string;
+          is_push_sent?: boolean | null;
+          is_read?: boolean | null;
+          message?: string;
+          priority?: string | null;
+          push_sent_at?: string | null;
+          read_at?: string | null;
+          recipient_id?: string;
+          related_user_id?: string | null;
+          status?: string;
+          title?: string | null;
+          type?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_related_user_fkey";
+            columns: ["related_user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_related_user_fkey";
+            columns: ["related_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_tokens: {
+        Row: {
+          created_at: string | null;
+          device_info: Json | null;
+          id: string;
+          is_active: boolean | null;
+          last_used_at: string | null;
+          platform: string | null;
+          token: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          device_info?: Json | null;
+          id?: string;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          platform?: string | null;
+          token: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          device_info?: Json | null;
+          id?: string;
+          is_active?: boolean | null;
+          last_used_at?: string | null;
+          platform?: string | null;
+          token?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_fcm_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_fcm_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      social_blocks: {
+        Row: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string | null;
+          id: string;
+        };
+        Insert: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string | null;
+          id?: string;
+        };
+        Update: {
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string | null;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "social_blocks_blocked_id_fkey";
+            columns: ["blocked_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "social_blocks_blocked_id_fkey";
+            columns: ["blocked_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "social_blocks_blocker_id_fkey";
+            columns: ["blocker_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "social_blocks_blocker_id_fkey";
+            columns: ["blocker_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      social_follows: {
+        Row: {
+          created_at: string | null;
+          follower_id: string;
+          following_id: string;
+          id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          follower_id: string;
+          following_id: string;
+          id?: string;
+        };
+        Update: {
+          created_at?: string | null;
+          follower_id?: string;
+          following_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "social_follows_follower_fkey";
+            columns: ["follower_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "social_follows_follower_fkey";
+            columns: ["follower_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "social_follows_following_fkey";
+            columns: ["following_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "social_follows_following_fkey";
+            columns: ["following_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      storage_documentation: {
+        Row: {
+          allowed_extensions: string[] | null;
+          bucket_name: string;
+          created_at: string | null;
+          description: string | null;
+          file_type: string;
+          id: string;
+          is_public: boolean | null;
+          max_size_mb: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          allowed_extensions?: string[] | null;
+          bucket_name: string;
+          created_at?: string | null;
+          description?: string | null;
+          file_type: string;
+          id?: string;
+          is_public?: boolean | null;
+          max_size_mb?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          allowed_extensions?: string[] | null;
+          bucket_name?: string;
+          created_at?: string | null;
+          description?: string | null;
+          file_type?: string;
+          id?: string;
+          is_public?: boolean | null;
+          max_size_mb?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      storage_migration_plan: {
+        Row: {
+          completed_at: string | null;
+          created_at: string | null;
+          id: string;
+          migration_type: string;
+          source_bucket: string;
+          started_at: string | null;
+          status: string | null;
+          target_bucket: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          migration_type: string;
+          source_bucket: string;
+          started_at?: string | null;
+          status?: string | null;
+          target_bucket: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string | null;
+          id?: string;
+          migration_type?: string;
+          source_bucket?: string;
+          started_at?: string | null;
+          status?: string | null;
+          target_bucket?: string;
+        };
+        Relationships: [];
       };
       system_config: {
         Row: {
-          id: string;
-          config_key: string;
-          config_value: Json;
-          description: string | null;
+          created_at: string | null;
+          is_secret: boolean | null;
+          key: string;
           updated_at: string | null;
-          updated_by: string | null;
+          value: string;
         };
         Insert: {
-          id?: string;
-          config_key: string;
-          config_value: Json;
-          description?: string | null;
+          created_at?: string | null;
+          is_secret?: boolean | null;
+          key: string;
           updated_at?: string | null;
-          updated_by?: string | null;
+          value: string;
         };
         Update: {
-          id?: string;
-          config_key?: string;
-          config_value?: Json;
-          description?: string | null;
+          created_at?: string | null;
+          is_secret?: boolean | null;
+          key?: string;
           updated_at?: string | null;
-          updated_by?: string | null;
+          value?: string;
         };
+        Relationships: [];
+      };
+      user_post_interactions: {
+        Row: {
+          created_at: string | null;
+          has_liked: boolean | null;
+          has_viewed: boolean | null;
+          id: string;
+          last_viewed_at: string | null;
+          liked_at: string | null;
+          post_id: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+          view_count: number | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          has_liked?: boolean | null;
+          has_viewed?: boolean | null;
+          id?: string;
+          last_viewed_at?: string | null;
+          liked_at?: string | null;
+          post_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          view_count?: number | null;
+        };
+        Update: {
+          created_at?: string | null;
+          has_liked?: boolean | null;
+          has_viewed?: boolean | null;
+          id?: string;
+          last_viewed_at?: string | null;
+          liked_at?: string | null;
+          post_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          view_count?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_post_interactions_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "content_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_post_interactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_post_interactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      users: {
+        Row: {
+          account_status: string | null;
+          auth_id: string | null;
+          avatar_url: string | null;
+          bio: string | null;
+          city: string | null;
+          company: string | null;
+          country: string | null;
+          created_at: string;
+          date_of_birth: string | null;
+          deleted_at: string | null;
+          display_name: string | null;
+          email: string;
+          email_notifications: boolean | null;
+          first_name: string | null;
+          gender: string | null;
+          id: string;
+          is_private: boolean | null;
+          is_verified: boolean | null;
+          last_name: string | null;
+          last_seen_at: string | null;
+          location: string | null;
+          occupation: string | null;
+          phone: string | null;
+          postal_code: string | null;
+          profile_image_url: string | null;
+          pronouns: string | null;
+          push_notifications: boolean | null;
+          role: string | null;
+          settings: Json | null;
+          state: string | null;
+          updated_at: string;
+          username: string;
+          website: string | null;
+        };
+        Insert: {
+          account_status?: string | null;
+          auth_id?: string | null;
+          avatar_url?: string | null;
+          bio?: string | null;
+          city?: string | null;
+          company?: string | null;
+          country?: string | null;
+          created_at?: string;
+          date_of_birth?: string | null;
+          deleted_at?: string | null;
+          display_name?: string | null;
+          email: string;
+          email_notifications?: boolean | null;
+          first_name?: string | null;
+          gender?: string | null;
+          id?: string;
+          is_private?: boolean | null;
+          is_verified?: boolean | null;
+          last_name?: string | null;
+          last_seen_at?: string | null;
+          location?: string | null;
+          occupation?: string | null;
+          phone?: string | null;
+          postal_code?: string | null;
+          profile_image_url?: string | null;
+          pronouns?: string | null;
+          push_notifications?: boolean | null;
+          role?: string | null;
+          settings?: Json | null;
+          state?: string | null;
+          updated_at?: string;
+          username: string;
+          website?: string | null;
+        };
+        Update: {
+          account_status?: string | null;
+          auth_id?: string | null;
+          avatar_url?: string | null;
+          bio?: string | null;
+          city?: string | null;
+          company?: string | null;
+          country?: string | null;
+          created_at?: string;
+          date_of_birth?: string | null;
+          deleted_at?: string | null;
+          display_name?: string | null;
+          email?: string;
+          email_notifications?: boolean | null;
+          first_name?: string | null;
+          gender?: string | null;
+          id?: string;
+          is_private?: boolean | null;
+          is_verified?: boolean | null;
+          last_name?: string | null;
+          last_seen_at?: string | null;
+          location?: string | null;
+          occupation?: string | null;
+          phone?: string | null;
+          postal_code?: string | null;
+          profile_image_url?: string | null;
+          pronouns?: string | null;
+          push_notifications?: boolean | null;
+          role?: string | null;
+          settings?: Json | null;
+          state?: string | null;
+          updated_at?: string;
+          username?: string;
+          website?: string | null;
+        };
+        Relationships: [];
       };
     };
     Views: {
-      active_wolfpack_members: {
+      chat_messages_with_reactions: {
         Row: {
+          attachments: Json | null;
+          content: string | null;
+          conversation_id: string | null;
+          created_at: string | null;
+          current_user_has_reacted: boolean | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
+          edited_at: string | null;
           id: string | null;
-          email: string | null;
-          display_name: string | null;
-          avatar_url: string | null;
-          wolfpack_status: string | null;
-          wolfpack_tier: string | null;
-          is_online: boolean | null;
-          last_seen_at: string | null;
-          location: string | null;
+          is_deleted: boolean | null;
+          is_edited: boolean | null;
+          media_duration: number | null;
+          media_metadata: Json | null;
+          media_size: number | null;
+          media_thumbnail_url: string | null;
+          media_type: string | null;
+          media_url: string | null;
+          message_type: string | null;
+          metadata: Json | null;
+          reactions: Json | null;
+          reply_count: number | null;
+          reply_to_id: string | null;
+          sender_id: string | null;
         };
+        Insert: {
+          attachments?: Json | null;
+          content?: string | null;
+          conversation_id?: string | null;
+          created_at?: string | null;
+          current_user_has_reacted?: never;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          edited_at?: string | null;
+          id?: string | null;
+          is_deleted?: boolean | null;
+          is_edited?: boolean | null;
+          media_duration?: number | null;
+          media_metadata?: Json | null;
+          media_size?: number | null;
+          media_thumbnail_url?: string | null;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_type?: string | null;
+          metadata?: Json | null;
+          reactions?: never;
+          reply_count?: number | null;
+          reply_to_id?: string | null;
+          sender_id?: string | null;
+        };
+        Update: {
+          attachments?: Json | null;
+          content?: string | null;
+          conversation_id?: string | null;
+          created_at?: string | null;
+          current_user_has_reacted?: never;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          edited_at?: string | null;
+          id?: string | null;
+          is_deleted?: boolean | null;
+          is_edited?: boolean | null;
+          media_duration?: number | null;
+          media_metadata?: Json | null;
+          media_size?: number | null;
+          media_thumbnail_url?: string | null;
+          media_type?: string | null;
+          media_url?: string | null;
+          message_type?: string | null;
+          metadata?: Json | null;
+          reactions?: never;
+          reply_count?: number | null;
+          reply_to_id?: string | null;
+          sender_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey";
+            columns: ["deleted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey";
+            columns: ["deleted_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey";
+            columns: ["reply_to_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey";
+            columns: ["reply_to_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages_with_reactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles_with_stats";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      profiles: {
+      user_profiles_with_stats: {
         Row: {
-          id: string | null;
-          email: string | null;
-          first_name: string | null;
-          last_name: string | null;
-          display_name: string | null;
+          account_status: string | null;
+          auth_id: string | null;
           avatar_url: string | null;
-          role: string | null;
-          is_wolfpack_member: boolean | null;
-          wolfpack_status: string | null;
-          wolfpack_tier: string | null;
-          location: string | null;
-          is_online: boolean | null;
+          bio: string | null;
+          city: string | null;
+          company: string | null;
+          country: string | null;
+          created_at: string | null;
+          date_of_birth: string | null;
+          deleted_at: string | null;
+          display_name: string | null;
+          email: string | null;
+          email_notifications: boolean | null;
+          first_name: string | null;
+          followers_count: number | null;
+          following_count: number | null;
+          gender: string | null;
+          id: string | null;
+          is_private: boolean | null;
+          is_verified: boolean | null;
+          last_name: string | null;
           last_seen_at: string | null;
+          location: string | null;
+          occupation: string | null;
+          phone: string | null;
+          postal_code: string | null;
+          posts_count: number | null;
+          profile_image_url: string | null;
+          pronouns: string | null;
+          push_notifications: boolean | null;
+          role: string | null;
+          settings: Json | null;
+          state: string | null;
+          updated_at: string | null;
+          username: string | null;
+          website: string | null;
         };
+        Relationships: [];
+      };
+      v_menu_full: {
+        Row: {
+          allergens: string[] | null;
+          category_color: string | null;
+          category_icon: string | null;
+          category_id: string | null;
+          category_name: string | null;
+          category_order: number | null;
+          category_type: string | null;
+          content_postsrc: string | null;
+          has_video: boolean | null;
+          image_id: string | null;
+          image_url: string | null;
+          is_available: boolean | null;
+          is_featured: boolean | null;
+          item_description: string | null;
+          item_id: string | null;
+          item_name: string | null;
+          item_order: number | null;
+          item_price: number | null;
+          prep_time_minutes: number | null;
+          spice_level: number | null;
+          storage_path: string | null;
+          video_thumbnail_url: string | null;
+          video_url: string | null;
+        };
+        Relationships: [];
       };
     };
-    Functions: object;
+    Functions: {
+      add_comment: {
+        Args: {
+          p_content: string;
+          p_parent_comment_id?: string;
+          p_video_id: string;
+        };
+        Returns: Json;
+      };
+      batch_update_trending_scores: {
+        Args: { updates: Json };
+        Returns: undefined;
+      };
+      block_user: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      create_post: {
+        Args: {
+          p_caption?: string;
+          p_images?: string[];
+          p_post_type?: string;
+          p_tags?: string[];
+          p_thumbnail_url?: string;
+          p_video_url?: string;
+          p_visibility?: string;
+        };
+        Returns: Json;
+      };
+      follow_user: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      get_complete_menu: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      get_conversation_messages: {
+        Args: {
+          p_before_message_id?: string;
+          p_conversation_id: string;
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
+      get_cron_jobs_status: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          active: boolean;
+          jobname: string;
+          schedule: string;
+          username: string;
+        }[];
+      };
+      get_current_user_id: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      get_last_cleanup_status: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          hours_since_last_run: number;
+          last_executed: string;
+          results: Json;
+          status: string;
+        }[];
+      };
+      get_menu_items_by_type: {
+        Args: { item_type?: string };
+        Returns: Json;
+      };
+      get_notifications: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: Json;
+      };
+      get_or_create_dm_conversation: {
+        Args: { other_user_id: string };
+        Returns: Json;
+      };
+      get_user_feed: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: Json;
+      };
+      get_user_posts: {
+        Args: { p_limit?: number; p_offset?: number; target_user_id?: string };
+        Returns: Json;
+      };
+      get_user_posts_with_stats: {
+        Args: {
+          limit_count?: number;
+          offset_count?: number;
+          target_user_id: string;
+        };
+        Returns: Json;
+      };
+      get_user_profile: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      get_user_profile_with_counts: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      increment_view_counts: {
+        Args: { post_ids: string[]; user_id_param: string };
+        Returns: undefined;
+      };
+      mark_all_notifications_read: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      mark_notification_read: {
+        Args: { notification_id: string };
+        Returns: Json;
+      };
+      perform_maintenance: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      register_push_token: {
+        Args: { p_device_info?: Json; p_platform?: string; p_token: string };
+        Returns: Json;
+      };
+      run_automated_cleanup: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      run_cleanup_job: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      search_users: {
+        Args: { p_limit?: number; p_query: string };
+        Returns: Json;
+      };
+      send_message: {
+        Args: {
+          p_content: string;
+          p_conversation_id: string;
+          p_media_type?: string;
+          p_media_url?: string;
+          p_message_type?: string;
+          p_reply_to_id?: string;
+        };
+        Returns: Json;
+      };
+      toggle_follow: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      toggle_post_like: {
+        Args: { p_post_id: string; p_user_id: string } | { post_id: string };
+        Returns: Json;
+      };
+      unblock_user: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      unfollow_user: {
+        Args: { target_user_id: string };
+        Returns: Json;
+      };
+      update_user_profile: {
+        Args: {
+          p_avatar_url?: string;
+          p_display_name?: string;
+          p_first_name?: string;
+          p_last_name?: string;
+          p_settings?: Json;
+        };
+        Returns: Json;
+      };
+    };
     Enums: {
-      user_role: "admin" | "bartender" | "dj" | "user" | "vip";
-      user_status: "active" | "blocked" | "suspended" | "pending" | "inactive";
-      wolfpack_status: "pending" | "active" | "inactive" | "suspended";
-      wolfpack_tier: "basic" | "premium" | "vip" | "permanent";
-      location_verification_status:
-        | "unverified"
-        | "verified"
-        | "pending"
-        | "failed"
-        | "reported";
-      gender: "male" | "female" | "other" | "prefer_not_to_say";
-      notification_type:
-        | "follow"
-        | "like"
-        | "comment"
-        | "mention"
-        | "message"
-        | "wink"
-        | "video_posted"
-        | "system";
-      interaction_type:
-        | "wink"
-        | "wave"
-        | "cheers"
-        | "highfive"
-        | "hug"
-        | "wolfpack_invite";
-      broadcast_type:
-        | "general"
-        | "howl_request"
-        | "contest_announcement"
-        | "song_request"
-        | "vibe_check"
-        | "spotlight"
-        | "event"
-        | "single_ladies_spotlight"
-        | "special_event"
-        | "promotion"
-        | "vip_announcement";
-      dj_event_type:
-        | "dance_battle"
-        | "hottest_person"
-        | "best_costume"
-        | "name_that_tune"
-        | "song_request"
-        | "next_song_vote"
-        | "trivia"
-        | "contest"
-        | "poll"
-        | "custom";
-      dj_event_status:
-        | "pending"
-        | "active"
-        | "voting"
-        | "completed"
-        | "cancelled";
-      food_drink_type: "food" | "drink";
-      video_status: "uploading" | "processing" | "ready" | "failed" | "deleted";
-      video_privacy: "public" | "wolfpack_only" | "followers_only" | "private";
-      post_visibility:
-        | "public"
-        | "wolfpack_only"
-        | "followers_only"
-        | "private";
-      post_type: "text" | "image" | "video" | "poll" | "event" | "repost";
-      message_type: "text" | "image" | "voice" | "system" | "emoji";
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
     };
   };
 };
 
-// Utility types for easier usage
-export type Tables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Row"];
-export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Insert"];
-export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Update"];
-export type Views<T extends keyof Database["public"]["Views"]> =
-  Database["public"]["Views"][T]["Row"];
-export type Enums<T extends keyof Database["public"]["Enums"]> =
-  Database["public"]["Enums"][T];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-// Specific table types for convenience
-export type User = Tables<"users">;
-export type Location = Tables<"locations">;
-export type WolfpackVideo = Tables<"content_posts">;
-export type WolfpackPost = Tables<"content_posts">;
-export type WolfpackInteraction = Tables<"wolfpack_interactions">;
-export type WolfpackFollow = Tables<"social_follows">;
-export type WolfpackChatMessage = Tables<"wolfpack_chat_messages">;
-export type WolfpackDirectMessage = Tables<"chat_messages">;
-export type WolfpackActivityNotification = Tables<
-  "wolfpack_activity_notifications"
->;
-export type DjBroadcast = Tables<"dj_broadcasts">;
-export type DjEvent = Tables<"dj_events">;
-export type FoodDrinkCategory = Tables<"food_drink_categories">;
-export type FoodDrinkItem = Tables<"food_drink_items">;
-export type Image = Tables<"images">;
-export type WolfpackComment = Tables<"content_comments">;
-export type FeatureFlag = Tables<"feature_flags">;
-export type SystemConfig = Tables<"system_config">;
+type DefaultSchema =
+  DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
-// Insert types
-export type UserInsert = TablesInsert<"users">;
-export type LocationInsert = TablesInsert<"locations">;
-export type WolfpackVideoInsert = TablesInsert<"content_posts">;
-export type WolfpackPostInsert = TablesInsert<"content_posts">;
-export type WolfpackInteractionInsert = TablesInsert<"wolfpack_interactions">;
-export type WolfpackFollowInsert = TablesInsert<"social_follows">;
-export type WolfpackChatMessageInsert = TablesInsert<"wolfpack_chat_messages">;
-export type WolfpackDirectMessageInsert = TablesInsert<
-  "chat_messages"
->;
-export type WolfpackActivityNotificationInsert = TablesInsert<
-  "wolfpack_activity_notifications"
->;
-export type DjBroadcastInsert = TablesInsert<"dj_broadcasts">;
-export type DjEventInsert = TablesInsert<"dj_events">;
-export type FoodDrinkCategoryInsert = TablesInsert<"food_drink_categories">;
-export type FoodDrinkItemInsert = TablesInsert<"food_drink_items">;
-export type ImageInsert = TablesInsert<"images">;
-export type WolfpackCommentInsert = TablesInsert<"content_comments">;
-export type FeatureFlagInsert = TablesInsert<"feature_flags">;
-export type SystemConfigInsert = TablesInsert<"system_config">;
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  } ? keyof (
+      & DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+        "Tables"
+      ]
+      & DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+        "Views"
+      ]
+    )
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+} ? (
+    & DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+      "Tables"
+    ]
+    & DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+      "Views"
+    ]
+  )[TableName] extends {
+    Row: infer R;
+  } ? R
+  : never
+  : DefaultSchemaTableNameOrOptions extends keyof (
+    & DefaultSchema["Tables"]
+    & DefaultSchema["Views"]
+  ) ? (
+      & DefaultSchema["Tables"]
+      & DefaultSchema["Views"]
+    )[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R;
+    } ? R
+    : never
+  : never;
 
-// Update types
-export type UserUpdate = TablesUpdate<"users">;
-export type LocationUpdate = TablesUpdate<"locations">;
-export type WolfpackVideoUpdate = TablesUpdate<"content_posts">;
-export type WolfpackPostUpdate = TablesUpdate<"content_posts">;
-export type WolfpackInteractionUpdate = TablesUpdate<"wolfpack_interactions">;
-export type WolfpackFollowUpdate = TablesUpdate<"social_follows">;
-export type WolfpackChatMessageUpdate = TablesUpdate<"wolfpack_chat_messages">;
-export type WolfpackDirectMessageUpdate = TablesUpdate<
-  "chat_messages"
->;
-export type WolfpackActivityNotificationUpdate = TablesUpdate<
-  "wolfpack_activity_notifications"
->;
-export type DjBroadcastUpdate = TablesUpdate<"dj_broadcasts">;
-export type DjEventUpdate = TablesUpdate<"dj_events">;
-export type FoodDrinkCategoryUpdate = TablesUpdate<"food_drink_categories">;
-export type FoodDrinkItemUpdate = TablesUpdate<"food_drink_items">;
-export type ImageUpdate = TablesUpdate<"images">;
-export type WolfpackCommentUpdate = TablesUpdate<"content_comments">;
-export type FeatureFlagUpdate = TablesUpdate<"feature_flags">;
-export type SystemConfigUpdate = TablesUpdate<"system_config">;
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  } ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+      "Tables"
+    ]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+} ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+    "Tables"
+  ][TableName] extends {
+    Insert: infer I;
+  } ? I
+  : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I;
+    } ? I
+    : never
+  : never;
 
-// View types
-export type ActiveWolfpackMember = Views<"active_wolfpack_members">;
-export type Profile = Views<"profiles">;
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  } ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+      "Tables"
+    ]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+} ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]][
+    "Tables"
+  ][TableName] extends {
+    Update: infer U;
+  } ? U
+  : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U;
+    } ? U
+    : never
+  : never;
 
-// Enum types
-export type UserRole = Enums<"user_role">;
-export type UserStatus = Enums<"user_status">;
-export type WolfpackStatus = Enums<"wolfpack_status">;
-export type WolfpackTier = Enums<"wolfpack_tier">;
-export type LocationVerificationStatus = Enums<"location_verification_status">;
-export type Gender = Enums<"gender">;
-export type NotificationType = Enums<"notification_type">;
-export type InteractionType = Enums<"interaction_type">;
-export type BroadcastType = Enums<"broadcast_type">;
-export type DjEventType = Enums<"dj_event_type">;
-export type DjEventStatus = Enums<"dj_event_status">;
-export type FoodDrinkType = Enums<"food_drink_type">;
-export type content_poststatus = Enums<"video_status">;
-export type VideoPrivacy = Enums<"video_privacy">;
-export type PostVisibility = Enums<"post_visibility">;
-export type PostType = Enums<"post_type">;
-export type MessageType = Enums<"message_type">;
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  } ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]][
+      "Enums"
+    ]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+} ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][
+    EnumName
+  ]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never;
 
-// ===== WOLFPACK ERROR TYPES =====
-export interface WolfpackError extends Error {
-  code?: string;
-  details?: unknown;
-  statusCode?: number;
-}
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  } ? keyof DatabaseWithoutInternals[
+      PublicCompositeTypeNameOrOptions["schema"]
+    ]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+} ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]][
+    "CompositeTypes"
+  ][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends
+    keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never;
 
-// ===== WOLFPACK SERVICE RESPONSE TYPES =====
-export interface WolfpackServiceResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  code?: string;
-}
-
-// ===== PAGINATION TYPES =====
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-// ===== FILTER TYPES =====
-export interface LocationFilter {
-  latitude?: number;
-  longitude?: number;
-  radiusMiles?: number;
-  locationId?: string;
-  verified?: boolean;
-}
-
-export interface WolfpackMemberFilter extends LocationFilter {
-  status?: WolfpackStatus;
-  tier?: WolfpackTier;
-  online?: boolean;
-  hasOpenTab?: boolean;
-}
-
-export interface VideoFilter extends LocationFilter {
-  conversationid?: string;
-  status?: content_poststatus;
-  privacy?: VideoPrivacy;
-  featured?: boolean;
-  category?: string;
-  hashtags?: string[];
-}
-
-export interface PostFilter extends LocationFilter {
-  conversationid?: string;
-  visibility?: PostVisibility;
-  postType?: PostType;
-  featured?: boolean;
-  hashtags?: string[];
-}
-
-// ===== INTERACTION TYPES =====
-export interface CreateInteractionParams {
-  receiverId: string;
-  interactionType: InteractionType;
-  metadata?: Json;
-}
-
-export interface InteractionResponse {
-  interaction: WolfpackInteraction;
-  notification?: WolfpackActivityNotification;
-}
-
-// ===== CHAT TYPES =====
-export interface SendMessageParams {
-  sessionId: string;
-  content: string;
-  messageType?: MessageType;
-  imageUrl?: string | null;
-  replyToMessageId?: string | null;
-}
-
-export interface DirectMessageParams {
-  recipientId: string;
-  content: string;
-  metadata?: Json;
-}
-
-// ===== BROADCAST TYPES =====
-export interface CreateBroadcastParams {
-  title: string;
-  message: string;
-  subtitle?: string | null;
-  broadcastType?: BroadcastType;
-  duration?: number;
-  interaction?: Json;
-  styling?: {
-    backgroundColor?: string;
-    textColor?: string;
-    accentColor?: string;
-    animationType?: string;
-    emojiBurst?: string[];
-  };
-}
-
-// ===== WOLFPACK MEMBER TYPES =====
-export interface WolfpackMemberProfile extends User {
-  followersCount?: number;
-  followingCount?: number;
-  postsCount?: number;
-  content_postsCount?: number;
-  isFollowing?: boolean;
-  isFollower?: boolean;
-}
-
-// ===== NOTIFICATION PREFERENCES =====
-export interface NotificationPreferences {
-  events: boolean;
-  marketing: boolean;
-  announcements: boolean;
-  chat_messages: boolean;
-  order_updates: boolean;
-  member_activity: boolean;
-  social_interactions: boolean;
-}
-
-// ===== PRIVACY SETTINGS =====
-export interface PrivacySettings {
-  accept_winks: boolean;
-  show_location: boolean;
-  accept_messages: boolean;
-  profile_visible: boolean;
-}
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const;

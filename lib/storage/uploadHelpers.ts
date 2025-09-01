@@ -31,7 +31,7 @@ export async function uploadImage(
     const fileName = `${user.id}/${timestamp}_${randomString}.${fileExt}`;
 
     // Upload to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, {
         contentType: file.type,
@@ -181,7 +181,7 @@ export function generateVideoThumbnail(file: File): Promise<File> {
       );
     };
 
-    video.onerror = (e) => {
+    video.onerror = () => {
       reject(new Error("Video loading error"));
     };
 

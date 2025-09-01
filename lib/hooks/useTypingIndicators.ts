@@ -129,8 +129,7 @@ export function useTypingIndicators(
         currentUser.username ||
         "User",
       username: currentUser.username || undefined,
-      avatarUrl: currentUser.avatarUrl || currentUser.profileImageUrl ||
-        undefined,
+      avatarUrl: currentUser.avatarUrl || undefined,
       timestamp: Date.now(),
     };
 

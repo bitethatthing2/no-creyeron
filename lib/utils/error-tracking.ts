@@ -1,16 +1,18 @@
 "use client";
 
-import * as React from 'react';
+import * as React from "react";
 import { toast } from "sonner";
 
 export interface ErrorContext {
-  conversationid?: string;
+  conversationId?: string;
+  userId?: string;
   feature?: string;
   action?: string;
   component?: string;
   timestamp?: string;
   userAgent?: string;
   url?: string;
+  [key: string]: unknown; // Allow additional context
 }
 
 export interface AppError {
@@ -18,6 +20,10 @@ export interface AppError {
   stack?: string;
   context: ErrorContext;
   level: "info" | "warning" | "error" | "critical";
+}
+
+interface ErrorInfo {
+  componentStack?: string;
 }
 
 class ErrorTracker {
@@ -143,19 +149,7 @@ class ErrorTracker {
     this.errors = [];
   }
 
-  // Helper methods for common error scenarios
-  logWolfpackError(
-    error: Error | string,
-    action: string,
-    context: Partial<ErrorContext> = {},
-  ) {
-    this.logError(error, {
-      ...context,
-      feature: "wolfpack",
-      action,
-    });
-  }
-
+  // Helper methods for common error scenarios in your app
   logAuthError(
     error: Error | string,
     action: string,
@@ -168,14 +162,50 @@ class ErrorTracker {
     });
   }
 
-  logLocationError(
+  logChatError(
     error: Error | string,
     action: string,
     context: Partial<ErrorContext> = {},
   ) {
     this.logError(error, {
       ...context,
-      feature: "location",
+      feature: "chat",
+      action,
+    });
+  }
+
+  logContentError(
+    error: Error | string,
+    action: string,
+    context: Partial<ErrorContext> = {},
+  ) {
+    this.logError(error, {
+      ...context,
+      feature: "content",
+      action,
+    });
+  }
+
+  logMenuError(
+    error: Error | string,
+    action: string,
+    context: Partial<ErrorContext> = {},
+  ) {
+    this.logError(error, {
+      ...context,
+      feature: "menu",
+      action,
+    });
+  }
+
+  logNotificationError(
+    error: Error | string,
+    action: string,
+    context: Partial<ErrorContext> = {},
+  ) {
+    this.logError(error, {
+      ...context,
+      feature: "notifications",
       action,
     });
   }
@@ -190,6 +220,18 @@ class ErrorTracker {
       feature: "payment",
       action,
     }, "critical");
+  }
+
+  logSocialError(
+    error: Error | string,
+    action: string,
+    context: Partial<ErrorContext> = {},
+  ) {
+    this.logError(error, {
+      ...context,
+      feature: "social",
+      action,
+    });
   }
 }
 
@@ -222,13 +264,13 @@ export function withErrorTracking<T extends unknown[], R>(
 
 // React error boundary helper
 export function createErrorBoundary(
-  fallbackComponent: ComponentType<{ error: Error }>,
+  fallbackComponent: React.ComponentType<{ error: Error }>,
 ) {
   return class ErrorBoundary extends React.Component<
-    { children: ReactNode },
+    { children: React.ReactNode },
     { hasError: boolean; error?: Error }
   > {
-    constructor(props: { children: ReactNode }) {
+    constructor(props: { children: React.ReactNode }) {
       super(props);
       this.state = { hasError: false };
     }

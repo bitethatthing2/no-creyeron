@@ -162,6 +162,7 @@ export default function ConversationPage() {
             <button 
               onClick={() => router.back()}
               className="text-white hover:text-gray-300 transition-colors"
+              title="Go back"
             >
               <ArrowLeft className="h-6 w-6" />
             </button>
@@ -220,8 +221,7 @@ export default function ConversationPage() {
             <p className="text-gray-400 text-sm">Active</p>
           </div>
         </div>
-        
-        <button className="text-white hover:text-gray-300 transition-colors">
+        <button className="text-white hover:text-gray-300 transition-colors" title="More options">
           <MoreVertical className="h-6 w-6" />
         </button>
       </div>

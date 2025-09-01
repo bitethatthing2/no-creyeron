@@ -362,9 +362,9 @@ export default function Page() {
                     <span className="text-white/90 text-sm">VIP table reservations available</span>
                   </div>
                 </div>
-                <Link href="/wolfpack">
+                <Link href="/social/feed">
                   <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 text-base font-semibold rounded-full">
-                    Join the Wolf Pack
+                    Connect & Share
                   </Button>
                 </Link>
               </div>

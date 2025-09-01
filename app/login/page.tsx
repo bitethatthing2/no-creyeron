@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { logAuthError, getAuthErrorSuggestions, testSupabaseAuth } from '@/lib/auth/debug';
+import { logAuthError, getAuthErrorSuggestions, testSupabaseAuth } from '@/lib/authUtils';
 
 export default function UnifiedLoginPage() {
   const [isSignUp, setIsSignUp] = React.useState(false);
@@ -105,8 +105,8 @@ export default function UnifiedLoginPage() {
             description: "Welcome! Please check your email to verify your account.",
           });
           
-          // Redirect to wolfpack feed after successful signup
-          router.push('/wolfpack/feed');
+          // Redirect to social feed after successful signup
+          router.push('/social/feed');
           return;
         }
       } else {
@@ -227,7 +227,7 @@ export default function UnifiedLoginPage() {
               localStorage.removeItem('redirectAfterLogin');
             }
             
-            const targetUrl = urlReturnUrl || localStorageReturnUrl || '/wolfpack/feed';
+            const targetUrl = urlReturnUrl || localStorageReturnUrl || '/social/feed';
             console.log('🔄 Redirecting user to:', targetUrl);
             router.push(targetUrl);
           }
@@ -340,6 +340,7 @@ export default function UnifiedLoginPage() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required={isSignUp}
+                  autoComplete="name"
                   className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                 />
               </div>

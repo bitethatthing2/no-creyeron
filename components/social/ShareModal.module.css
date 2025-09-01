@@ -1,0 +1,7 @@
+/* ShareModal.module.css */
+
+/* Safe area inset bottom for mobile devices */
+.safeAreaBottom {
+  height: 1.5rem; /* 6 in Tailwind = 1.5rem */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

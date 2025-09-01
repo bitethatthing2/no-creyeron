@@ -5,7 +5,11 @@
 
 import { supabase } from "@/lib/supabase";
 import { ErrorCategory, errorService, ErrorSeverity } from "./error-service";
-import { dataService } from "./data-service";
+import type { Database } from "@/types/supabase"; // Import generated types
+
+// Type aliases from generated types
+type UserInsert = Database["public"]["Tables"]["users"]["Insert"];
+type UserUpdate = Database["public"]["Tables"]["users"]["Update"];
 
 export enum UserRole {
   USER = "user",
@@ -19,18 +23,19 @@ export enum Permission {
   VIEW_PROFILE = "view_profile",
   EDIT_PROFILE = "edit_profile",
 
-  // Wolfpack permissions
-  JOIN_WOLFPACK = "join_wolfpack",
-  VIEW_WOLF_PACK_MEMBERS = "view_wolf_pack_members",
-  SEND_PRIVATE_MESSAGES = "send_private_messages",
-  PARTICIPATE_IN_EVENTS = "participate_in_events",
-  VOTE_IN_EVENTS = "vote_in_events",
+  // Social permissions
+  FOLLOW_USERS = "follow_users",
+  VIEW_FOLLOWERS = "view_followers",
+  SEND_MESSAGES = "send_messages",
+  VIEW_POSTS = "view_posts",
+  CREATE_POSTS = "create_posts",
+  LIKE_POSTS = "like_posts",
+  COMMENT_ON_POSTS = "comment_on_posts",
 
   // Admin permissions (full access)
-  CREATE_EVENTS = "create_events",
-  MANAGE_EVENTS = "manage_events",
+  MANAGE_POSTS = "manage_posts",
   SEND_MASS_MESSAGES = "send_mass_messages",
-  VIEW_MEMBER_DETAILS = "view_member_details",
+  VIEW_USER_DETAILS = "view_user_details",
   MANAGE_ORDERS = "manage_orders",
   VIEW_ORDER_DETAILS = "view_order_details",
   UPDATE_ORDER_STATUS = "update_order_status",
@@ -50,16 +55,23 @@ interface AuthUser {
   email: string;
   role: UserRole;
   permissions: Permission[];
-  isWolfpackMember: boolean;
+  isVerified: boolean;
+  isPrivate: boolean;
   profile: {
-    displayName?: string;
-    firstName?: string;
-    lastName?: string;
-    wolfEmoji?: string;
-    profileImageUrl?: string;
-    vibeStatus?: string;
-    bio?: string;
-    favoriteDrink?: string;
+    displayName?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    username: string;
+    profileImageUrl?: string | null;
+    avatarUrl?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    website?: string | null;
+    occupation?: string | null;
+    company?: string | null;
   };
   session: {
     accessToken: string;
@@ -68,10 +80,11 @@ interface AuthUser {
     sessionId: string;
   };
   metadata: {
-    lastLoginAt: Date;
-    loginCount: number;
-    preferredLocation?: string;
-    deviceInfo?: string;
+    lastSeenAt?: Date | null;
+    accountStatus: string;
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    settings: Database["public"]["Tables"]["users"]["Row"]["settings"];
   };
 }
 
@@ -84,8 +97,9 @@ interface LoginCredentials {
 interface SignupData {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
   displayName?: string;
   agreeToTerms: boolean;
 }
@@ -97,18 +111,20 @@ class AuthService {
   private permissionCache = new Map<string, Permission[]>();
   private sessionRefreshTimer: NodeJS.Timeout | null = null;
 
-  // Role-Permission mapping - Ultra-simplified 2-role system
+  // Role-Permission mapping - Simplified 2-role system
   private rolePermissions: Record<UserRole, Permission[]> = {
     [UserRole.USER]: [
       Permission.VIEW_MENU,
       Permission.PLACE_ORDER,
       Permission.VIEW_PROFILE,
       Permission.EDIT_PROFILE,
-      Permission.JOIN_WOLFPACK,
-      Permission.VIEW_WOLF_PACK_MEMBERS,
-      Permission.SEND_PRIVATE_MESSAGES,
-      Permission.PARTICIPATE_IN_EVENTS,
-      Permission.VOTE_IN_EVENTS,
+      Permission.FOLLOW_USERS,
+      Permission.VIEW_FOLLOWERS,
+      Permission.SEND_MESSAGES,
+      Permission.VIEW_POSTS,
+      Permission.CREATE_POSTS,
+      Permission.LIKE_POSTS,
+      Permission.COMMENT_ON_POSTS,
     ],
     [UserRole.ADMIN]: Object.values(Permission),
   };
@@ -153,7 +169,8 @@ class AuthService {
    */
   async signIn(credentials: LoginCredentials): Promise<AuthUser> {
     try {
-      const { email, password, rememberMe = false } = credentials;
+      const { email, password } = credentials;
+      // rememberMe could be used for session persistence in the future
 
       const { data, error } = await this.client.auth.signInWithPassword({
         email,
@@ -184,8 +201,8 @@ class AuthService {
         user = await this.loadUserProfile(data.user.id);
       }
 
-      // Update login metadata
-      await this.updateLoginMetadata(user.id);
+      // Update last seen
+      await this.updateLastSeen(user.id);
 
       this.setupSessionRefresh();
       this.notifyAuthListeners(user);
@@ -207,6 +224,7 @@ class AuthService {
       const {
         email,
         password,
+        username,
         firstName,
         lastName,
         displayName,
@@ -227,9 +245,11 @@ class AuthService {
         password,
         options: {
           data: {
+            username,
             first_name: firstName,
             last_name: lastName,
-            display_name: displayName || `${firstName} ${lastName}`,
+            display_name: displayName || `${firstName} ${lastName}`.trim() ||
+              username,
           },
         },
       });
@@ -296,11 +316,9 @@ class AuthService {
   /**
    * Check if user has specific permission
    */
-  hasPermission(permission: Permission, conversationid?: string): boolean {
-    const user = conversationid ? null : this.currentUser; // For now, only check current user
-    if (!user) return false;
-
-    return user.permissions.includes(permission);
+  hasPermission(permission: Permission): boolean {
+    if (!this.currentUser) return false;
+    return this.currentUser.permissions.includes(permission);
   }
 
   /**
@@ -350,12 +368,19 @@ class AuthService {
         "You don't have permission to perform this action",
         ErrorSeverity.HIGH,
         ErrorCategory.AUTHORIZATION,
-        { action: "updateUserRole", targetUserId: userId, newRole },
       );
     }
 
     try {
-      await dataService.updateUser(userId, { role: newRole });
+      // Use Supabase client directly for update
+      const { error } = await this.client
+        .from("users")
+        .update({ role: newRole })
+        .eq("id", userId);
+
+      if (error) {
+        throw error;
+      }
 
       // Update permissions cache
       this.permissionCache.delete(userId);
@@ -368,42 +393,53 @@ class AuthService {
       throw errorService.handleDatabaseError(
         error as Error,
         "updateUserRole",
-        { userId, newRole },
       );
     }
   }
 
   /**
-   * Join Wolfpack
+   * Update user profile
    */
-  async joinMembership(): Promise<void> {
+  async updateProfile(
+    updates: Partial<Omit<UserUpdate, "id" | "created_at" | "updated_at">>,
+  ): Promise<void> {
     if (!this.currentUser) {
       throw errorService.handleAuthError(new Error("Not authenticated"));
     }
 
-    if (!this.hasPermission(Permission.JOIN_WOLFPACK)) {
-      throw errorService.createError(
-        "Cannot join Wolfpack",
-        "You need to be a member to join the Wolfpack",
-        ErrorSeverity.MEDIUM,
-        ErrorCategory.AUTHORIZATION,
-        { action: "joinMembership" },
-      );
-    }
-
     try {
-      await dataService.updateUser(this.currentUser.id, {
-        is_wolfpack_member: true,
-        wolfpack_join_date: new Date().toISOString(),
-        role: UserRole.USER, // Users maintain USER role when joining wolfpack
+      // Filter out any null values and ensure we're only updating allowed fields
+      const safeUpdates: UserUpdate = {};
+
+      // Type-safe key iteration
+      (Object.keys(updates) as Array<keyof typeof updates>).forEach((key) => {
+        const value = updates[key];
+        if (value !== null && value !== undefined) {
+          // Type assertion is safe here because we know the key exists in UserUpdate
+          (safeUpdates as Record<
+            keyof UserUpdate,
+            UserUpdate[keyof UserUpdate]
+          >)[key] = value;
+        }
       });
 
-      // Reload user profile with new permissions
+      // Always update the updated_at timestamp
+      safeUpdates.updated_at = new Date().toISOString();
+
+      const { error } = await this.client
+        .from("users")
+        .update(safeUpdates)
+        .eq("id", this.currentUser.id);
+
+      if (error) {
+        throw error;
+      }
+
       await this.loadUserProfile(this.currentUser.id);
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
-        "joinMembership",
+        "updateProfile",
       );
     }
   }
@@ -424,11 +460,16 @@ class AuthService {
   /**
    * Private methods
    */
-  private async loadUserProfile(userId: string): Promise<AuthUser> {
+  private async loadUserProfile(authId: string): Promise<AuthUser> {
     try {
-      const userData = await dataService.getUser(userId);
+      // First, try to get user by auth_id
+      const { data: userData, error } = await this.client
+        .from("users")
+        .select("*")
+        .eq("auth_id", authId)
+        .single();
 
-      if (!userData) {
+      if (error || !userData) {
         throw new Error("User profile not found");
       }
 
@@ -436,20 +477,27 @@ class AuthService {
       const permissions = this.getRolePermissions(role);
 
       const user: AuthUser = {
-        id: userId,
+        id: userData.id,
         email: userData.email,
         role,
         permissions,
-        isWolfpackMember: userData.is_wolfpack_member || false,
+        isVerified: userData.is_verified || false,
+        isPrivate: userData.is_private || false,
         profile: {
           displayName: userData.display_name,
           firstName: userData.first_name,
           lastName: userData.last_name,
-          wolfEmoji: userData.wolf_emoji,
+          username: userData.username,
           profileImageUrl: userData.profile_image_url,
-          vibeStatus: userData.vibe_status,
+          avatarUrl: userData.avatar_url,
           bio: userData.bio,
-          favoriteDrink: userData.favorite_drink,
+          location: userData.location,
+          city: userData.city,
+          state: userData.state,
+          country: userData.country,
+          website: userData.website,
+          occupation: userData.occupation,
+          company: userData.company,
         },
         session: {
           accessToken: "", // Will be set by Supabase
@@ -458,79 +506,91 @@ class AuthService {
           sessionId: `session_${Date.now()}`,
         },
         metadata: {
-          lastLoginAt: new Date(userData.last_login_at || Date.now()),
-          loginCount: userData.login_count || 0,
-          preferredLocation: userData.preferred_location,
-          deviceInfo: typeof navigator !== "undefined"
-            ? navigator.userAgent
-            : undefined,
+          lastSeenAt: userData.last_seen_at
+            ? new Date(userData.last_seen_at)
+            : null,
+          accountStatus: userData.account_status || "active",
+          emailNotifications: userData.email_notifications ?? true,
+          pushNotifications: userData.push_notifications ?? true,
+          settings: userData.settings || {},
         },
       };
 
       this.currentUser = user;
-      this.permissionCache.set(userId, permissions);
+      this.permissionCache.set(userData.id, permissions);
 
       return user;
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
         "loadUserProfile",
-        { userId },
       );
     }
   }
 
-  // Note: createUserProfile removed - user profiles are now created automatically by database trigger
-
-  private async createMissingUserProfile(authUser: any): Promise<void> {
+  private async createMissingUserProfile(
+    authUser: {
+      id: string;
+      email?: string;
+      user_metadata?: {
+        display_name?: string;
+        full_name?: string;
+        username?: string;
+        first_name?: string;
+        last_name?: string;
+      };
+    },
+  ): Promise<void> {
     try {
-      const displayName = authUser.user_metadata?.display_name ||
-        authUser.user_metadata?.full_name ||
-        authUser.email?.split("@")[0] ||
-        "User";
+      const metadata = authUser.user_metadata || {};
+      const email = authUser.email || "";
+      const username = metadata.username || email.split("@")[0] ||
+        `user_${Date.now()}`;
+      const displayName = metadata.display_name ||
+        metadata.full_name ||
+        username;
 
-      await dataService.executeQuery(
-        () =>
-          this.client
-            .from("users")
-            .insert({
-              auth_id: authUser.id,
-              email: authUser.email || "",
-              first_name: displayName.split(" ")[0] || "",
-              last_name: displayName.split(" ").slice(1).join(" ") || "",
-              display_name: displayName,
-              role: UserRole.USER,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .select(),
-        "createMissingUserProfile",
-      );
+      const userInsert: UserInsert = {
+        auth_id: authUser.id,
+        email,
+        username,
+        first_name: metadata.first_name || displayName.split(" ")[0] || "",
+        last_name: metadata.last_name ||
+          displayName.split(" ").slice(1).join(" ") || "",
+        display_name: displayName,
+        role: UserRole.USER,
+        account_status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await this.client
+        .from("users")
+        .insert(userInsert)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       throw errorService.handleDatabaseError(
         error as Error,
         "createMissingUserProfile",
-        { userId: authUser.id },
       );
     }
   }
 
-  private async updateLoginMetadata(userId: string): Promise<void> {
+  private async updateLastSeen(userId: string): Promise<void> {
     try {
-      await dataService.executeQuery(
-        () =>
-          this.client
-            .from("users")
-            .update({
-              last_login: new Date().toISOString(),
-              // login_count field not available in schema
-            })
-            .eq("id", userId)
-            .select(),
-        "updateLoginMetadata",
-      );
+      await this.client
+        .from("users")
+        .update({
+          last_seen_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
     } catch (error) {
-      console.warn("Failed to update login metadata:", error);
+      console.warn("Failed to update last seen:", error);
     }
   }
 

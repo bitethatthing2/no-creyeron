@@ -269,39 +269,48 @@ class MenuApiService {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      
-      if (filters.category) params.set('category', filters.category);
-      if (filters.is_available !== undefined) params.set('is_available', filters.is_available.toString());
-      if (filters.featured !== undefined) params.set('featured', filters.featured.toString());
-      if (filters.search) params.set('search', filters.search);
-      if (filters.limit) params.set('limit', filters.limit.toString());
-      if (filters.offset) params.set('offset', filters.offset.toString());
-      if (filters.sort_by) params.set('sort_by', filters.sort_by);
-      if (filters.sort_order) params.set('sort_order', filters.sort_order);
+
+      if (filters.category) params.set("category", filters.category);
+      if (filters.is_available !== undefined) {
+        params.set("is_available", filters.is_available.toString());
+      }
+      if (filters.featured !== undefined) {
+        params.set("featured", filters.featured.toString());
+      }
+      if (filters.search) params.set("search", filters.search);
+      if (filters.limit) params.set("limit", filters.limit.toString());
+      if (filters.offset) params.set("offset", filters.offset.toString());
+      if (filters.sort_by) params.set("sort_by", filters.sort_by);
+      if (filters.sort_order) params.set("sort_order", filters.sort_order);
 
       // Use dedicated food endpoint
-      const edgeFunctionUrl = 'https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/food';
+      const edgeFunctionUrl =
+        "https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/food";
       const url = `${edgeFunctionUrl}?${params.toString()}`;
-      
-      console.log('Fetching food items from:', url);
-      
+
+      console.log("Fetching food items from:", url);
+
       const response = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+          "Content-Type": "application/json",
+          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+          "Authorization": `Bearer ${
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+          }`,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`Food endpoint returned ${response.status}: ${response.statusText}`);
+        throw new Error(
+          `Food endpoint returned ${response.status}: ${response.statusText}`,
+        );
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
-        throw new Error(result.error || 'Food endpoint returned error');
+        throw new Error(result.error || "Food endpoint returned error");
       }
 
       return {
@@ -316,15 +325,18 @@ class MenuApiService {
       };
     } catch (error) {
       console.error("Food items query error:", error);
-      console.error("Food endpoint URL was:", `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/food`);
+      console.error(
+        "Food endpoint URL was:",
+        `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/food`,
+      );
       console.error("Food error details:", {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack',
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : "No stack",
         type: typeof error,
-        error: error
+        error: error,
       });
       console.log("Falling back to local food data");
-      
+
       // Fallback to local data
       return this.getLocalMenuItems({ ...filters, type: "food" });
     }
@@ -340,39 +352,48 @@ class MenuApiService {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      
-      if (filters.category) params.set('category', filters.category);
-      if (filters.is_available !== undefined) params.set('is_available', filters.is_available.toString());
-      if (filters.featured !== undefined) params.set('featured', filters.featured.toString());
-      if (filters.search) params.set('search', filters.search);
-      if (filters.limit) params.set('limit', filters.limit.toString());
-      if (filters.offset) params.set('offset', filters.offset.toString());
-      if (filters.sort_by) params.set('sort_by', filters.sort_by);
-      if (filters.sort_order) params.set('sort_order', filters.sort_order);
+
+      if (filters.category) params.set("category", filters.category);
+      if (filters.is_available !== undefined) {
+        params.set("is_available", filters.is_available.toString());
+      }
+      if (filters.featured !== undefined) {
+        params.set("featured", filters.featured.toString());
+      }
+      if (filters.search) params.set("search", filters.search);
+      if (filters.limit) params.set("limit", filters.limit.toString());
+      if (filters.offset) params.set("offset", filters.offset.toString());
+      if (filters.sort_by) params.set("sort_by", filters.sort_by);
+      if (filters.sort_order) params.set("sort_order", filters.sort_order);
 
       // Use dedicated drink endpoint
-      const edgeFunctionUrl = 'https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/drink';
+      const edgeFunctionUrl =
+        "https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/drink";
       const url = `${edgeFunctionUrl}?${params.toString()}`;
-      
-      console.log('Fetching drink items from:', url);
-      
+
+      console.log("Fetching drink items from:", url);
+
       const response = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+          "Content-Type": "application/json",
+          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+          "Authorization": `Bearer ${
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+          }`,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`Drink endpoint returned ${response.status}: ${response.statusText}`);
+        throw new Error(
+          `Drink endpoint returned ${response.status}: ${response.statusText}`,
+        );
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
-        throw new Error(result.error || 'Drink endpoint returned error');
+        throw new Error(result.error || "Drink endpoint returned error");
       }
 
       return {
@@ -387,15 +408,18 @@ class MenuApiService {
       };
     } catch (error) {
       console.error("Drink items query error:", error);
-      console.error("Drink endpoint URL was:", `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/drink`);
+      console.error(
+        "Drink endpoint URL was:",
+        `https://tvnpgbjypnezoasbhbwx.supabase.co/functions/v1/MENU_ITEMS/drink`,
+      );
       console.error("Drink error details:", {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack',
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : "No stack",
         type: typeof error,
-        error: error
+        error: error,
       });
       console.log("Falling back to local drink data");
-      
+
       // Fallback to local data
       return this.getLocalMenuItems({ ...filters, type: "drink" });
     }
@@ -566,9 +590,7 @@ class MenuApiService {
         .filter((cat) => cat.is_active)
         .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
         .map((cat) => ({
-          category: cat.name,
-          id: cat.id,
-          type: cat.type,
+          category: cat.name ?? "",
           count: 0,
         }));
 

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { UserProfileManager } from '@/components/wolfpack/UserProfileManager';
+import { UserProfileManager } from '@/components/social/UserProfileManager';
 
 export default function EditProfilePage() {
   const router = useRouter();

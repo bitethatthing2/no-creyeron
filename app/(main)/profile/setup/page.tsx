@@ -46,7 +46,6 @@ export default function ProfileSetupPage() {
         last_name: formData.last_name,
         display_name: formData.display_name || `${formData.first_name} ${formData.last_name}`.trim(),
         username: formData.username,
-        bio: formData.bio,
       });
 
       toast({

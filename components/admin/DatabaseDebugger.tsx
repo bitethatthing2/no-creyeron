@@ -22,7 +22,7 @@ export function DatabaseDebugger() {
   const [directQueryStatus, setDirectQueryStatus] = React.useState<null | {
     success: boolean;
     error?: string;
-    data?: any;
+    data?: unknown;
   }>(null);
   const [apiTestStatus, setApiTestStatus] = React.useState<null | {
     success: boolean;
@@ -30,7 +30,7 @@ export function DatabaseDebugger() {
     status?: number;
     statusText?: string;
     error?: string;
-    data?: any;
+    data?: unknown;
   }>(null);
   
   // Run health check

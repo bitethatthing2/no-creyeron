@@ -26,7 +26,7 @@ export interface ErrorContext {
   userId?: string;
   component?: string;
   action?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp?: Date;
   sessionId?: string;
   userAgent?: string;
@@ -404,13 +404,13 @@ class ErrorService {
   /**
    * Create retry function for retryable errors
    */
-  createRetryFunction(
-    originalFunction: () => Promise<any>,
+  createRetryFunction<T>(
+    originalFunction: () => Promise<T>,
     maxRetries: number = 3,
     delayMs: number = 1000,
-  ): () => Promise<any> {
+  ): () => Promise<T> {
     return async () => {
-      let lastError: Error;
+      let lastError: Error = new Error("Unknown error");
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -431,6 +431,8 @@ class ErrorService {
           );
         }
       }
+      // This line is unreachable, but required for type safety
+      throw lastError;
     };
   }
 }

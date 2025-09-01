@@ -3,11 +3,29 @@
 import * as React from "react";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { supabase } from "@/lib/supabase";
-import type {
-  DeviceInfo,
-  DeviceToken,
-  FCMTokenData,
-} from "@/types/global/notifications";
+import type { Database } from "@/types/database.types";
+
+// Type definitions based on your database schema
+type PushToken = Database["public"]["Tables"]["push_tokens"]["Row"];
+type PushTokenInsert = Database["public"]["Tables"]["push_tokens"]["Insert"];
+type PushTokenUpdate = Database["public"]["Tables"]["push_tokens"]["Update"];
+
+// Device info types
+export interface DeviceInfo {
+  type: "web" | "ios" | "android";
+  name: string;
+  version?: string;
+  isStandalone?: boolean;
+  browser?: string;
+  platform?: string;
+}
+
+export interface FCMTokenData {
+  token: string;
+  deviceType: string;
+  deviceName: string;
+  appVersion?: string;
+}
 
 /**
  * Detect device information for token registration
@@ -30,6 +48,8 @@ function getDeviceInfo(): DeviceInfo {
       }`,
       version: process.env.NEXT_PUBLIC_APP_VERSION,
       isStandalone,
+      browser: ua,
+      platform: navigator.platform,
     };
   }
 
@@ -39,6 +59,8 @@ function getDeviceInfo(): DeviceInfo {
       name: `Android ${/Android (\d+\.\d+)/.exec(ua)?.[1] || "Unknown"}`,
       version: process.env.NEXT_PUBLIC_APP_VERSION,
       isStandalone,
+      browser: ua,
+      platform: navigator.platform,
     };
   }
 
@@ -49,22 +71,19 @@ function getDeviceInfo(): DeviceInfo {
     }`,
     version: process.env.NEXT_PUBLIC_APP_VERSION,
     isStandalone,
+    browser: ua,
+    platform: navigator.platform,
   };
 }
 
 export function useDeviceToken(authUserId?: string) {
   const [fcmToken, setFcmToken] = React.useState<string | null>(null);
-  const [deviceToken, setDeviceToken] = React.useState<DeviceToken | null>(
-    null,
-  );
+  const [deviceToken, setDeviceToken] = React.useState<PushToken | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [permission, setPermission] = React.useState<NotificationPermission>(
     "default",
   );
-  const [dbUserId, setDbUserId] = React.useState<string | null>(null);
-
-  // Removed mapAuthIdToUserId - we'll use auth ID directly for FCM tokens
 
   /**
    * Request notification permission and get FCM token
@@ -122,7 +141,7 @@ export function useDeviceToken(authUserId?: string) {
     async (
       tokenData: FCMTokenData,
       userId: string,
-    ): Promise<DeviceToken | null> => {
+    ): Promise<PushToken | null> => {
       try {
         if (!userId) {
           throw new Error("User ID is required");
@@ -132,34 +151,32 @@ export function useDeviceToken(authUserId?: string) {
 
         // Check if token already exists
         const { data: existingToken } = await supabase
-          .from("user_fcm_tokens")
+          .from("push_tokens")
           .select("*")
           .eq("token", tokenData.token)
           .single();
 
         if (existingToken) {
           // Update existing token
+          const updateData: PushTokenUpdate = {
+            user_id: userId,
+            platform: deviceInfo.type,
+            device_info: {
+              type: deviceInfo.type,
+              name: deviceInfo.name,
+              version: deviceInfo.version ||
+                process.env.NEXT_PUBLIC_APP_VERSION,
+              isStandalone: deviceInfo.isStandalone,
+              browser: deviceInfo.browser || "unknown",
+              platform: deviceInfo.platform || "unknown",
+            },
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          };
+
           const { data: updatedToken, error: updateError } = await supabase
-            .from("user_fcm_tokens")
-            .update({
-              user_id: userId,
-              platform: deviceInfo.type,
-              device_info: JSON.stringify({
-                type: deviceInfo.type,
-                name: deviceInfo.name,
-                version: deviceInfo.version ||
-                  process.env.NEXT_PUBLIC_APP_VERSION,
-                isStandalone: deviceInfo.isStandalone,
-                browser: typeof window !== "undefined"
-                  ? navigator.userAgent
-                  : "unknown",
-                platform: typeof window !== "undefined"
-                  ? navigator.platform
-                  : "unknown",
-              }),
-              is_active: true,
-              updated_at: new Date().toISOString(),
-            })
+            .from("push_tokens")
+            .update(updateData)
             .eq("token", tokenData.token)
             .select()
             .single();
@@ -172,27 +189,25 @@ export function useDeviceToken(authUserId?: string) {
           return updatedToken;
         } else {
           // Insert new token
+          const insertData: PushTokenInsert = {
+            user_id: userId,
+            token: tokenData.token,
+            platform: deviceInfo.type,
+            device_info: {
+              type: deviceInfo.type,
+              name: deviceInfo.name,
+              version: deviceInfo.version ||
+                process.env.NEXT_PUBLIC_APP_VERSION,
+              isStandalone: deviceInfo.isStandalone,
+              browser: deviceInfo.browser || "unknown",
+              platform: deviceInfo.platform || "unknown",
+            },
+            is_active: true,
+          };
+
           const { data: newToken, error: insertError } = await supabase
-            .from("user_fcm_tokens")
-            .insert({
-              user_id: userId,
-              token: tokenData.token,
-              platform: deviceInfo.type,
-              device_info: JSON.stringify({
-                type: deviceInfo.type,
-                name: deviceInfo.name,
-                version: deviceInfo.version ||
-                  process.env.NEXT_PUBLIC_APP_VERSION,
-                isStandalone: deviceInfo.isStandalone,
-                browser: typeof window !== "undefined"
-                  ? navigator.userAgent
-                  : "unknown",
-                platform: typeof window !== "undefined"
-                  ? navigator.platform
-                  : "unknown",
-              }),
-              is_active: true,
-            })
+            .from("push_tokens")
+            .insert(insertData)
             .select()
             .single();
 
@@ -219,10 +234,10 @@ export function useDeviceToken(authUserId?: string) {
    * Load existing device token for user
    */
   const loadDeviceToken = React.useCallback(
-    async (userId: string): Promise<DeviceToken | null> => {
+    async (userId: string): Promise<PushToken | null> => {
       try {
         const { data, error } = await supabase
-          .from("user_fcm_tokens")
+          .from("push_tokens")
           .select("*")
           .eq("user_id", userId)
           .eq("is_active", true)
@@ -234,7 +249,7 @@ export function useDeviceToken(authUserId?: string) {
           throw new Error(error.message);
         }
 
-        return data as DeviceToken | null;
+        return data;
       } catch (err) {
         const errorMessage = err instanceof Error
           ? err.message
@@ -262,25 +277,25 @@ export function useDeviceToken(authUserId?: string) {
 
       // Use auth ID directly for FCM tokens
       const userId = authId;
-      setDbUserId(userId);
-      const finalUserId = userId;
 
       // First, load existing token from database
-      const existingToken = await loadDeviceToken(finalUserId);
+      const existingToken = await loadDeviceToken(userId);
 
       if (existingToken) {
         setDeviceToken(existingToken);
         setFcmToken(existingToken.token);
 
         // Update last used timestamp
-        if (existingToken.id) {
-          await supabase
-            .from("user_fcm_tokens")
-            .update({
-              last_used_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", existingToken.id);
+        const { error: updateError } = await supabase
+          .from("push_tokens")
+          .update({
+            last_used_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingToken.id);
+
+        if (updateError) {
+          console.error("Error updating last_used_at:", updateError);
         }
       } else if (Notification.permission === "granted") {
         // If permission is granted but no token exists, try to get token without requesting permission
@@ -304,10 +319,7 @@ export function useDeviceToken(authUserId?: string) {
                   deviceName: getDeviceInfo().name,
                   appVersion: process.env.NEXT_PUBLIC_APP_VERSION,
                 };
-                const savedToken = await saveDeviceToken(
-                  tokenData,
-                  finalUserId,
-                );
+                const savedToken = await saveDeviceToken(tokenData, userId);
                 if (savedToken) {
                   setDeviceToken(savedToken);
                   setFcmToken(token);
@@ -336,8 +348,8 @@ export function useDeviceToken(authUserId?: string) {
   const registerToken = React.useCallback(
     async (): Promise<boolean> => {
       try {
-        if (!dbUserId) {
-          throw new Error("No database user ID available");
+        if (!authUserId) {
+          throw new Error("No user ID available");
         }
 
         const token = await requestPermissionAndToken();
@@ -353,7 +365,7 @@ export function useDeviceToken(authUserId?: string) {
           appVersion: process.env.NEXT_PUBLIC_APP_VERSION,
         };
 
-        const savedToken = await saveDeviceToken(tokenData, dbUserId);
+        const savedToken = await saveDeviceToken(tokenData, authUserId);
 
         if (savedToken) {
           setDeviceToken(savedToken);
@@ -371,7 +383,7 @@ export function useDeviceToken(authUserId?: string) {
         return false;
       }
     },
-    [requestPermissionAndToken, saveDeviceToken, dbUserId],
+    [requestPermissionAndToken, saveDeviceToken, authUserId],
   );
 
   /**
@@ -381,12 +393,8 @@ export function useDeviceToken(authUserId?: string) {
     if (!deviceToken) return false;
 
     try {
-      if (!deviceToken.id) {
-        throw new Error("Device token ID is missing");
-      }
-
       const { error } = await supabase
-        .from("user_fcm_tokens")
+        .from("push_tokens")
         .update({
           is_active: false,
           updated_at: new Date().toISOString(),
@@ -457,7 +465,7 @@ export function useDeviceToken(authUserId?: string) {
     loading,
     error,
     permission,
-    registerToken: dbUserId ? registerToken : null,
+    registerToken: authUserId ? registerToken : null,
     deactivateToken,
     refresh: authUserId ? () => initializeToken(authUserId) : null,
     isSupported: typeof window !== "undefined" && "Notification" in window,

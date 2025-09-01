@@ -24,14 +24,14 @@ export function TopNav() {
 
   const menuItems = [
     { href: '/', label: 'Home' },
-    { href: '/wolfpack/feed', label: 'Wolf Pack' },
+    { href: '/social/feed', label: 'Social' },
     { href: '/blog', label: 'Blog' },
   ];
 
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-lg border-b border-white/30 topnav-shadow">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/10 border-b border-white/20 topnav-shadow">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
@@ -67,7 +67,7 @@ export function TopNav() {
                   More <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-white/20 backdrop-blur-lg border-white/30 shadow-2xl">
+              <DropdownMenuContent className="bg-black/80 border-white/20 shadow-2xl">
                 <DropdownMenuItem asChild>
                   <Link href="/about" className="text-white hover:text-red-500">
                     About Us
@@ -132,7 +132,7 @@ export function TopNav() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-white/30 bg-white/20 backdrop-blur-lg rounded-b-lg shadow-xl">
+          <div className="md:hidden py-4 border-t border-white/20 bg-black/80 rounded-b-lg shadow-xl">
             {menuItems.map((item) => (
               <Link
                 key={item.href}

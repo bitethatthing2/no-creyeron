@@ -46,7 +46,7 @@ interface UserSearchResult {
   username?: string;
   avatarUrl?: string;
   avatar_url?: string;
-  wolfpack_status?: string;
+  account_status?: string;
   location?: string;
   first_name?: string;
   last_name?: string;
@@ -131,7 +131,7 @@ export default function MessagesInboxPage() {
     try {
       setSearchingUsers(true);
 
-      const response = await fetch('/api/messages/wolfpack-members', {
+      const response = await fetch('/api/users/current', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -160,11 +160,11 @@ export default function MessagesInboxPage() {
 
         setSearchUsers(filteredMembers);
       } else {
-        console.error('❌ Failed to fetch wolfpack members:', response.status, data);
+        console.error('❌ Failed to fetch social members:', response.status, data);
         setSearchUsers([]);
       }
     } catch (error) {
-      console.error('Error fetching wolfpack members:', error);
+      console.error('Error fetching social members:', error);
       setSearchUsers([]);
     } finally {
       setSearchingUsers(false);
@@ -256,7 +256,9 @@ export default function MessagesInboxPage() {
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-gray-800 bg-black sticky top-0 z-10">
         <button
+          type="button"
           onClick={() => router.back()}
+          aria-label="Go back"
           className="p-2 hover:bg-gray-800 rounded-full transition-colors"
         >
           <ArrowLeft className="h-5 w-5 text-white" />
@@ -267,7 +269,9 @@ export default function MessagesInboxPage() {
         </div>
 
         <button
+          type="button"
           onClick={() => setShowAllMembers(true)}
+          aria-label="Search members"
           className="p-2 hover:bg-gray-800 rounded-full transition-colors"
         >
           <Search className="h-5 w-5 text-white" />
@@ -285,8 +289,10 @@ export default function MessagesInboxPage() {
               <p className="text-red-200 text-sm font-medium">Connection Error</p>
               <p className="text-red-300 text-sm mt-1">{error}</p>
               <button
+                type="button"
                 onClick={retryLoadConversations}
                 disabled={retrying}
+                aria-label="Retry loading conversations"
                 className="mt-3 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white text-xs rounded-md transition-colors flex items-center gap-1"
               >
                 {retrying ? (
@@ -300,7 +306,9 @@ export default function MessagesInboxPage() {
               </button>
             </div>
             <button
+              type="button"
               onClick={() => setError(null)}
+              aria-label="Close error message"
               className="text-red-400 hover:text-red-200 transition-colors"
             >
               ✕
@@ -332,7 +340,9 @@ export default function MessagesInboxPage() {
       {!searchQuery && !showAllMembers && conversations.length === 0 && (
         <div className="p-4 border-b border-gray-800">
           <button
+            type="button"
             onClick={() => setShowAllMembers(true)}
+            aria-label="Browse all pack members to start a conversation"
             className="w-full bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 text-red-400 rounded-lg py-3 px-4 flex items-center justify-center gap-2 transition-colors"
           >
             <span className="text-lg">🐺</span>
@@ -351,10 +361,12 @@ export default function MessagesInboxPage() {
               </h3>
               {showAllMembers && (
                 <button
+                  type="button"
                   onClick={() => {
                     setShowAllMembers(false);
                     setSearchQuery('');
                   }}
+                  aria-label="Clear search and return to conversations"
                   className="text-xs text-gray-500 hover:text-white transition-colors"
                 >
                   Clear
@@ -375,6 +387,7 @@ export default function MessagesInboxPage() {
                 {searchUsers.map((user: UserSearchResult) => (
                   <button
                     key={user.id}
+                    type="button"
                     onClick={() => {
                       console.log('🔍 Clicking on user:', {
                         id: user.id,
@@ -384,6 +397,7 @@ export default function MessagesInboxPage() {
                       });
                       router.push(`/messages/user/${user.id}`);
                     }}
+                    aria-label={`Start conversation with ${user.displayName || user.display_name || user.username || 'Wolf Pack Member'}`}
                     className="w-full flex items-center gap-4 p-4 hover:bg-gray-900/50 transition-colors text-left"
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800">
@@ -401,7 +415,7 @@ export default function MessagesInboxPage() {
                         <h3 className="font-semibold text-white truncate">
                           {user.displayName || user.display_name || user.username || 'Wolf Pack Member'}
                         </h3>
-                        {user.wolfpack_status === 'active' && (
+                        {user.account_status === 'active' && (
                           <span className="text-xs bg-red-600/20 text-red-400 px-2 py-0.5 rounded-full">
                             🐺 Pack
                           </span>
@@ -439,7 +453,9 @@ export default function MessagesInboxPage() {
               </p>
               {conversations.length === 0 && (
                 <button
+                  type="button"
                   onClick={() => setShowAllMembers(true)}
+                  aria-label="Browse pack members to start a new conversation"
                   className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-medium transition-colors"
                 >
                   Browse Pack Members
@@ -457,7 +473,9 @@ export default function MessagesInboxPage() {
                 return (
                   <button
                     key={conversation.conversation_id || conversation.id}
+                    type="button"
                     onClick={() => router.push(`/messages/conversation/${conversation.conversation_id || conversation.id}`)}
+                    aria-label={`Open conversation with ${getDisplayName(conversation)}`}
                     className="w-full flex items-center gap-4 p-4 hover:bg-gray-900/50 transition-colors text-left"
                   >
                     <div className="relative">

@@ -11,33 +11,37 @@ interface User {
   avatar_url?: string | null;
   profile_image_url?: string | null;
   username?: string | null;
+  email?: string | null;
+  last_seen_at?: string | null;
 }
 
 interface ConversationData {
   id: string;
   conversation_type: string;
+  name?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+  last_message_at?: string | null;
+  last_message_preview?: string | null;
+  last_message_sender_id?: string | null;
+  message_count: number;
+  participant_count: number;
+  is_archived: boolean;
+  is_pinned: boolean;
   created_at: string;
   updated_at: string;
+  metadata?: Record<string, unknown>;
 }
 
-interface ConversationParticipantRaw {
-  conversation_id: string;
-  joined_at: string;
-  last_read_at: string | null;
-  notification_settings: Record<string, unknown> | null;
-  chat_conversations: ConversationData | null;
-}
-
-interface ParticipantWithUser {
-  user_id: string;
-  users: User | null;
-}
-
-interface MessageWithSender {
+interface MessageData {
+  id: string;
   content: string;
   created_at: string;
   sender_id: string;
-  sender: User | null;
+  message_type: string;
+  is_deleted: boolean;
+  is_edited: boolean;
+  users?: User;
 }
 
 interface TransformedConversation {
@@ -45,36 +49,41 @@ interface TransformedConversation {
   conversation_id: string;
   conversation_type: string;
   name: string;
+  description?: string | null;
+  avatar_url: string;
   last_message_at: string | null;
   last_message_preview: string;
+  message_count: number;
+  participant_count: number;
+  is_archived: boolean;
+  is_pinned: boolean;
   created_at: string;
   updated_at: string;
   unread_count: number;
-  other_user_id: string | null;
-  other_user_name: string;
-  other_user_avatar: string;
-  other_user_username: string | null;
-  other_user_is_online: boolean;
-  user_id: string | null;
-  display_name: string;
-  username: string | null;
-  avatar_url: string;
-  last_message: string;
-  last_message_time: string | null;
-  is_online: boolean;
-}
 
-interface SupabaseError {
-  message: string;
-  details?: string;
-  hint?: string;
-  code?: string;
+  // For direct messages
+  other_user?: {
+    id: string;
+    display_name: string;
+    username?: string | null;
+    avatar_url: string;
+    is_online: boolean;
+  };
+
+  // Participants list for group chats
+  participants?: Array<{
+    id: string;
+    display_name: string;
+    username?: string | null;
+    avatar_url: string;
+  }>;
 }
 
 export async function GET() {
   console.log("🔥 CONVERSATIONS API HIT AT:", new Date().toISOString());
+
   try {
-    // Create server client using the same pattern as other API routes
+    // Create server client
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -96,141 +105,126 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    console.log(
-      "🚀 API UPDATED - Fetching conversations for auth user:",
-      user.id,
-      "at",
-      new Date().toISOString(),
-    );
+    console.log("🚀 Fetching conversations for auth user:", user.id);
 
-    // Get the current user's database record first
+    // Get the current user's database record using auth_id
     const { data: currentUserRecord, error: userError } = await supabase
       .from("users")
-      .select("id, display_name")
+      .select(
+        "id, display_name, first_name, last_name, username, avatar_url, profile_image_url",
+      )
       .eq("auth_id", user.id)
-      .maybeSingle();
+      .single();
 
     if (userError || !currentUserRecord) {
-      console.error("Current user not found in database:", userError);
+      console.error("User lookup error:", userError);
 
-      // Provide more specific error information
+      // Check if user profile doesn't exist
       if (userError?.code === "PGRST116") {
         return NextResponse.json({
           error: "User profile not found. Please complete profile setup.",
           code: "PROFILE_MISSING",
-          details: userError.message,
         }, { status: 404 });
       }
 
       return NextResponse.json({
         error: "Failed to verify user profile",
         code: "USER_LOOKUP_FAILED",
-        details: userError?.message || "Unknown error",
       }, { status: 500 });
     }
 
-    console.log("📍 Found current user record:", {
+    console.log("📍 Found current user:", {
       id: currentUserRecord.id,
       auth_id: user.id,
-      display_name: currentUserRecord.display_name || "N/A",
+      display_name: currentUserRecord.display_name,
     });
 
-    // Query conversations directly and join with participant data using correct table names
-    const { data: conversations, error } = await supabase
+    // Get all conversations where the user is a participant
+    const { data: participantRecords, error: convError } = await supabase
       .from("chat_participants")
       .select(`
+        id,
+        user_id,
         conversation_id,
+        role,
         joined_at,
         last_read_at,
+        is_active,
         notification_settings,
-        chat_conversations(
+        chat_conversations (
           id,
           conversation_type,
+          name,
+          description,
+          avatar_url,
+          last_message_at,
+          last_message_preview,
+          last_message_sender_id,
+          message_count,
+          participant_count,
+          is_archived,
+          is_pinned,
           created_at,
-          updated_at
+          updated_at,
+          metadata
         )
       `)
       .eq("user_id", currentUserRecord.id)
+      .eq("is_active", true)
       .order("joined_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching conversations:", error);
+    if (convError) {
+      console.error("Error fetching conversations:", convError);
       return NextResponse.json({
         error: "Failed to fetch conversations",
-        code: "CONVERSATION_FETCH_FAILED",
-        details: error.message,
+        details: convError.message,
       }, { status: 500 });
     }
 
-    console.log("✅ Raw conversations data:", conversations);
-
-    if (!conversations || conversations.length === 0) {
+    if (!participantRecords || participantRecords.length === 0) {
+      console.log("No conversations found for user");
       return NextResponse.json({ conversations: [] });
     }
 
-    // For each conversation, get additional data including messages and participants
+    console.log(`Found ${participantRecords.length} conversation(s)`);
+
+    // Transform conversations with additional data
     const transformedConversations = await Promise.all(
-      conversations.map(async (convParticipant: ConversationParticipantRaw) => {
+      participantRecords.map(async (record) => {
         try {
-          const conversationId = convParticipant.conversation_id;
-          const conversation = convParticipant.chat_conversations;
+          // Handle both single object and array responses from Supabase
+          const conversationRaw = record.chat_conversations;
+          const conversation = Array.isArray(conversationRaw)
+            ? conversationRaw[0] as ConversationData
+            : conversationRaw as ConversationData;
 
           if (!conversation) {
             console.warn(
-              `No conversation data for participant:`,
-              convParticipant,
+              "No conversation data for participant record:",
+              record.id,
             );
             return null;
           }
 
-          console.log(`🎯 Processing conversation:`, {
-            conversation_id: conversationId,
-            conversation_type: conversation.conversation_type,
-          });
+          const conversationId = conversation.id;
+          console.log(
+            `Processing conversation ${conversationId} (${conversation.conversation_type})`,
+          );
 
-          // Get the latest message for this conversation WITH sender info
-          const { data: latestMessage } = await supabase
-            .from("chat_messages")
-            .select(`
-              content, 
-              created_at, 
-              sender_id,
-              sender:users!wolfpack_messages_sender_id_fkey(
-                id,
-                display_name,
-                first_name,
-                last_name,
-                username,
-                avatar_url,
-                profile_image_url
-              )
-            `)
-            .eq("conversation_id", conversationId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle() as { data: MessageWithSender | null };
-
-          // Initialize variables that will be used throughout
-          let otherUser: User | null = null;
-          let displayName = "Wolf Pack Member"; // Will be updated if we find user info
-          let allParticipants: ParticipantWithUser[] | null = null; // Declare at function scope
-
-          if (conversation.conversation_type === "direct") {
-            console.log(`🔍 Direct conversation ${conversationId}:`, {
-              hasLatestMessage: !!latestMessage,
-              senderId: latestMessage?.sender_id,
-              currentUserId: currentUserRecord.id,
-              senderIsCurrentUser:
-                latestMessage?.sender_id === currentUserRecord.id,
-            });
-
-            // FIRST: Try to get the other user from ANY message in the conversation
-            // This is the most reliable way since messages always have sender info
-            const { data: allMessages, error: messagesError } = await supabase
+          // Get the latest message if there is one
+          let lastMessage: MessageData | null = null;
+          if (conversation.last_message_at) {
+            const { data: messageData } = await supabase
               .from("chat_messages")
               .select(`
+                id,
+                content,
+                created_at,
                 sender_id,
-                sender:users!sender_id(
+                message_type,
+                is_deleted,
+                is_edited,
+                users:sender_id (
                   id,
                   display_name,
                   first_name,
@@ -241,273 +235,186 @@ export async function GET() {
                 )
               `)
               .eq("conversation_id", conversationId)
-              .limit(10) as {
-                data: MessageWithSender[] | null;
-                error: SupabaseError | null;
-              };
+              .eq("is_deleted", false)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single();
 
-            console.log(`📧 Messages for ${conversationId}:`, {
-              messagesCount: allMessages?.length,
-              messagesError,
-              messages: allMessages?.map((m) => ({
-                sender_id: m.sender_id,
-                has_sender: !!m.sender,
-                sender_data: m.sender,
-              })),
-            });
-
-            // Find a message from someone other than the current user
-            if (allMessages && allMessages.length > 0) {
-              for (const msg of allMessages) {
-                const senderData = msg.sender;
-                console.log(`🔍 Checking message sender:`, {
-                  sender_id: msg.sender_id,
-                  is_current_user: msg.sender_id === currentUserRecord.id,
-                  has_sender_data: !!senderData,
-                  sender_data: senderData,
-                });
-
-                if (msg.sender_id !== currentUserRecord.id && senderData) {
-                  otherUser = senderData;
-                  const fullName = `${otherUser.first_name || ""} ${
-                    otherUser.last_name || ""
-                  }`.trim();
-                  displayName = otherUser.display_name ||
-                    fullName ||
-                    otherUser.username ||
-                    "Wolf Pack Member";
-                  console.log(
-                    `✅ Found other user from messages: ${displayName} (id: ${otherUser.id})`,
-                  );
-                  break;
-                }
-              }
-            }
-
-            // SECOND FALLBACK: Try participants table if we didn't find from messages
-            if (!otherUser) {
-              const { data: participantsData, error: participantsError } =
-                await supabase
-                  .from("chat_participants")
-                  .select(`
-                  user_id,
-                  users(id, display_name, first_name, last_name, avatar_url, profile_image_url, username)
-                `)
-                  .eq("conversation_id", conversationId) as {
-                    data: ParticipantWithUser[] | null;
-                    error: SupabaseError | null;
-                  };
-
-              allParticipants = participantsData;
-
-              console.log(`🔍 Participants lookup for ${conversationId}:`, {
-                allParticipants,
-                participantsError,
-                currentUserId: currentUserRecord.id,
-              });
-
-              // Filter out current user in JavaScript
-              const otherParticipants = allParticipants?.filter((p) =>
-                p.user_id !== currentUserRecord.id
-              );
-
-              if (otherParticipants && otherParticipants.length > 0) {
-                const otherParticipant = otherParticipants[0];
-                const userData = otherParticipant.users;
-
-                if (userData) {
-                  otherUser = userData;
-                  const fullName = `${otherUser.first_name || ""} ${
-                    otherUser.last_name || ""
-                  }`.trim();
-                  displayName = otherUser.display_name ||
-                    fullName ||
-                    otherUser.username ||
-                    "Wolf Pack Member";
-                  console.log(
-                    `✅ Found participant: ${displayName} (id: ${otherUser.id})`,
-                  );
-                }
-              }
-            }
-
-            // THIRD FALLBACK: Use latest message sender if available
-            if (
-              !otherUser && latestMessage?.sender &&
-              latestMessage.sender.id !== currentUserRecord.id
-            ) {
-              otherUser = latestMessage.sender;
-              const fullName = `${otherUser.first_name || ""} ${
-                otherUser.last_name || ""
-              }`.trim();
-              displayName = otherUser.display_name ||
-                fullName ||
-                otherUser.username ||
-                "Wolf Pack Member";
-              console.log(`✅ Found user from latest message: ${displayName}`);
-            }
-
-            // FINAL FALLBACK: If we have a sender_id but no user data, try direct lookup
-            if (!otherUser && allMessages && allMessages.length > 0) {
-              for (const msg of allMessages) {
-                if (
-                  msg.sender_id && msg.sender_id !== currentUserRecord.id &&
-                  !msg.sender
-                ) {
-                  console.log(
-                    `🔍 Attempting direct user lookup for sender_id: ${msg.sender_id}`,
-                  );
-                  const { data: directUser, error: directError } =
-                    await supabase
-                      .from("users")
-                      .select(
-                        "id, display_name, first_name, last_name, username, avatar_url, profile_image_url",
-                      )
-                      .eq("id", msg.sender_id)
-                      .single();
-
-                  if (directUser) {
-                    otherUser = directUser;
-                    const fullName = `${otherUser.first_name || ""} ${
-                      otherUser.last_name || ""
-                    }`.trim();
-                    displayName = otherUser.display_name ||
-                      fullName ||
-                      otherUser.username ||
-                      "Wolf Pack Member";
-                    console.log(
-                      `✅ Found user via direct lookup: ${displayName} (id: ${otherUser.id})`,
-                    );
-                    break;
-                  } else {
-                    console.log(
-                      `❌ Direct lookup failed for ${msg.sender_id}:`,
-                      directError,
-                    );
-
-                    // Try looking up by auth_id in case sender_id is actually an auth_id
-                    const { data: authUser, error: authError } = await supabase
-                      .from("users")
-                      .select(
-                        "id, display_name, first_name, last_name, username, avatar_url, profile_image_url",
-                      )
-                      .eq("auth_id", msg.sender_id)
-                      .single();
-
-                    if (authUser) {
-                      otherUser = authUser;
-                      const fullName = `${otherUser.first_name || ""} ${
-                        otherUser.last_name || ""
-                      }`.trim();
-                      displayName = otherUser.display_name ||
-                        fullName ||
-                        otherUser.username ||
-                        "Wolf Pack Member";
-                      console.log(
-                        `✅ Found user via auth_id lookup: ${displayName} (id: ${otherUser.id})`,
-                      );
-                      break;
-                    } else {
-                      console.log(
-                        `❌ Auth_id lookup also failed for ${msg.sender_id}:`,
-                        authError,
-                      );
-                    }
-                  }
-                }
-              }
-            }
-
-            // Check for broken conversations after attempting to find participants
-            if (displayName === "Wolf Pack Member") {
-              // If we haven't fetched participants yet, do it now
-              if (!allParticipants) {
-                const { data: participantsData } = await supabase
-                  .from("chat_participants")
-                  .select(`
-                    user_id,
-                    users(id, display_name, first_name, last_name, avatar_url, profile_image_url, username)
-                  `)
-                  .eq("conversation_id", conversationId) as {
-                    data: ParticipantWithUser[] | null;
-                    error: SupabaseError | null;
-                  };
-
-                allParticipants = participantsData;
-              }
-
-              // Check if this is a broken conversation (only has current user)
-              const participantCount = allParticipants?.length || 0;
-
-              if (
-                participantCount === 1 &&
-                allParticipants?.[0].user_id === currentUserRecord.id
-              ) {
-                // This is a broken conversation - only has the current user
-                console.log(
-                  `⚠️ BROKEN: Conversation ${conversationId} only has current user as participant - removing from list`,
-                );
-
-                // Skip this conversation entirely - it shouldn't exist
-                return null;
-              } else if (!latestMessage) {
-                // This is likely a new conversation with no messages
-                displayName = "New Conversation";
-                console.log(
-                  `📝 New conversation with no messages: ${conversationId}`,
-                );
-              } else {
-                // We have messages but couldn't identify the user
-                displayName = "Unknown User";
-                console.log(
-                  `⚠️ ERROR: Could not determine name for conversation ${conversationId} despite having messages`,
-                );
-              }
-            }
-          } else if (conversation.conversation_type === "group") {
-            displayName = "WolfPack Team"; // Default group name
+            lastMessage = messageData as MessageData | null;
           }
 
-          console.log(
-            `📝 Conversation ${conversationId} display name: ${displayName}`,
-          );
+          // Calculate unread count (messages since last_read_at)
+          let unreadCount = 0;
+          if (record.last_read_at) {
+            const { count } = await supabase
+              .from("chat_messages")
+              .select("id", { count: "exact", head: true })
+              .eq("conversation_id", conversationId)
+              .neq("sender_id", currentUserRecord.id)
+              .gt("created_at", record.last_read_at);
 
-          // Safely access otherUser properties
-          const userId = otherUser?.id || null;
-          const userAvatar = otherUser?.profile_image_url ||
-            otherUser?.avatar_url || "/icons/wolf-icon.png";
-          const userUsername = otherUser?.username || null;
+            unreadCount = count || 0;
+          } else {
+            // If never read, count all messages not from current user
+            const { count } = await supabase
+              .from("chat_messages")
+              .select("id", { count: "exact", head: true })
+              .eq("conversation_id", conversationId)
+              .neq("sender_id", currentUserRecord.id);
 
-          return {
+            unreadCount = count || 0;
+          }
+
+          // Base transformed conversation
+          const baseConversation: TransformedConversation = {
             id: conversationId,
             conversation_id: conversationId,
             conversation_type: conversation.conversation_type,
-            name: displayName,
-            last_message_at: latestMessage?.created_at || null,
-            last_message_preview: latestMessage?.content || "",
+            name: conversation.name || "Unnamed Conversation",
+            description: conversation.description,
+            avatar_url: conversation.avatar_url || "/icons/wolf-icon.png",
+            last_message_at: lastMessage?.created_at ||
+              conversation.last_message_at || null,
+            last_message_preview: lastMessage?.content ||
+              conversation.last_message_preview || "",
+            message_count: conversation.message_count,
+            participant_count: conversation.participant_count,
+            is_archived: conversation.is_archived,
+            is_pinned: conversation.is_pinned,
             created_at: conversation.created_at,
             updated_at: conversation.updated_at,
-            unread_count: 0, // Calculate properly later if needed
-
-            // Other participant info
-            other_user_id: userId,
-            other_user_name: displayName,
-            other_user_avatar: userAvatar,
-            other_user_username: userUsername,
-            other_user_is_online: false, // Can be enhanced later
-
-            // Legacy format for backward compatibility
-            user_id: userId,
-            display_name: displayName,
-            username: userUsername,
-            avatar_url: userAvatar,
-            last_message: latestMessage?.content || "",
-            last_message_time: latestMessage?.created_at || null,
-            is_online: false,
+            unread_count: unreadCount,
           };
+
+          // For direct messages, get the other user
+          if (conversation.conversation_type === "direct") {
+            const { data: allParticipants } = await supabase
+              .from("chat_participants")
+              .select(`
+                user_id,
+                users (
+                  id,
+                  display_name,
+                  first_name,
+                  last_name,
+                  username,
+                  avatar_url,
+                  profile_image_url,
+                  last_seen_at
+                )
+              `)
+              .eq("conversation_id", conversationId)
+              .eq("is_active", true);
+
+            if (allParticipants && allParticipants.length > 0) {
+              // Find the other user (not current user)
+              const otherParticipant = allParticipants.find(
+                (p) => p.user_id !== currentUserRecord.id,
+              );
+
+              if (otherParticipant?.users) {
+                // Handle both single object and array responses
+                const userRaw = otherParticipant.users;
+                const otherUser = Array.isArray(userRaw)
+                  ? userRaw[0] as User
+                  : userRaw as User;
+
+                if (otherUser) {
+                  const fullName = `${otherUser.first_name || ""} ${
+                    otherUser.last_name || ""
+                  }`.trim();
+                  const displayName = otherUser.display_name || fullName ||
+                    otherUser.username || "Wolf Pack Member";
+
+                  // Check if user is online (last seen within 5 minutes)
+                  const lastSeen = otherUser.last_seen_at
+                    ? new Date(otherUser.last_seen_at)
+                    : null;
+                  const isOnline = lastSeen
+                    ? (Date.now() - lastSeen.getTime()) < 5 * 60 * 1000
+                    : false;
+
+                  baseConversation.other_user = {
+                    id: otherUser.id,
+                    display_name: displayName,
+                    username: otherUser.username,
+                    avatar_url: otherUser.avatar_url ||
+                      otherUser.profile_image_url || "/icons/wolf-icon.png",
+                    is_online: isOnline,
+                  };
+
+                  // Override conversation name and avatar with other user's info for DMs
+                  baseConversation.name = displayName;
+                  baseConversation.avatar_url =
+                    baseConversation.other_user.avatar_url;
+                }
+              }
+            }
+          } // For group chats, get all participants
+          else if (conversation.conversation_type === "group") {
+            const { data: allParticipants } = await supabase
+              .from("chat_participants")
+              .select(`
+                user_id,
+                users (
+                  id,
+                  display_name,
+                  first_name,
+                  last_name,
+                  username,
+                  avatar_url,
+                  profile_image_url
+                )
+              `)
+              .eq("conversation_id", conversationId)
+              .eq("is_active", true)
+              .limit(5); // Limit to first 5 participants for preview
+
+            if (allParticipants && allParticipants.length > 0) {
+              baseConversation.participants = allParticipants
+                .filter((p) => p.users)
+                .map((p) => {
+                  // Handle both single object and array responses
+                  const userRaw = p.users;
+                  const user = Array.isArray(userRaw)
+                    ? userRaw[0] as User
+                    : userRaw as User;
+
+                  if (!user) return null;
+
+                  const fullName = `${user.first_name || ""} ${
+                    user.last_name || ""
+                  }`.trim();
+                  const displayName = user.display_name || fullName ||
+                    user.username || "Member";
+
+                  return {
+                    id: user.id,
+                    display_name: displayName,
+                    username: user.username,
+                    avatar_url: user.avatar_url || user.profile_image_url ||
+                      "/icons/wolf-icon.png",
+                  };
+                })
+                .filter((p): p is NonNullable<typeof p> => p !== null);
+
+              // If no custom name, generate one from participants
+              if (!conversation.name) {
+                const names = baseConversation.participants
+                  .slice(0, 3)
+                  .map((p) => p.display_name);
+                baseConversation.name = names.join(", ");
+                if (allParticipants.length > 3) {
+                  baseConversation.name += ` +${allParticipants.length - 3}`;
+                }
+              }
+            }
+          }
+
+          return baseConversation;
         } catch (error) {
           console.error(
-            `Error processing conversation ${convParticipant?.conversation_id}:`,
+            `Error processing conversation ${record.conversation_id}:`,
             error,
           );
           return null;
@@ -515,16 +422,16 @@ export async function GET() {
       }),
     );
 
-    // Filter out null results (broken conversations) and sort by last message time
-    const filteredConversations = transformedConversations
-      .filter((conv): conv is TransformedConversation => {
-        if (conv === null) {
-          console.log("📝 Filtered out broken conversation");
-          return false;
-        }
-        return true;
-      })
+    // Filter out nulls and sort by last message time (most recent first)
+    const validConversations = transformedConversations
+      .filter((conv): conv is TransformedConversation => conv !== null)
       .sort((a, b) => {
+        // Pinned conversations first
+        if (a.is_pinned !== b.is_pinned) {
+          return a.is_pinned ? -1 : 1;
+        }
+
+        // Then by last message time
         const aTime = a.last_message_at
           ? new Date(a.last_message_at).getTime()
           : 0;
@@ -534,22 +441,20 @@ export async function GET() {
         return bTime - aTime;
       });
 
-    console.log(
-      "🎯 FINAL transformed conversations COUNT:",
-      filteredConversations.length,
-    );
-    console.log(
-      "🎯 FINAL transformed conversations:",
-      JSON.stringify(filteredConversations, null, 2),
-    );
+    console.log(`✅ Returning ${validConversations.length} conversations`);
 
     return NextResponse.json({
-      conversations: filteredConversations,
+      conversations: validConversations,
+      total: validConversations.length,
     });
   } catch (error) {
-    console.error("Conversation fetch error:", error);
-    return NextResponse.json({ error: "Internal server error" }, {
-      status: 500,
-    });
+    console.error("Unexpected error in conversations API:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
   }
 }

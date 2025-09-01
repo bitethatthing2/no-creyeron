@@ -20,10 +20,6 @@ interface SliderMenuProps {
   className?: string;
 }
 
-const FOOD_CATEGORIES = [
-  'Popular', 'BIRRIA', 'BREAKFAST', 'Main', 'SEA FOOD', 
-  'WINGS', 'Keto', 'Specials', 'Small Bites', 'Sides'
-];
 
 const DRINK_CATEGORIES = [
   'Boards', 'Flights', 'Towers', 'House Favorites', 'Martinis',
@@ -68,7 +64,30 @@ export default function SliderMenu({
   const getDefaultImage = useCallback((category: string, name: string): string => {
     // Use production Supabase URL for images since they exist there
     const productionUrl = 'https://tvnpgbjypnezoasbhbwx.supabase.co';
-    const localUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+    
+    // Special handling for wings with different quantities
+    // Actual menu items are named: "4 Wings", "8 Wings", "Family Wing Pack (20 Wings)"
+    if (name.toLowerCase().includes('wing')) {
+      // Extract the number from various formats
+      const match = name.match(/(\d+)\s*wings?|family.*\((\d+)/i);
+      if (match) {
+        const count = match[1] || match[2];
+        if (count) {
+          // Map to the hot-wings images
+          return `${productionUrl}/storage/v1/object/public/menu-images/food/hot-wings-${count}.png`;
+        }
+      }
+      // Try to identify by specific names
+      if (name === '4 Wings') {
+        return `${productionUrl}/storage/v1/object/public/menu-images/food/hot-wings-4.png`;
+      } else if (name === '8 Wings') {
+        return `${productionUrl}/storage/v1/object/public/menu-images/food/hot-wings-8.png`;
+      } else if (name.includes('Family Wing Pack') || name.includes('20')) {
+        return `${productionUrl}/storage/v1/object/public/menu-images/food/hot-wings-20.png`;
+      }
+      // Default to 8 if no number found
+      return `${productionUrl}/storage/v1/object/public/menu-images/food/hot-wings-8.png`;
+    }
     
     const itemName = name.toLowerCase().replace(/\s+/g, '-');
     const isDrink = DRINK_CATEGORIES.some(cat => 
@@ -98,9 +117,21 @@ export default function SliderMenu({
     const processed = filtered.map((item): MenuItem => {
       const videoUrl = item.video_url || getMenuItemVideoUrl(item.name);
       
+      // Check if item already has a specific image URL
+      let imageUrl = item.image_url;
+      
+      // For wing items, ALWAYS override with correct image based on name
+      // This is needed because database has wrong URLs (all pointing to hot-wings-8.png)
+      if (item.name.toLowerCase().includes('wing')) {
+        imageUrl = getDefaultImage(item.category || '', item.name);
+      } else if (!imageUrl) {
+        // For other items, use stored URL or generate default
+        imageUrl = getDefaultImage(item.category || '', item.name);
+      }
+      
       return {
         ...item,
-        image_url: item.image_url || getDefaultImage(item.category || '', item.name),
+        image_url: imageUrl,
         video_url: videoUrl || undefined
       };
     });
@@ -292,7 +323,7 @@ export default function SliderMenu({
           {categories.map((category) => (
             <button
               key={category}
-              onClick={() => setSelectedCategory(category)}
+              onClick={() => setSelectedCategory(category ?? 'all')}
               className={`${styles.categoryButton} ${selectedCategory === category ? styles.active : styles.inactive}`}
             >
               {category}

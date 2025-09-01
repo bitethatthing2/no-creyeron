@@ -415,11 +415,11 @@ export function EdgeFunctionTestPanel() {
             <div className="space-y-2">
               <p className="font-medium text-sm">Testing Instructions:</p>
               <ul className="text-xs space-y-1 list-disc list-inside">
-                <li>Ensure you're logged in as an admin user</li>
+                <li>Ensure you&#39;re logged in as an admin user</li>
                 <li>Check browser console for detailed logs</li>
                 <li>Failed tests may indicate missing data or permissions</li>
                 <li>Click individual function buttons for targeted testing</li>
-                <li>Use "Copy" buttons to share test results with backend team</li>
+                <li>Use &quot;Copy&quot; buttons to share test results with backend team</li>
               </ul>
             </div>
           </AlertDescription>

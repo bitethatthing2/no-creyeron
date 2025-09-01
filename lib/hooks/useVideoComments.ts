@@ -245,7 +245,7 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
         display_name: currentUser.displayName ?? null,
         username: currentUser.username || "",
         avatar_url: currentUser.avatarUrl ?? null,
-        profile_image_url: currentUser.profileImageUrl ?? null,
+        profile_image_url: currentUser.avatarUrl ?? null,
       },
       isOptimistic: true,
     };

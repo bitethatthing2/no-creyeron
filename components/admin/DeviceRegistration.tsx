@@ -76,7 +76,9 @@ export function DeviceRegistration() {
       } else {
         toast({
           title: "Registration Failed",
-          description: result.error?.message || "An unknown error occurred.",
+          description: typeof result.error === 'object' && result.error !== null && 'message' in result.error
+            ? (result.error as { message: string }).message
+            : (typeof result.error === 'string' ? result.error : "An unknown error occurred."),
           variant: "destructive",
         });
       }

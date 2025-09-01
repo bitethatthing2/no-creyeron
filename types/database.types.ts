@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
@@ -130,7 +110,21 @@ export type Database = {
             foreignKeyName: "chat_conversations_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -183,6 +177,13 @@ export type Database = {
             foreignKeyName: "chat_message_reactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -226,6 +227,13 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "chat_messages_with_reactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_message_receipts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -319,6 +327,13 @@ export type Database = {
             foreignKeyName: "chat_messages_deleted_by_fkey"
             columns: ["deleted_by"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -334,6 +349,13 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "chat_messages_with_reactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -388,6 +410,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -474,6 +503,13 @@ export type Database = {
             foreignKeyName: "content_comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -502,6 +538,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "content_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "content_interactions_user_id_fkey"
             columns: ["user_id"]
@@ -642,6 +685,13 @@ export type Database = {
           visibility?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "content_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "content_posts_user_id_fkey"
             columns: ["user_id"]
@@ -879,7 +929,21 @@ export type Database = {
             foreignKeyName: "notifications_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_user_fkey"
+            columns: ["related_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -930,6 +994,13 @@ export type Database = {
             foreignKeyName: "user_fcm_tokens_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_fcm_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -959,7 +1030,21 @@ export type Database = {
             foreignKeyName: "social_blocks_blocked_id_fkey"
             columns: ["blocked_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -995,7 +1080,21 @@ export type Database = {
             foreignKeyName: "social_follows_follower_fkey"
             columns: ["follower_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_follower_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_following_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -1149,6 +1248,13 @@ export type Database = {
             foreignKeyName: "user_post_interactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_post_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1159,52 +1265,106 @@ export type Database = {
           account_status: string | null
           auth_id: string | null
           avatar_url: string | null
+          bio: string | null
+          city: string | null
+          company: string | null
+          country: string | null
           created_at: string
+          date_of_birth: string | null
+          deleted_at: string | null
           display_name: string | null
           email: string
+          email_notifications: boolean | null
           first_name: string | null
+          gender: string | null
           id: string
+          is_private: boolean | null
+          is_verified: boolean | null
           last_name: string | null
+          last_seen_at: string | null
+          location: string | null
+          occupation: string | null
           phone: string | null
+          postal_code: string | null
           profile_image_url: string | null
+          pronouns: string | null
+          push_notifications: boolean | null
           role: string | null
           settings: Json | null
+          state: string | null
           updated_at: string
           username: string
+          website: string | null
         }
         Insert: {
           account_status?: string | null
           auth_id?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          company?: string | null
+          country?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          deleted_at?: string | null
           display_name?: string | null
           email: string
+          email_notifications?: boolean | null
           first_name?: string | null
+          gender?: string | null
           id?: string
+          is_private?: boolean | null
+          is_verified?: boolean | null
           last_name?: string | null
+          last_seen_at?: string | null
+          location?: string | null
+          occupation?: string | null
           phone?: string | null
+          postal_code?: string | null
           profile_image_url?: string | null
+          pronouns?: string | null
+          push_notifications?: boolean | null
           role?: string | null
           settings?: Json | null
+          state?: string | null
           updated_at?: string
           username: string
+          website?: string | null
         }
         Update: {
           account_status?: string | null
           auth_id?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          company?: string | null
+          country?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          deleted_at?: string | null
           display_name?: string | null
           email?: string
+          email_notifications?: boolean | null
           first_name?: string | null
+          gender?: string | null
           id?: string
+          is_private?: boolean | null
+          is_verified?: boolean | null
           last_name?: string | null
+          last_seen_at?: string | null
+          location?: string | null
+          occupation?: string | null
           phone?: string | null
+          postal_code?: string | null
           profile_image_url?: string | null
+          pronouns?: string | null
+          push_notifications?: boolean | null
           role?: string | null
           settings?: Json | null
+          state?: string | null
           updated_at?: string
           username?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -1298,6 +1458,13 @@ export type Database = {
             foreignKeyName: "chat_messages_deleted_by_fkey"
             columns: ["deleted_by"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1319,10 +1486,58 @@ export type Database = {
             foreignKeyName: "chat_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_profiles_with_stats: {
+        Row: {
+          account_status: string | null
+          auth_id: string | null
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          company: string | null
+          country: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          deleted_at: string | null
+          display_name: string | null
+          email: string | null
+          email_notifications: boolean | null
+          first_name: string | null
+          followers_count: number | null
+          following_count: number | null
+          gender: string | null
+          id: string | null
+          is_private: boolean | null
+          is_verified: boolean | null
+          last_name: string | null
+          last_seen_at: string | null
+          location: string | null
+          occupation: string | null
+          phone: string | null
+          postal_code: string | null
+          posts_count: number | null
+          profile_image_url: string | null
+          pronouns: string | null
+          push_notifications: boolean | null
+          role: string | null
+          settings: Json | null
+          state: string | null
+          updated_at: string | null
+          username: string | null
+          website: string | null
+        }
+        Relationships: []
       }
       v_menu_full: {
         Row: {
@@ -1356,34 +1571,34 @@ export type Database = {
     Functions: {
       add_comment: {
         Args: {
-          p_video_id: string
           p_content: string
           p_parent_comment_id?: string
+          p_video_id: string
         }
         Returns: Json
       }
+      batch_update_trending_scores: {
+        Args: { updates: Json }
+        Returns: undefined
+      }
       block_user: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: Json
       }
       create_post: {
         Args: {
-          p_video_url?: string
-          p_thumbnail_url?: string
           p_caption?: string
-          p_post_type?: string
           p_images?: string[]
+          p_post_type?: string
           p_tags?: string[]
+          p_thumbnail_url?: string
+          p_video_url?: string
           p_visibility?: string
         }
         Returns: Json
       }
       follow_user: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: Json
       }
       get_complete_menu: {
@@ -1392,18 +1607,18 @@ export type Database = {
       }
       get_conversation_messages: {
         Args: {
+          p_before_message_id?: string
           p_conversation_id: string
           p_limit?: number
-          p_before_message_id?: string
         }
         Returns: Json
       }
       get_cron_jobs_status: {
         Args: Record<PropertyKey, never>
         Returns: {
+          active: boolean
           jobname: string
           schedule: string
-          active: boolean
           username: string
         }[]
       }
@@ -1414,54 +1629,58 @@ export type Database = {
       get_last_cleanup_status: {
         Args: Record<PropertyKey, never>
         Returns: {
-          status: string
+          hours_since_last_run: number
           last_executed: string
           results: Json
-          hours_since_last_run: number
+          status: string
         }[]
       }
+      get_menu_items_by_type: {
+        Args: { item_type?: string }
+        Returns: Json
+      }
       get_notifications: {
-        Args: {
-          p_limit?: number
-          p_offset?: number
-        }
+        Args: { p_limit?: number; p_offset?: number }
         Returns: Json
       }
       get_or_create_dm_conversation: {
-        Args: {
-          other_user_id: string
-        }
+        Args: { other_user_id: string }
         Returns: Json
       }
       get_user_feed: {
-        Args: {
-          p_limit?: number
-          p_offset?: number
-        }
+        Args: { p_limit?: number; p_offset?: number }
         Returns: Json
       }
       get_user_posts: {
+        Args: { p_limit?: number; p_offset?: number; target_user_id?: string }
+        Returns: Json
+      }
+      get_user_posts_with_stats: {
         Args: {
-          target_user_id?: string
-          p_limit?: number
-          p_offset?: number
+          limit_count?: number
+          offset_count?: number
+          target_user_id: string
         }
         Returns: Json
       }
       get_user_profile: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: Json
+      }
+      get_user_profile_with_counts: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
+      increment_view_counts: {
+        Args: { post_ids: string[]; user_id_param: string }
+        Returns: undefined
       }
       mark_all_notifications_read: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
       mark_notification_read: {
-        Args: {
-          notification_id: string
-        }
+        Args: { notification_id: string }
         Returns: Json
       }
       perform_maintenance: {
@@ -1469,11 +1688,7 @@ export type Database = {
         Returns: undefined
       }
       register_push_token: {
-        Args: {
-          p_token: string
-          p_platform?: string
-          p_device_info?: Json
-        }
+        Args: { p_device_info?: Json; p_platform?: string; p_token: string }
         Returns: Json
       }
       run_automated_cleanup: {
@@ -1485,47 +1700,42 @@ export type Database = {
         Returns: undefined
       }
       search_users: {
-        Args: {
-          p_query: string
-          p_limit?: number
-        }
+        Args: { p_limit?: number; p_query: string }
         Returns: Json
       }
       send_message: {
         Args: {
-          p_conversation_id: string
           p_content: string
-          p_message_type?: string
-          p_media_url?: string
+          p_conversation_id: string
           p_media_type?: string
+          p_media_url?: string
+          p_message_type?: string
           p_reply_to_id?: string
         }
         Returns: Json
       }
+      toggle_follow: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       toggle_post_like: {
-        Args: {
-          post_id: string
-        }
+        Args: { p_post_id: string; p_user_id: string } | { post_id: string }
         Returns: Json
       }
       unblock_user: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: Json
       }
       unfollow_user: {
-        Args: {
-          target_user_id: string
-        }
+        Args: { target_user_id: string }
         Returns: Json
       }
       update_user_profile: {
         Args: {
+          p_avatar_url?: string
           p_display_name?: string
           p_first_name?: string
           p_last_name?: string
-          p_avatar_url?: string
           p_settings?: Json
         }
         Returns: Json
@@ -1540,27 +1750,33 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1568,20 +1784,24 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1589,20 +1809,24 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1610,30 +1834,41 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
