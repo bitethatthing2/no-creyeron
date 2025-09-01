@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { logAuthError, getAuthErrorSuggestions, testSupabaseAuth } from '@/lib/authUtils';
+import { logAuthError, getAuthErrorSuggestions, testSupabaseAuth } from '@/lib/auth-utils';
 
 export default function UnifiedLoginPage() {
   const [isSignUp, setIsSignUp] = React.useState(false);
