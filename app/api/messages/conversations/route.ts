@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 // Define types for better type safety
 interface User {
   id: string;

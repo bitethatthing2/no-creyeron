@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -42,7 +42,7 @@ interface PostUpdatePayload {
   share_count?: number | null;
 }
 
-export default function OptimizedSocialFeedPage() {
+function SocialFeedContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
@@ -529,5 +529,20 @@ export default function OptimizedSocialFeedPage() {
 
       {showCameraTest && <CameraTest />}
     </>
+  );
+}
+
+export default function OptimizedSocialFeedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-6 w-6 animate-spin text-white" />
+          <p className="text-gray-300 text-sm">Loading feed...</p>
+        </div>
+      </div>
+    }>
+      <SocialFeedContent />
+    </Suspense>
   );
 }
