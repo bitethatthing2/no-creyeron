@@ -5,7 +5,7 @@ import Script from 'next/script';
 import { Playfair_Display, Inter } from 'next/font/google';
 import { Providers } from './providers';
 import { UnifiedNotificationInit } from '@/components/notifications/UnifiedNotificationInit';
-import { PwaInitializer } from '@/components/shared/PwaInitializer';
+// import { PwaInitializer } from '@/components/shared/PwaInitializer';
 import { LogoPreloader } from '@/components/shared/LogoPreloader';
 
 // ============================================================================
@@ -320,7 +320,7 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
       >
         <Providers>
           <LogoPreloader />
-          <PwaInitializer />
+          {/* <PwaInitializer /> */}
           <UnifiedNotificationInit />
           <main>{children}</main>
         </Providers>

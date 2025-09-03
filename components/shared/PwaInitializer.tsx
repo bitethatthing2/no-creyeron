@@ -6,6 +6,9 @@ export function PwaInitializer() {
   const [updatePromptShown, setUpdatePromptShown] = React.useState(false);
   
   React.useEffect(() => {
+    // TEMPORARILY DISABLED - Service worker causing update loop
+    return;
+    
     // Initialize service worker for PWA functionality
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
