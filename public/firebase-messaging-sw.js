@@ -1,18 +1,22 @@
 // Firebase Cloud Messaging Service Worker
-// Updated to work with NEW SIDEHUSTLE Supabase backend types
+// Updated to work with environment variables and NEW SIDEHUSTLE Supabase backend types
 
 importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging-compat.js');
 
+// Firebase configuration will be injected by next.config.js
+// This ensures credentials are not hardcoded in public files
+const firebaseConfig = {
+  apiKey: "${NEXT_PUBLIC_FIREBASE_API_KEY}",
+  authDomain: "${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}",
+  projectId: "${NEXT_PUBLIC_FIREBASE_PROJECT_ID}",
+  storageBucket: "${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}",
+  messagingSenderId: "${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}",
+  appId: "${NEXT_PUBLIC_FIREBASE_APP_ID}"
+};
+
 // Initialize Firebase
-firebase.initializeApp({
-  apiKey: "AIzaSyAUWCAf5xHLMitmAgI5gfy8d2o48pnjXeo",
-  authDomain: "sidehustle-22a6a.firebaseapp.com",
-  projectId: "sidehustle-22a6a",
-  storageBucket: "sidehustle-22a6a.firebasestorage.app",
-  messagingSenderId: "993911155207",
-  appId: "1:993911155207:web:610f19ac354d69540bd8a2"
-});
+firebase.initializeApp(firebaseConfig);
 
 // Get messaging instance
 const messaging = firebase.messaging();

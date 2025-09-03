@@ -217,9 +217,9 @@ export const registerServiceWorker = async (): Promise<
   }
 
   // If we reach here, there's no service worker controlling the page
-  // DO NOT register a new one - let the ServiceWorkerRegister component handle this
+  // The service worker is registered in layout.tsx, not here
   console.log(
-    "Deferring service worker registration to ServiceWorkerRegister component",
+    "No existing service worker found. Registration handled by layout.tsx",
   );
   return null;
 };

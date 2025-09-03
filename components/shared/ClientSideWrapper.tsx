@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { NotificationProvider } from '@/components/unified';
-import ServiceWorkerRegister from '@/components/shared/ServiceWorkerRegister';
+// ServiceWorkerRegister removed - using layout.tsx registration instead
 import FirebaseInitializer from '@/components/shared/FirebaseInitializer';
 import { PwaStatusToast } from '@/components/shared/PwaStatusToast';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -78,7 +78,6 @@ export default function ClientSideWrapper({ children }: ClientSideWrapperProps):
       <TooltipProvider>
         <FirebaseInitializer>
           {children}
-          <ServiceWorkerRegister />
           <PwaStatusToast />
         </FirebaseInitializer>
       </TooltipProvider>
@@ -91,7 +90,6 @@ export default function ClientSideWrapper({ children }: ClientSideWrapperProps):
       <NotificationProvider recipientId={userId}>
         <FirebaseInitializer>
           {children}
-          <ServiceWorkerRegister />
           <PwaStatusToast />
         </FirebaseInitializer>
       </NotificationProvider>
