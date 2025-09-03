@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function WolfpackPage() {
+export default function SocialPage() {
   const router = useRouter();
 
   useEffect(() => {
@@ -12,9 +12,9 @@ export default function WolfpackPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        <p>Redirecting to social feed...</p>
+        <p className="text-muted-foreground">Redirecting to social feed...</p>
       </div>
     </div>
   );

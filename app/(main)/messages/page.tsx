@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { 
   ArrowLeft, 
   Search, 
@@ -134,12 +134,13 @@ interface ConversationWithDetails extends ChatConversation {
 export default function MessagesInboxPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
-  const supabase = createClientComponentClient();
+  const supabase = getSupabaseBrowserClient();
 
   // State management
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
   const [searchUsers, setSearchUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchingUsers, setSearchingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'groups'>('all');
@@ -150,15 +151,17 @@ export default function MessagesInboxPage() {
   const getDisplayName = (user: User | undefined | null): string => {
     if (!user) return 'Wolf Pack Member';
     
-    // Try full name first
-    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    // Try display_name first (most likely to be set by user)
+    if (user.display_name && user.display_name.trim()) return user.display_name.trim();
+    
+    // Try full name
+    const firstName = user.first_name?.trim() || '';
+    const lastName = user.last_name?.trim() || '';
+    const fullName = `${firstName} ${lastName}`.trim();
     if (fullName) return fullName;
     
-    // Then display_name
-    if (user.display_name) return user.display_name;
-    
     // Then username
-    if (user.username) return user.username;
+    if (user.username && user.username.trim()) return user.username.trim();
     
     // Fallback
     return 'Wolf Pack Member';
@@ -166,8 +169,8 @@ export default function MessagesInboxPage() {
 
   // Helper function to get avatar URL
   const getAvatarUrl = (user: User | undefined | null): string => {
-    if (!user) return '/icons/wolf-512x512.png';
-    return user.avatar_url || user.profile_image_url || '/icons/wolf-512x512.png';
+    if (!user) return 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+    return user.avatar_url || user.profile_image_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
   };
 
   // Helper function to format time
@@ -199,59 +202,169 @@ export default function MessagesInboxPage() {
 
   // Load conversations from Supabase
   const loadConversations = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('❌ No current user, skipping conversation load');
+      return;
+    }
 
     try {
+      console.log('🔄 Loading conversations for user:', currentUser.id);
       setLoading(true);
+      setError(null);
 
-      // Get user's conversations with participants and last message
+      // Get conversations where user is a participant
       const { data: participantData, error: participantError } = await supabase
         .from('chat_participants')
         .select(`
           conversation_id,
           last_read_at,
           notification_settings,
-          conversation:chat_conversations(
-            *,
-            last_message:chat_messages(
-              id,
-              content,
-              created_at,
-              sender_id,
-              message_type,
-              sender:users(*)
-            )
-          )
+          conversation:chat_conversations(*)
         `)
         .eq('user_id', currentUser.id)
-        .eq('is_active', true)
-        .order('joined_at', { ascending: false });
+        .eq('is_active', true);
 
       if (participantError) {
-        console.error('Error loading conversations:', participantError);
+        console.error('❌ Error loading conversations:', participantError);
         toast.error('Failed to load conversations');
         return;
       }
 
-      // Process conversations and get participant details
+      console.log('📊 Found participant records:', participantData?.length || 0);
+
+      if (!participantData || participantData.length === 0) {
+        console.log('📭 No conversations found');
+        setConversations([]);
+        return;
+      }
+
+      // Process conversations
       const conversationsWithDetails: ConversationWithDetails[] = [];
       
-      for (const participantRecord of participantData || []) {
+      for (const participantRecord of participantData) {
         let conversation = participantRecord.conversation as ChatConversation | ChatConversation[] | undefined;
+        
+        // Handle nested array structure
         if (Array.isArray(conversation)) {
           conversation = conversation[0];
         }
-        if (!conversation) continue;
+        
+        if (!conversation || !conversation.is_active) {
+          console.log('⚠️ Skipping inactive/missing conversation');
+          continue;
+        }
 
-        // Get all participants for this conversation
+        console.log('🔍 Processing conversation:', conversation.id, conversation.conversation_type);
+
+        // Get participants first
         const { data: allParticipants } = await supabase
           .from('chat_participants')
-          .select(`
-            *,
-            user:users(*)
-          `)
+          .select('*')
           .eq('conversation_id', conversation.id)
           .eq('is_active', true);
+
+        // For direct conversations, find the other user
+        let otherUser: User | undefined;
+        if (conversation.conversation_type === 'direct' && allParticipants) {
+          console.log('📋 Participants in direct conversation:', allParticipants.map(p => ({ user_id: p.user_id, currentUser: currentUser.id })));
+          const otherParticipant = allParticipants.find(p => p.user_id !== currentUser.id);
+          if (otherParticipant) {
+            console.log('👤 Found other participant:', otherParticipant.user_id);
+            // Fetch the user data separately
+            const { data: userData } = await supabase
+              .from('users')
+              .select(`
+                id,
+                email,
+                first_name,
+                last_name,
+                display_name,
+                username,
+                avatar_url,
+                profile_image_url,
+                is_verified,
+                bio,
+                location,
+                city,
+                state,
+                country,
+                account_status,
+                is_private,
+                last_seen_at,
+                created_at,
+                updated_at
+              `)
+              .eq('id', otherParticipant.user_id)
+              .single();
+            
+            if (userData) {
+              otherUser = userData as User;
+              console.log('✅ Found user data for participant:', userData.display_name || userData.username || userData.email);
+              // Attach user data to participant for consistency
+              otherParticipant.user = userData;
+            } else {
+              // Skip broken direct conversations that don't have the other participant
+              console.log('⚠️ Skipping broken direct conversation - missing user data for participant:', otherParticipant.user_id);
+              continue;
+            }
+          } else {
+            console.log('⚠️ No other participant found in direct conversation:', conversation.id);
+            continue;
+          }
+        }
+        
+        // Fetch user data for all participants to enrich the data
+        if (allParticipants && allParticipants.length > 0) {
+          const userIds = allParticipants.map(p => p.user_id);
+          const { data: usersData } = await supabase
+            .from('users')
+            .select(`
+              id,
+              first_name,
+              last_name,
+              display_name,
+              username,
+              avatar_url,
+              profile_image_url,
+              is_verified
+            `)
+            .in('id', userIds);
+          
+          // Attach user data to participants
+          if (usersData) {
+            allParticipants.forEach(participant => {
+              const userData = usersData.find(u => u.id === participant.user_id);
+              if (userData) {
+                participant.user = userData;
+              }
+            });
+          }
+        }
+
+        // Get the last message
+        const { data: lastMessageData } = await supabase
+          .from('chat_messages')
+          .select(`
+            id,
+            content,
+            created_at,
+            sender_id,
+            message_type,
+            sender:users(
+              id,
+              display_name,
+              username,
+              first_name,
+              last_name,
+              avatar_url,
+              profile_image_url
+            )
+          `)
+          .eq('conversation_id', conversation.id)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         // Calculate unread count
         const { count: unreadCount } = await supabase
@@ -259,49 +372,47 @@ export default function MessagesInboxPage() {
           .select('id', { count: 'exact', head: true })
           .eq('conversation_id', conversation.id)
           .neq('sender_id', currentUser.id)
+          .eq('is_deleted', false)
           .gt('created_at', participantRecord.last_read_at || '1970-01-01');
 
-        // For direct conversations, find the other user
-        let otherUser: User | undefined;
-        if (conversation.conversation_type === 'direct' && allParticipants) {
-          const otherParticipant = allParticipants.find(p => p.user_id !== currentUser.id);
-          otherUser = otherParticipant?.user as User;
-        }
-
-        // Get the last message properly
-        const { data: lastMessageData } = await supabase
-          .from('chat_messages')
-          .select(`
-            *,
-            sender:users(*)
-          `)
-          .eq('conversation_id', conversation.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        conversationsWithDetails.push({
+        const conversationWithDetails: ConversationWithDetails = {
           ...conversation,
           participants: allParticipants as ChatParticipant[],
           unread_count: unreadCount || 0,
-          last_message: lastMessageData as ChatMessage,
+          last_message: lastMessageData ? {
+            ...lastMessageData,
+            conversation_id: conversation.id
+          } as ChatMessage : undefined,
           other_user: otherUser,
           last_message_at: lastMessageData?.created_at || conversation.last_message_at,
-          last_message_preview: lastMessageData?.content || conversation.last_message_preview
+          last_message_preview: lastMessageData?.content || conversation.last_message_preview,
+          last_message_sender_id: lastMessageData?.sender_id || conversation.last_message_sender_id
+        };
+
+        conversationsWithDetails.push(conversationWithDetails);
+        console.log('✅ Added conversation:', conversation.id, {
+          type: conversation.conversation_type,
+          name: conversation.name,
+          otherUser: otherUser ? (otherUser.display_name || otherUser.username || otherUser.email) : 'N/A',
+          lastMessage: conversationWithDetails.last_message_preview,
+          unreadCount: conversationWithDetails.unread_count
         });
       }
 
-      // Sort by last message time
+      // Sort by last message time (most recent first)
       conversationsWithDetails.sort((a, b) => {
         const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
         const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
         return bTime - aTime;
       });
 
+      console.log('✅ Loaded', conversationsWithDetails.length, 'conversations');
       setConversations(conversationsWithDetails);
+
     } catch (error) {
-      console.error('Error in loadConversations:', error);
+      console.error('❌ Error in loadConversations:', error);
       toast.error('An error occurred while loading conversations');
+      setError('Failed to load conversations');
     } finally {
       setLoading(false);
     }
@@ -319,7 +430,21 @@ export default function MessagesInboxPage() {
 
       const { data: users, error } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          id,
+          email,
+          first_name,
+          last_name,
+          display_name,
+          username,
+          avatar_url,
+          profile_image_url,
+          is_verified,
+          bio,
+          account_status,
+          created_at,
+          updated_at
+        `)
         .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
         .neq('id', currentUser.id)
         .eq('account_status', 'active')
@@ -342,43 +467,65 @@ export default function MessagesInboxPage() {
 
   // Create or navigate to direct conversation
   const handleStartDirectChat = async (userId: string) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      toast.error('Please log in to start a conversation');
+      return;
+    }
 
     try {
-      // Check if a direct conversation already exists
-      const { data: existingParticipants } = await supabase
+      console.log('🚀 Starting direct chat with user:', userId);
+      
+      // First check if a direct conversation already exists
+      console.log('🔍 Checking for existing conversation...');
+      const { data: existingParticipants, error: existingError } = await supabase
         .from('chat_participants')
         .select(`
           conversation_id,
-          conversation:chat_conversations(*)
+          conversation:chat_conversations(
+            id,
+            conversation_type,
+            created_by,
+            is_active
+          )
         `)
         .eq('user_id', currentUser.id)
         .eq('is_active', true);
 
-      // Find if there's already a direct conversation with this user
-      for (const participant of existingParticipants || []) {
-        let conv: ChatConversation | undefined;
-        if (Array.isArray(participant.conversation)) {
-          conv = participant.conversation[0] as ChatConversation;
-        } else {
-          conv = participant.conversation as ChatConversation;
-        }
-        if (conv?.conversation_type === 'direct') {
-          const { data: otherParticipants } = await supabase
-            .from('chat_participants')
-            .select('user_id')
-            .eq('conversation_id', conv.id)
-            .eq('user_id', userId)
-            .single();
+      if (existingError) {
+        console.error('❌ Error checking existing conversations:', existingError);
+        // Continue with creation anyway
+      }
 
-          if (otherParticipants) {
-            // Navigate to existing conversation
-            router.push(`/messages/conversation/${conv.id}`);
-            return;
+      // Find if there's already a direct conversation with this user
+      if (existingParticipants) {
+        for (const participant of existingParticipants) {
+          const conv = Array.isArray(participant.conversation) 
+            ? participant.conversation[0] 
+            : participant.conversation;
+          
+          if (conv && conv.conversation_type === 'direct' && conv.is_active) {
+            // Check if the other user is in this conversation
+            const { data: otherParticipant } = await supabase
+              .from('chat_participants')
+              .select('user_id')
+              .eq('conversation_id', conv.id)
+              .eq('user_id', userId)
+              .eq('is_active', true)
+              .single();
+
+            if (otherParticipant) {
+              console.log('✅ Found existing conversation:', conv.id);
+              setShowNewChatSheet(false);
+              setSearchQuery('');
+              router.push(`/messages/conversation/${conv.id}`);
+              return;
+            }
           }
         }
       }
 
+      console.log('📝 Creating new conversation...');
+      
       // Create new direct conversation
       const { data: newConversation, error: convError } = await supabase
         .from('chat_conversations')
@@ -391,29 +538,46 @@ export default function MessagesInboxPage() {
         .single();
 
       if (convError) {
-        console.error('Error creating conversation:', convError);
-        toast.error('Failed to create conversation');
+        console.error('❌ Error creating conversation:', convError);
+        toast.error('Failed to create conversation - please check your connection');
         return;
       }
+
+      console.log('✅ Created conversation:', newConversation.id);
 
       // Add participants
       const { error: participantError } = await supabase
         .from('chat_participants')
         .insert([
-          { conversation_id: newConversation.id, user_id: currentUser.id, role: 'member' },
-          { conversation_id: newConversation.id, user_id: userId, role: 'member' }
+          { 
+            conversation_id: newConversation.id, 
+            user_id: currentUser.id, 
+            role: 'member',
+            is_active: true
+          },
+          { 
+            conversation_id: newConversation.id, 
+            user_id: userId, 
+            role: 'member',
+            is_active: true
+          }
         ]);
 
       if (participantError) {
-        console.error('Error adding participants:', participantError);
-        toast.error('Failed to add participants');
+        console.error('❌ Error adding participants:', participantError);
+        toast.error('Failed to add participants - please try again');
         return;
       }
 
-      // Navigate to new conversation
+      console.log('✅ Added participants successfully');
+      
+      // Close the new chat sheet and navigate
+      setShowNewChatSheet(false);
+      setSearchQuery('');
       router.push(`/messages/conversation/${newConversation.id}`);
+      
     } catch (error) {
-      console.error('Error starting direct chat:', error);
+      console.error('❌ Error starting direct chat:', error);
       toast.error('Failed to start conversation');
     }
   };
@@ -587,13 +751,23 @@ export default function MessagesInboxPage() {
             </div>
           </div>
 
-          <Button
-            onClick={() => setShowNewChatSheet(true)}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            New Chat
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={loadConversations}
+              variant="outline"
+              className="border-red-600/20 text-red-400 hover:bg-red-600/10"
+              disabled={loading}
+            >
+              🔄 Reload
+            </Button>
+            <Button
+              onClick={() => setShowNewChatSheet(true)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -652,28 +826,74 @@ export default function MessagesInboxPage() {
               {searchQuery ? 'No conversations found' : 'No conversations yet'}
             </h3>
             <p className="text-gray-500 text-center px-4 mb-6">
-              {searchQuery 
-                ? 'Try a different search term' 
-                : 'Start a conversation with someone from the Wolf Pack'}
+              {error ? (
+                <>
+                  Error: {error}
+                  <br />
+                  <Button 
+                    onClick={loadConversations} 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    disabled={loading}
+                  >
+                    Try Again
+                  </Button>
+                </>
+              ) : searchQuery ? (
+                'Try a different search term'
+              ) : (
+                'Start a conversation with someone from the Wolf Pack'
+              )}
             </p>
-            <Button
-              onClick={() => setShowNewChatSheet(true)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Start New Chat
-            </Button>
+            {!error && (
+              <Button
+                onClick={() => setShowNewChatSheet(true)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Start New Chat
+              </Button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-800/50">
             {filteredConversations.map((conversation) => {
-              const displayName = conversation.conversation_type === 'direct' 
-                ? getDisplayName(conversation.other_user)
-                : conversation.name || 'Group Chat';
+              // Get display name with better fallbacks
+              let displayName: string;
+              if (conversation.conversation_type === 'direct') {
+                if (conversation.other_user) {
+                  displayName = getDisplayName(conversation.other_user);
+                } else {
+                  // Try to get name from participants
+                  const otherParticipant = conversation.participants?.find(p => p.user_id !== currentUser.id);
+                  if (otherParticipant?.user) {
+                    displayName = getDisplayName(otherParticipant.user as User);
+                  } else {
+                    displayName = 'Unknown User';
+                  }
+                }
+              } else {
+                displayName = conversation.name || 'Group Chat';
+              }
               
-              const avatarUrl = conversation.conversation_type === 'direct'
-                ? getAvatarUrl(conversation.other_user)
-                : conversation.avatar_url || '/icons/wolf-512x512.png';
+              // Get avatar URL with better fallbacks
+              let avatarUrl: string;
+              if (conversation.conversation_type === 'direct') {
+                if (conversation.other_user) {
+                  avatarUrl = getAvatarUrl(conversation.other_user);
+                } else {
+                  // Try to get avatar from participants
+                  const otherParticipant = conversation.participants?.find(p => p.user_id !== currentUser.id);
+                  if (otherParticipant?.user) {
+                    avatarUrl = getAvatarUrl(otherParticipant.user as User);
+                  } else {
+                    avatarUrl = 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+                  }
+                }
+              } else {
+                avatarUrl = conversation.avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+              }
 
               const isOnline = conversation.conversation_type === 'direct' 
                 ? isUserOnline(conversation.other_user?.last_seen_at)

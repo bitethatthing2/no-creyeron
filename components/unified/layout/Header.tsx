@@ -1,9 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Menu, Search, X, Bell, Home, User } from 'lucide-react';
+import { Menu, Search, X, Bell, Home, User, MessageSquare, ShoppingBag, Video, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Sheet, 
   SheetContent, 
@@ -17,121 +18,223 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
-// Types
+// Types based on your actual database schema
+interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  profile_image_url: string | null;
+  is_verified: boolean | null;
+  is_private: boolean | null;
+  role: 'admin' | 'user' | null;
+}
+
 interface NavItem {
   href: string;
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
   badge?: string | number;
-  isActive?: boolean;
+  requiresAuth?: boolean;
+  requiresAdmin?: boolean;
 }
 
 interface HeaderProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   navItems?: NavItem[];
   logo?: string;
   logoAlt?: string;
   showNotifications?: boolean;
   showSearch?: boolean;
+  showMessages?: boolean;
   onSearch?: (query: string) => void;
-  variant?: 'default' | 'transparent' | 'minimal' | 'wolfpack';
-  currentPath?: string;
-  user?: {
-    id: string;
-    username: string;
-    avatar_url?: string;
-    wolfpack_status?: string;
-  };
-  notificationCount?: number;
-  onNotificationClick?: () => void;
+  variant?: 'default' | 'transparent' | 'minimal' | 'dark';
   className?: string;
 }
 
 /**
- * Production-ready Header component
- * Fully typed, accessible, and optimized for TikTok-style app
+ * Production-ready Header component for NEW SIDEHUSTLE
+ * Uses actual database fields and proper authentication
  */
 export function Header({
-  title,
+  title = 'Side Hustle',
   subtitle,
-  navItems = [],
-  logo,
-  logoAlt,
+  navItems,
+  logo = '/icons/wolf-icon.png',
+  logoAlt = 'Side Hustle',
   showNotifications = true,
-  showSearch = false,
+  showSearch = true,
+  showMessages = true,
   onSearch,
   variant = 'default',
-  currentPath = '/',
-  user,
-  notificationCount = 0,
-  onNotificationClick,
   className
 }: HeaderProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user: authUser } = useAuth();
+  
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
+  const [notificationCount, setNotificationCount] = React.useState(0);
+  const [messageCount, setMessageCount] = React.useState(0);
+  
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   
+  // Default navigation items based on your actual routes
+  const defaultNavItems: NavItem[] = React.useMemo(() => [
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/menu', label: 'Menu', icon: ShoppingBag },
+    { href: '/social', label: 'Social', icon: Video },
+    { href: '/messages', label: 'Messages', icon: MessageSquare, requiresAuth: true },
+  ], []);
+
+  const navigationItems = navItems || defaultNavItems;
+  
+  // Fetch user profile when auth user changes
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!authUser) {
+        setUserProfile(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', authUser.id)
+        .single();
+
+      if (!error && data) {
+        setUserProfile(data);
+      }
+    };
+
+    fetchUserProfile();
+  }, [authUser]);
+
+  // Fetch notification count
+  React.useEffect(() => {
+    const fetchCounts = async () => {
+      if (!userProfile) {
+        setNotificationCount(0);
+        setMessageCount(0);
+        return;
+      }
+
+      // Get unread notifications
+      const { count: notifCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', userProfile.id)
+        .eq('status', 'unread');
+
+      setNotificationCount(notifCount || 0);
+
+      // Get unread message count (conversations with unread messages)
+      const { data: conversations } = await supabase
+        .from('chat_participants')
+        .select(`
+          conversation_id,
+          last_read_at,
+          chat_conversations!inner(
+            last_message_at
+          )
+        `)
+        .eq('user_id', userProfile.id);
+
+      const unreadConversations = conversations?.filter(conv => {
+        const lastMessage = Array.isArray(conv.chat_conversations) && conv.chat_conversations.length > 0
+          ? conv.chat_conversations[0].last_message_at
+          : undefined;
+        const lastRead = conv.last_read_at;
+        return lastMessage && (!lastRead || new Date(lastMessage) > new Date(lastRead));
+      });
+
+      setMessageCount(unreadConversations?.length || 0);
+    };
+
+    if (userProfile) {
+      fetchCounts();
+      
+      // Set up real-time subscriptions
+      const notificationSubscription = supabase
+        .channel('header-notifications')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${userProfile.id}`
+        }, () => {
+          setNotificationCount(prev => prev + 1);
+        })
+        .subscribe();
+
+      return () => {
+        notificationSubscription.unsubscribe();
+      };
+    }
+  }, [userProfile]);
+  
   // Get background style based on variant
-  const getVariantStyles = React.useCallback(() => {
+  const getVariantStyles = () => {
     switch (variant) {
       case 'transparent':
         return 'bg-transparent text-white';
       case 'minimal':
         return 'bg-background/70 backdrop-blur-sm border-b border-border/50';
-      case 'wolfpack':
-        return 'bg-gradient-to-r from-purple-900/90 to-pink-900/90 backdrop-blur-md text-white border-b border-purple-500/20';
+      case 'dark':
+        return 'bg-gray-900 text-white border-b border-gray-800';
       default:
         return 'bg-background border-b border-border';
     }
-  }, [variant]);
+  };
   
   // Handle search submit
-  const handleSearchSubmit = React.useCallback((e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim() && onSearch) {
-      onSearch(searchQuery.trim());
+    if (searchQuery.trim()) {
+      if (onSearch) {
+        onSearch(searchQuery.trim());
+      } else {
+        // Default search behavior - redirect to search page
+        router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      }
       setSearchQuery('');
       setIsSearchOpen(false);
     }
-  }, [searchQuery, onSearch]);
+  };
 
-  // Handle search open
-  const handleSearchOpen = React.useCallback(() => {
-    setIsSearchOpen(true);
-    // Focus input after state update
-    setTimeout(() => searchInputRef.current?.focus(), 100);
-  }, []);
-
-  // Handle search close
-  const handleSearchClose = React.useCallback(() => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-  }, []);
-
-  // Handle escape key
-  React.useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isSearchOpen) {
-        handleSearchClose();
-      }
-    };
-    
-    if (isSearchOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isSearchOpen, handleSearchClose]);
+  // Handle sign out
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   // Check if nav item is active
-  const isNavItemActive = React.useCallback((href: string) => {
+  const isNavItemActive = (href: string) => {
     if (href === '/') {
-      return currentPath === '/';
+      return pathname === '/';
     }
-    return currentPath.startsWith(href);
-  }, [currentPath]);
+    return pathname.startsWith(href);
+  };
+
+  // Get display name for user
+  const getUserDisplayName = () => {
+    if (!userProfile) return 'User';
+    return userProfile.display_name || userProfile.username || 'User';
+  };
+
+  // Get avatar URL
+  const getAvatarUrl = () => {
+    return userProfile?.avatar_url || userProfile?.profile_image_url || null;
+  };
   
   return (
     <header 
@@ -146,42 +249,44 @@ export function Header({
           {/* Left Section */}
           <div className="flex items-center gap-3">
             {/* Mobile Menu */}
-            {navItems.length > 0 && (
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button 
-                    variant={variant === 'wolfpack' ? 'ghost' : 'ghost'} 
-                    size="icon" 
-                    className="md:hidden"
-                    aria-label="Open navigation menu"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] sm:w-[350px]">
-                  <SheetHeader>
-                    <SheetTitle>
-                      {logo ? (
-                        <div className="relative h-8 w-32">
-                          <Image
-                            src={logo}
-                            alt={logoAlt || title}
-                            fill
-                            className="object-contain object-left"
-                            priority
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-lg font-bold">{title}</span>
-                      )}
-                    </SheetTitle>
-                  </SheetHeader>
-                  
-                  <ScrollArea className="mt-6 h-[calc(100vh-120px)]">
-                    <nav className="space-y-1">
-                      {navItems.map((item) => {
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="md:hidden"
+                  aria-label="Open navigation menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] sm:w-[350px]">
+                <SheetHeader>
+                  <SheetTitle>
+                    {logo ? (
+                      <div className="relative h-8 w-32">
+                        <Image
+                          src={logo}
+                          alt={logoAlt}
+                          fill
+                          className="object-contain object-left"
+                          priority
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-lg font-bold">{title}</span>
+                    )}
+                  </SheetTitle>
+                </SheetHeader>
+                
+                <ScrollArea className="mt-6 h-[calc(100vh-120px)]">
+                  <nav className="space-y-1">
+                    {navigationItems
+                      .filter(item => !item.requiresAuth || userProfile)
+                      .filter(item => !item.requiresAdmin || userProfile?.role === 'admin')
+                      .map((item) => {
                         const Icon = item.icon || Home;
-                        const isActive = item.isActive ?? isNavItemActive(item.href);
+                        const isActive = isNavItemActive(item.href);
                         
                         return (
                           <SheetClose asChild key={item.href}>
@@ -196,7 +301,7 @@ export function Header({
                             >
                               <Icon className="h-5 w-5" />
                               <span className="flex-1">{item.label}</span>
-                              {item.badge !== undefined && (
+                              {typeof item.badge === 'number' && item.badge > 0 && (
                                 <Badge variant={isActive ? 'secondary' : 'default'}>
                                   {item.badge}
                                 </Badge>
@@ -205,21 +310,20 @@ export function Header({
                           </SheetClose>
                         );
                       })}
-                    </nav>
-                  </ScrollArea>
+                  </nav>
 
-                  {/* User Profile in Mobile Menu */}
-                  {user && (
-                    <div className="absolute bottom-4 left-4 right-4 border-t pt-4">
+                  {/* User Section in Mobile Menu */}
+                  {userProfile ? (
+                    <div className="mt-6 border-t pt-6 space-y-1">
                       <Link
-                        href={`/profile/${user.username}`}
+                        href={`/profile/${userProfile.id}`}
                         className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent"
                       >
                         <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-400 to-pink-400">
-                          {user.avatar_url ? (
+                          {getAvatarUrl() ? (
                             <Image
-                              src={user.avatar_url}
-                              alt={user.username}
+                              src={getAvatarUrl()!}
+                              alt={getUserDisplayName()}
                               fill
                               className="object-cover"
                             />
@@ -228,17 +332,50 @@ export function Header({
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{user.username}</p>
-                          {user.wolfpack_status === 'active' && (
-                            <p className="text-xs text-purple-500">🐺 Wolfpack</p>
+                          <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                          {userProfile.is_verified && (
+                            <p className="text-xs text-primary">✓ Verified</p>
                           )}
                         </div>
                       </Link>
+                      
+                      {userProfile.role === 'admin' && (
+                        <Link
+                          href="/admin"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent"
+                        >
+                          <Settings className="h-5 w-5" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      )}
+                      
+                      <button
+                        onClick={handleSignOut}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent text-left"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-6 border-t pt-6 space-y-2">
+                      <Link
+                        href="/login"
+                        className="flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className="flex items-center justify-center rounded-lg border px-3 py-2"
+                      >
+                        Sign Up
+                      </Link>
                     </div>
                   )}
-                </SheetContent>
-              </Sheet>
-            )}
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
             
             {/* Logo/Title */}
             <Link 
@@ -249,17 +386,14 @@ export function Header({
                 <div className="relative h-8 w-32">
                   <Image
                     src={logo}
-                    alt={logoAlt || title}
+                    alt={logoAlt}
                     fill
                     className="object-contain object-left"
                     priority
                   />
                 </div>
               ) : (
-                <h1 className={cn(
-                  'text-lg font-bold md:text-xl',
-                  variant === 'wolfpack' && 'bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent'
-                )}>
+                <h1 className="text-lg font-bold md:text-xl">
                   {title}
                 </h1>
               )}
@@ -267,21 +401,21 @@ export function Header({
             
             {/* Subtitle */}
             {subtitle && (
-              <span className={cn(
-                'hidden text-sm md:inline-block',
-                variant === 'wolfpack' ? 'text-white/70' : 'text-muted-foreground'
-              )}>
+              <span className="hidden text-sm text-muted-foreground md:inline-block">
                 {subtitle}
               </span>
             )}
           </div>
           
           {/* Desktop Navigation */}
-          {navItems.length > 0 && (
-            <nav className="hidden md:flex md:flex-1 md:justify-center md:gap-1">
-              {navItems.map((item) => {
+          <nav className="hidden md:flex md:flex-1 md:justify-center md:gap-1">
+            {navigationItems
+              .filter(item => !item.requiresAuth || userProfile)
+              .filter(item => !item.requiresAdmin || userProfile?.role === 'admin')
+              .map((item) => {
                 const Icon = item.icon;
-                const isActive = item.isActive ?? isNavItemActive(item.href);
+                const isActive = isNavItemActive(item.href);
+                const badge = item.href === '/messages' ? messageCount : item.badge;
                 
                 return (
                   <Link 
@@ -290,29 +424,24 @@ export function Header({
                     className={cn(
                       'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                       isActive 
-                        ? variant === 'wolfpack'
-                          ? 'bg-white/20 text-white'
-                          : 'bg-accent text-accent-foreground'
-                        : variant === 'wolfpack'
-                          ? 'text-white/80 hover:bg-white/10 hover:text-white'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                     )}
                   >
                     {Icon && <Icon className="h-4 w-4" />}
                     <span>{item.label}</span>
-                    {item.badge !== undefined && (
+                    {typeof badge === 'number' && badge > 0 && (
                       <Badge 
                         variant={isActive ? 'secondary' : 'outline'} 
                         className="ml-1.5 h-5 px-1.5 text-xs"
                       >
-                        {item.badge}
+                        {badge > 99 ? '99+' : badge}
                       </Badge>
                     )}
                   </Link>
                 );
               })}
-            </nav>
-          )}
+          </nav>
           
           {/* Right Section */}
           <div className="flex items-center gap-2">
@@ -331,18 +460,19 @@ export function Header({
                         placeholder="Search..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className={cn(
-                          'w-[200px] pr-10 md:w-[300px]',
-                          variant === 'wolfpack' && 'bg-white/10 border-white/20 text-white placeholder:text-white/50'
-                        )}
+                        className="w-[200px] pr-10 md:w-[300px]"
                         aria-label="Search"
+                        autoFocus
                       />
                       <Button 
                         type="button" 
                         variant="ghost" 
                         size="icon"
                         className="absolute right-0 top-0 h-full hover:bg-transparent"
-                        onClick={handleSearchClose}
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          setSearchQuery('');
+                        }}
                         aria-label="Close search"
                       >
                         <X className="h-4 w-4" />
@@ -351,11 +481,10 @@ export function Header({
                   </form>
                 ) : (
                   <Button
-                    variant={variant === 'wolfpack' ? 'ghost' : 'ghost'}
+                    variant="ghost"
                     size="icon"
-                    onClick={handleSearchOpen}
+                    onClick={() => setIsSearchOpen(true)}
                     aria-label="Open search"
-                    className={variant === 'wolfpack' ? 'text-white hover:bg-white/10' : ''}
                   >
                     <Search className="h-5 w-5" />
                   </Button>
@@ -363,49 +492,79 @@ export function Header({
               </div>
             )}
             
+            {/* Messages (Mobile) */}
+            {showMessages && userProfile && (
+              <Link href="/messages" className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  aria-label={`Messages${messageCount > 0 ? ` (${messageCount} unread)` : ''}`}
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  {messageCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {messageCount > 99 ? '99+' : messageCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
+            
             {/* Notifications */}
-            {showNotifications && (
-              <Button
-                variant={variant === 'wolfpack' ? 'ghost' : 'ghost'}
-                size="icon"
-                onClick={onNotificationClick}
-                className={cn(
-                  'relative',
-                  variant === 'wolfpack' && 'text-white hover:bg-white/10'
-                )}
-                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-              >
-                <Bell className="h-5 w-5" />
-                {notificationCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                    {notificationCount > 99 ? '99+' : notificationCount}
-                  </span>
-                )}
-              </Button>
+            {showNotifications && userProfile && (
+              <Link href="/notifications">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+                >
+                  <Bell className="h-5 w-5" />
+                  {notificationCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
             )}
 
             {/* User Avatar (Desktop) */}
-            {user && (
+            {userProfile ? (
               <Link
-                href={`/profile/${user.username}`}
+                href={`/profile/${userProfile.id}`}
                 className="hidden md:flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
               >
                 <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-400 to-pink-400">
-                  {user.avatar_url ? (
+                  {getAvatarUrl() ? (
                     <Image
-                      src={user.avatar_url}
-                      alt={user.username}
+                      src={getAvatarUrl()!}
+                      alt={getUserDisplayName()}
                       fill
                       className="object-cover"
                     />
                   ) : (
                     <User className="h-5 w-5 text-white absolute inset-0 m-auto" />
                   )}
-                  {user.wolfpack_status === 'active' && (
-                    <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-purple-500 border-2 border-white" />
+                  {userProfile.is_verified && (
+                    <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-primary border-2 border-background" />
                   )}
                 </div>
               </Link>
+            ) : (
+              <div className="hidden md:flex items-center gap-2">
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>

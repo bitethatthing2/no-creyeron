@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-// import { notificationService } from "@/lib/services/unified-notification.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +18,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     console.log(
-      "🚀 NEW Send message request body:",
-      body,
+      "Send message request:",
+      {
+        ...body,
+        content: body.content?.substring(0, 50) + "...", // Log truncated content for privacy
+      },
       "at",
       new Date().toISOString(),
     );
@@ -34,89 +36,44 @@ export async function POST(request: NextRequest) {
       mediaUrl,
       mediaType,
       mediaThumbnailUrl,
+      mediaSize,
+      mediaDuration,
       attachments,
       mediaMetadata,
       replyToMessageId,
+      metadata,
     } = body;
 
-    console.log("Parsed values:", {
-      conversationId,
-      receiverId,
-      recipientId,
-      content,
-      messageType,
-    });
-
-    // If conversationId is provided, use it directly
-    if (conversationId && content) {
-      // Get the current user's database record
-      const { data: currentUserRecord, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("auth_id", user.id)
-        .maybeSingle();
-
-      if (userError || !currentUserRecord) {
-        console.error("Current user not found:", userError);
-        return NextResponse.json(
-          { error: "Current user not found in database" },
-          { status: 404 },
-        );
-      }
-
-      // Insert the message directly
-      const { data: message, error: messageError } = await supabase
-        .from("chat_messages")
-        .insert({
-          conversation_id: conversationId,
-          sender_id: currentUserRecord.id,
-          content,
-          message_type: messageType || "text",
-          media_url: mediaUrl,
-          media_type: mediaType,
-          media_thumbnail_url: mediaThumbnailUrl,
-          attachments: attachments || [],
-          reply_to_id: replyToMessageId,
-        })
-        .select()
-        .single();
-
-      if (messageError) {
-        console.error("Error sending message:", messageError);
-        return NextResponse.json(
-          { error: "Failed to send message", details: messageError.message },
-          { status: 500 },
-        );
-      }
-
-      return NextResponse.json({
-        message,
-        messageId: message.id,
-      });
-    }
-
-    // Legacy support for receiverId/recipientId
-    const finalRecipientId = receiverId || recipientId;
-
-    if (!finalRecipientId || !content) {
-      console.log("Missing required fields:", {
-        conversationId: !!conversationId,
-        finalRecipientId: !!finalRecipientId,
-        content: !!content,
-      });
+    // Validate message type against database constraint
+    const validMessageTypes = ["text", "image", "system", "deleted"];
+    if (messageType && !validMessageTypes.includes(messageType)) {
       return NextResponse.json(
         {
-          error:
-            "Either conversationId or recipient ID and content are required",
+          error: `Invalid message type. Must be one of: ${
+            validMessageTypes.join(", ")
+          }`,
         },
         { status: 400 },
       );
     }
 
-    // Get current user's database record
+    // Validate media type if provided
+    const validMediaTypes = ["image", "video", "audio", "file", "gif"];
+    if (mediaType && !validMediaTypes.includes(mediaType)) {
+      return NextResponse.json(
+        {
+          error: `Invalid media type. Must be one of: ${
+            validMediaTypes.join(", ")
+          }`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Get the current user's database record
     const { data: currentUserRecord, error: userError } = await supabase
       .from("users")
-      .select("id")
+      .select("id, username, display_name")
       .eq("auth_id", user.id)
       .maybeSingle();
 
@@ -128,87 +85,275 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the safe helper function to get or create conversation
-    const { data: conversationResult, error: conversationError } =
-      await supabase
-        .rpc("find_or_create_direct_conversation", {
-          other_user_id: finalRecipientId,
-        });
+    let finalConversationId = conversationId;
 
-    if (conversationError) {
-      console.error("Error with conversation function:", conversationError);
-      return NextResponse.json(
-        {
-          error: "Failed to get conversation",
-          details: conversationError.message,
-        },
-        { status: 500 },
-      );
+    // If conversationId is not provided, create or find a direct conversation
+    if (!conversationId) {
+      const finalRecipientId = receiverId || recipientId;
+
+      if (!finalRecipientId) {
+        return NextResponse.json(
+          { error: "Either conversationId or recipientId is required" },
+          { status: 400 },
+        );
+      }
+
+      // Use the RPC function to get or create conversation
+      const { data: conversationResult, error: conversationError } =
+        await supabase
+          .rpc("get_or_create_dm_conversation", {
+            other_user_id: finalRecipientId,
+          });
+
+      if (conversationError || !conversationResult) {
+        console.error("Error with conversation function:", conversationError);
+
+        // Fallback: Try to find existing conversation manually
+        const { data: existingConversation } = await supabase
+          .from("chat_conversations")
+          .select("id")
+          .eq("conversation_type", "direct")
+          .single();
+
+        if (existingConversation) {
+          finalConversationId = existingConversation.id;
+        } else {
+          return NextResponse.json(
+            {
+              error: "Failed to get or create conversation",
+              details: conversationError?.message,
+            },
+            { status: 500 },
+          );
+        }
+      } else {
+        finalConversationId = conversationResult.conversation_id ||
+          conversationResult.id || conversationResult;
+      }
     }
 
-    const foundConversationId = conversationResult;
+    // Validate that user is a participant in the conversation
+    const { data: participantCheck } = await supabase
+      .from("chat_participants")
+      .select("user_id")
+      .eq("conversation_id", finalConversationId)
+      .eq("user_id", currentUserRecord.id)
+      .maybeSingle();
 
-    console.log("Final conversation ID:", foundConversationId);
+    if (!participantCheck) {
+      // User is not a participant, check if they can join
+      const { data: conversationData } = await supabase
+        .from("chat_conversations")
+        .select("conversation_type, is_active")
+        .eq("id", finalConversationId)
+        .single();
 
-    // Insert the message
+      if (!conversationData || conversationData.is_active === false) {
+        return NextResponse.json(
+          { error: "Cannot send message to inactive conversation" },
+          { status: 403 },
+        );
+      }
+
+      // Add user as participant if allowed
+      const { error: joinError } = await supabase
+        .from("chat_participants")
+        .insert({
+          conversation_id: finalConversationId,
+          user_id: currentUserRecord.id,
+          role: "member",
+        });
+
+      if (joinError) {
+        console.error("Error joining conversation:", joinError);
+        return NextResponse.json(
+          { error: "Cannot join this conversation" },
+          { status: 403 },
+        );
+      }
+    }
+
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      if (!mediaUrl && (!attachments || attachments.length === 0)) {
+        return NextResponse.json(
+          { error: "Message must have content, media, or attachments" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Prepare message data
+    interface MessageData {
+      conversation_id: string;
+      sender_id: string;
+      content: string;
+      message_type: string;
+      metadata: Record<string, unknown>;
+      media_url?: string;
+      media_type?: string;
+      media_thumbnail_url?: string;
+      media_size?: number;
+      media_duration?: number;
+      media_metadata?: Record<string, unknown>;
+      attachments?: unknown[];
+      reply_to_id?: string;
+    }
+
+    const messageData: MessageData = {
+      conversation_id: finalConversationId,
+      sender_id: currentUserRecord.id,
+      content: content || "",
+      message_type: messageType,
+      metadata: metadata || {},
+    };
+
+    // Add media fields if provided
+    if (mediaUrl) {
+      messageData.media_url = mediaUrl;
+      messageData.media_type = mediaType;
+      messageData.media_thumbnail_url = mediaThumbnailUrl;
+      messageData.media_size = mediaSize;
+      messageData.media_duration = mediaDuration;
+      messageData.media_metadata = mediaMetadata || {};
+    }
+
+    // Add attachments if provided
+    if (attachments && attachments.length > 0) {
+      messageData.attachments = attachments;
+    }
+
+    // Add reply reference if provided
+    if (replyToMessageId) {
+      // Verify the reply-to message exists in the same conversation
+      const { data: replyToMessage } = await supabase
+        .from("chat_messages")
+        .select("id")
+        .eq("id", replyToMessageId)
+        .eq("conversation_id", finalConversationId)
+        .single();
+
+      if (replyToMessage) {
+        messageData.reply_to_id = replyToMessageId;
+        messageData.metadata = {
+          ...messageData.metadata,
+          reply_to: replyToMessageId,
+        };
+      }
+    }
+
+    // Insert the message using RPC function for better error handling
     const { data: message, error: messageError } = await supabase
-      .from("chat_messages")
-      .insert({
-        conversation_id: foundConversationId,
-        sender_id: currentUserRecord.id,
-        content,
-        message_type: messageType || "text",
-        media_url: mediaUrl,
-        media_type: mediaType,
-        media_thumbnail_url: mediaThumbnailUrl,
-        attachments: attachments || [],
-        reply_to_id: replyToMessageId,
-      })
-      .select()
-      .single();
+      .rpc("send_message_safe", {
+        p_conversation_id: finalConversationId,
+        p_content: content || "",
+        p_message_type: messageType,
+        p_media_url: mediaUrl,
+        p_media_type: mediaType,
+        p_reply_to_id: replyToMessageId,
+      });
 
     if (messageError) {
       console.error("Error sending message:", messageError);
-      return NextResponse.json(
-        { error: "Failed to send message" },
-        { status: 500 },
-      );
-    }
 
-    // Send notification to recipient - TODO: Implement when notification service is available
-    /*
-    try {
-      // Get sender's profile for notification
-      const { data: senderProfile } = await supabase
-        .from("users")
-        .select("display_name, first_name, last_name, username")
-        .eq("auth_id", user.id)
+      // Fallback to direct insert if RPC fails
+      const { data: directMessage, error: directError } = await supabase
+        .from("chat_messages")
+        .insert(messageData)
+        .select()
         .single();
 
-      if (senderProfile) {
-        const senderName = senderProfile.display_name ||
-          `${senderProfile.first_name || ""} ${senderProfile.last_name || ""}`
-            .trim() ||
-          senderProfile.username || "Someone";
-
-        await notificationService.sendWolfpackMessageNotification(
-          finalRecipientId,
-          senderName,
-          content,
-          `/messages/${user.id}`,
+      if (directError) {
+        return NextResponse.json(
+          { error: "Failed to send message", details: directError.message },
+          { status: 500 },
         );
       }
+
+      // Update conversation's last message info
+      await supabase
+        .from("chat_conversations")
+        .update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: content?.substring(0, 100) || "[Media]",
+          last_message_sender_id: currentUserRecord.id,
+          message_count: supabase.rpc("increment", { x: 1 }),
+        })
+        .eq("id", finalConversationId);
+
+      return NextResponse.json({
+        message: directMessage,
+        messageId: directMessage.id,
+        conversationId: finalConversationId,
+      });
+    }
+
+    // Send push notification to recipients
+    try {
+      // Get all other participants
+      const { data: participants } = await supabase
+        .from("chat_participants")
+        .select("user_id, notification_settings")
+        .eq("conversation_id", finalConversationId)
+        .neq("user_id", currentUserRecord.id);
+
+      if (participants && participants.length > 0) {
+        // Create notifications for each participant
+        const notifications = participants
+          .filter((p) => {
+            // Check if participant has muted notifications
+            const settings = p.notification_settings as Record<string, unknown>;
+            return !settings?.muted;
+          })
+          .map((participant) => ({
+            recipient_id: participant.user_id,
+            type: "message",
+            title: currentUserRecord.display_name ||
+              currentUserRecord.username || "New Message",
+            message: content?.substring(0, 100) || "Sent you a message",
+            content_type: "conversation",
+            content_id: finalConversationId,
+            related_user_id: currentUserRecord.id,
+            data: {
+              conversation_id: finalConversationId,
+              message_id: message.id,
+              sender_name: currentUserRecord.display_name ||
+                currentUserRecord.username,
+              message_preview: content?.substring(0, 50),
+            },
+            action_url: `/messages/${finalConversationId}`,
+            priority: "normal",
+          }));
+
+        if (notifications.length > 0) {
+          const { error: notifError } = await supabase
+            .from("notifications")
+            .insert(notifications);
+
+          if (notifError) {
+            console.error("Error creating notifications:", notifError);
+            // Don't fail the request if notifications fail
+          }
+        }
+      }
     } catch (notificationError) {
-      console.error("Error sending notification:", notificationError);
+      console.error("Error sending notifications:", notificationError);
       // Don't fail the message send if notification fails
     }
-    */
 
-    return NextResponse.json({ message });
+    return NextResponse.json({
+      message,
+      messageId: message?.id || message,
+      conversationId: finalConversationId,
+      success: true,
+    });
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("Unexpected error sending message:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 },
     );
   }

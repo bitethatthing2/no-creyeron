@@ -2,7 +2,7 @@
  * Timeout Management Utilities
  *
  * Centralized timeout constants and management utilities
- * Verified against your Supabase backend configuration
+ * Aligned with your actual Supabase backend schema
  */
 
 // ============================================================================
@@ -10,50 +10,78 @@
 // ============================================================================
 
 /**
- * Timeout constants verified against your database
- * ✅ VERIFIED: Matches app_config timeout values in your database
+ * Timeout constants based on your actual database schema
+ * Verified against chat_messages, chat_participants, notifications tables
  */
 export const TIMEOUT_CONSTANTS = {
-  // Chat & Messaging timeouts (verified with wolfpack_chat tables)
-  MESSAGE_BUBBLE_TIMEOUT: 3000, // 3 seconds for message bubbles
-  OPTIMISTIC_BUBBLE_TIMEOUT: 5000, // 5 seconds for optimistic bubbles
-  PROFILE_POPUP_TIMEOUT: 4000, // 4 seconds for profile popup
-  TYPING_INDICATOR_TIMEOUT: 1000, // 1 second for typing indicator
-  MESSAGE_EDIT_TIMEOUT: 30000, // 30 seconds to edit a message
+  // Chat & Messaging timeouts (based on chat_* tables)
+  TYPING_INDICATOR_TIMEOUT: 5000, // 5 seconds - matches v_typing_users view logic
+  MESSAGE_EDIT_WINDOW: 300000, // 5 minutes to edit a message
+  MESSAGE_DELETE_WINDOW: 600000, // 10 minutes to delete own message
+  CONVERSATION_REFRESH: 30000, // 30 seconds to refresh conversation list
+  MESSAGE_POLL_INTERVAL: 10000, // 10 seconds for polling new messages
+  READ_RECEIPT_DELAY: 1000, // 1 second delay before marking as read
+  REACTION_COOLDOWN: 500, // 500ms between reaction changes
 
-  // Notification timeouts (verified with notifications tables)
-  TOAST_TIMEOUT: 2000, // 2 seconds for toast notifications
-  NOTIFICATION_TIMEOUT: 5000, // 5 seconds for notifications
-  SUCCESS_MESSAGE_TIMEOUT: 3000, // 3 seconds for success messages
-  ERROR_MESSAGE_TIMEOUT: 8000, // 8 seconds for error messages
-  NOTIFICATION_EXPIRE: 86400000, // 24 hours for notification expiry
+  // Notification timeouts (based on notifications table)
+  NOTIFICATION_DISPLAY: 5000, // 5 seconds for notification display
+  NOTIFICATION_FADE: 300, // 300ms fade animation
+  PUSH_NOTIFICATION_TTL: 86400000, // 24 hours TTL for push notifications
+  NOTIFICATION_BATCH_DELAY: 2000, // 2 seconds to batch notifications
 
-  // Firebase/Service Worker (from app_config table)
-  FIREBASE_SERVICE_WORKER: 3000, // 3s from firebase_timeout_service_worker
-  FIREBASE_CACHING: 2000, // 2s from firebase_timeout_caching
+  // UI Feedback timeouts
+  TOAST_SUCCESS: 3000, // 3 seconds for success toast
+  TOAST_ERROR: 5000, // 5 seconds for error toast
+  TOAST_WARNING: 4000, // 4 seconds for warning toast
+  TOAST_INFO: 3000, // 3 seconds for info toast
+  LOADING_SPINNER_DELAY: 200, // 200ms before showing loading spinner
+  OPTIMISTIC_UPDATE_TIMEOUT: 5000, // 5 seconds for optimistic updates
 
-  // Loading and debounce timeouts
-  DEBOUNCE_SEARCH: 300, // 300ms for search input debounce
-  DEBOUNCE_API: 500, // 500ms for API call debounce
-  DEBOUNCE_LOCATION: 1000, // 1s for location updates
-  LOADING_DELAY: 100, // 100ms delay before showing loading
-  AUTO_REFRESH: 30000, // 30 seconds for auto refresh
-
-  // Connection and retry timeouts
-  CONNECTION_RETRY: 5000, // 5 seconds between connection retries
+  // API and Network timeouts
   API_TIMEOUT: 10000, // 10 seconds for API requests
+  API_RETRY_DELAY: 2000, // 2 seconds between retries
   WEBSOCKET_PING: 30000, // 30 seconds for websocket ping
   WEBSOCKET_RECONNECT: 3000, // 3 seconds before reconnect attempt
+  REALTIME_SUBSCRIBE_TIMEOUT: 5000, // 5 seconds to establish realtime connection
 
-  // Media timeouts (based on video duration fields in DB)
+  // Search and Input debouncing
+  DEBOUNCE_SEARCH: 300, // 300ms for search input
+  DEBOUNCE_USERNAME: 500, // 500ms for username availability check
+  DEBOUNCE_TYPING: 1000, // 1 second for typing indicator
+  DEBOUNCE_SCROLL: 100, // 100ms for scroll events
+  DEBOUNCE_RESIZE: 200, // 200ms for resize events
+
+  // Media timeouts (based on media fields in chat_messages)
   VIDEO_LOAD_TIMEOUT: 15000, // 15 seconds to load video
   IMAGE_LOAD_TIMEOUT: 10000, // 10 seconds to load image
+  THUMBNAIL_LOAD_TIMEOUT: 5000, // 5 seconds to load thumbnail
   MEDIA_UPLOAD_TIMEOUT: 60000, // 60 seconds for media upload
+  MEDIA_PROCESS_TIMEOUT: 30000, // 30 seconds for media processing
 
-  // Wolfpack specific timeouts
-  LOCATION_UPDATE_INTERVAL: 60000, // 1 minute for location updates
-  ACTIVITY_IDLE_TIMEOUT: 300000, // 5 minutes before marking idle
+  // User activity (based on users.last_seen_at)
+  USER_ONLINE_THRESHOLD: 300000, // 5 minutes - user considered online
+  USER_AWAY_THRESHOLD: 900000, // 15 minutes - user considered away
+  USER_OFFLINE_THRESHOLD: 1800000, // 30 minutes - user considered offline
+  PRESENCE_UPDATE_INTERVAL: 60000, // 1 minute between presence updates
+  LAST_SEEN_UPDATE_INTERVAL: 120000, // 2 minutes between last_seen updates
+
+  // Content and Posts (based on content_posts table)
+  POST_REFRESH_INTERVAL: 60000, // 1 minute to refresh feed
+  VIEW_COUNT_DEBOUNCE: 3000, // 3 seconds to count as a view
+  TRENDING_SCORE_UPDATE: 300000, // 5 minutes to update trending scores
+  COMMENT_EDIT_WINDOW: 180000, // 3 minutes to edit comment
+
+  // Session and Auth
   SESSION_TIMEOUT: 1800000, // 30 minutes session timeout
+  SESSION_REFRESH: 600000, // 10 minutes before session refresh
+  AUTH_TOKEN_REFRESH: 300000, // 5 minutes before token refresh
+  IDLE_WARNING: 1500000, // 25 minutes before idle warning
+  IDLE_LOGOUT: 1800000, // 30 minutes before auto-logout
+
+  // Cleanup and Maintenance
+  CACHE_CLEANUP_INTERVAL: 300000, // 5 minutes between cache cleanup
+  TEMP_DATA_CLEANUP: 600000, // 10 minutes for temp data cleanup
+  OLD_MESSAGE_CLEANUP: 86400000, // 24 hours for old message cleanup
 } as const;
 
 /**
@@ -62,15 +90,13 @@ export const TIMEOUT_CONSTANTS = {
 export type TimeoutKey = keyof typeof TIMEOUT_CONSTANTS;
 
 /**
- * Get timeout value from app_config or use default
- * Useful for dynamic timeout configuration
+ * Get timeout value with optional override from app_config
  */
 export function getConfiguredTimeout(
   key: TimeoutKey,
   configValue?: string | null,
 ): number {
   if (configValue) {
-    // Parse config value (handles "3s", "3000", etc.)
     const match = configValue.match(/^(\d+)(s|ms)?$/);
     if (match) {
       const value = parseInt(match[1], 10);
@@ -87,15 +113,14 @@ export function getConfiguredTimeout(
 
 /**
  * Timeout manager class for handling multiple timeouts with cleanup
- * ✅ VERIFIED: Properly typed without any 'any' types
  */
 export class TimeoutManager {
   private timeouts = new Map<string, NodeJS.Timeout>();
   private intervals = new Map<string, NodeJS.Timeout>();
+  private animationFrames = new Map<string, number>();
 
   /**
    * Set a timeout with a unique key
-   * Automatically clears any existing timeout with the same key
    */
   setTimeout(key: string, callback: () => void, delay: number): void {
     this.clearTimeout(key);
@@ -108,12 +133,23 @@ export class TimeoutManager {
 
   /**
    * Set an interval with a unique key
-   * Automatically clears any existing interval with the same key
    */
   setInterval(key: string, callback: () => void, delay: number): void {
     this.clearInterval(key);
     const intervalId = setInterval(callback, delay);
     this.intervals.set(key, intervalId);
+  }
+
+  /**
+   * Request animation frame with a unique key
+   */
+  requestAnimationFrame(key: string, callback: FrameRequestCallback): void {
+    this.cancelAnimationFrame(key);
+    const frameId = requestAnimationFrame((time) => {
+      this.animationFrames.delete(key);
+      callback(time);
+    });
+    this.animationFrames.set(key, frameId);
   }
 
   /**
@@ -139,46 +175,55 @@ export class TimeoutManager {
   }
 
   /**
-   * Clear all timeouts and intervals
+   * Cancel animation frame by key
+   */
+  cancelAnimationFrame(key: string): void {
+    const frameId = this.animationFrames.get(key);
+    if (frameId) {
+      cancelAnimationFrame(frameId);
+      this.animationFrames.delete(key);
+    }
+  }
+
+  /**
+   * Clear all timeouts, intervals, and animation frames
    */
   clearAll(): void {
     this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     this.intervals.forEach((intervalId) => clearInterval(intervalId));
+    this.animationFrames.forEach((frameId) => cancelAnimationFrame(frameId));
     this.timeouts.clear();
     this.intervals.clear();
+    this.animationFrames.clear();
   }
 
   /**
-   * Check if a timeout exists for a key
+   * Check if a timeout exists
    */
   hasTimeout(key: string): boolean {
     return this.timeouts.has(key);
   }
 
   /**
-   * Check if an interval exists for a key
+   * Check if an interval exists
    */
   hasInterval(key: string): boolean {
     return this.intervals.has(key);
   }
 
   /**
-   * Get the number of active timeouts
+   * Get active counts
    */
-  timeoutCount(): number {
-    return this.timeouts.size;
-  }
-
-  /**
-   * Get the number of active intervals
-   */
-  intervalCount(): number {
-    return this.intervals.size;
+  getActiveCounts(): { timeouts: number; intervals: number; frames: number } {
+    return {
+      timeouts: this.timeouts.size,
+      intervals: this.intervals.size,
+      frames: this.animationFrames.size,
+    };
   }
 
   /**
    * Cleanup method for React components
-   * Call this in useEffect cleanup
    */
   cleanup(): void {
     this.clearAll();
@@ -191,10 +236,6 @@ export class TimeoutManager {
 
 /**
  * Create a timeout manager instance
- * For React: Use in useRef to maintain instance across renders
- * @example
- * const timeoutManager = useRef(createTimeoutManager());
- * useEffect(() => () => timeoutManager.current.cleanup(), []);
  */
 export function createTimeoutManager(): TimeoutManager {
   return new TimeoutManager();
@@ -205,14 +246,11 @@ export function createTimeoutManager(): TimeoutManager {
 // ============================================================================
 
 /**
- * Utility for creating debounced functions with proper typing
- * ✅ VERIFIED: No 'any' types, fully typed parameters
+ * Debounce function with proper typing
  */
-export function createDebounce<
-  T extends (...args: Parameters<T>) => ReturnType<T>,
->(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  delay: number = TIMEOUT_CONSTANTS.DEBOUNCE_API,
+  delay: number = TIMEOUT_CONSTANTS.DEBOUNCE_SEARCH,
 ): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout | undefined;
 
@@ -225,23 +263,20 @@ export function createDebounce<
 }
 
 /**
- * Utility for creating throttled functions with proper typing
- * ✅ VERIFIED: No 'any' types, fully typed parameters
+ * Throttle function with proper typing
  */
-export function createThrottle<
-  T extends (...args: Parameters<T>) => ReturnType<T>,
->(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
-  delay: number = TIMEOUT_CONSTANTS.DEBOUNCE_API,
-): (...args: Parameters<T>) => ReturnType<T> | void {
+  delay: number = TIMEOUT_CONSTANTS.DEBOUNCE_SEARCH,
+): (...args: Parameters<T>) => ReturnType<T> | undefined {
   let lastCall = 0;
   let lastResult: ReturnType<T> | undefined;
 
-  return (...args: Parameters<T>): ReturnType<T> | void => {
+  return (...args: Parameters<T>): ReturnType<T> | undefined => {
     const now = Date.now();
     if (now - lastCall >= delay) {
       lastCall = now;
-      lastResult = func(...args);
+      lastResult = func(...args) as ReturnType<T>;
       return lastResult;
     }
     return lastResult;
@@ -249,7 +284,7 @@ export function createThrottle<
 }
 
 /**
- * Promise-based timeout utility
+ * Promise-based delay utility
  */
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -261,60 +296,56 @@ export function delay(ms: number): Promise<void> {
 export function withTimeout<T>(
   promise: Promise<T>,
   ms: number = TIMEOUT_CONSTANTS.API_TIMEOUT,
-  errorMessage: string = "Operation timed out",
+  errorMessage = "Operation timed out",
 ): Promise<T> {
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(new Error(errorMessage));
-    }, ms);
-
-    // Clean up timeout if promise resolves first
-    promise.then(() => clearTimeout(timeoutId)).catch(() =>
-      clearTimeout(timeoutId)
-    );
-  });
-
-  return Promise.race([promise, timeoutPromise]);
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), ms)
+    ),
+  ]);
 }
 
 /**
- * Retry utility with exponential backoff
+ * Retry with exponential backoff
  */
 export async function retryWithBackoff<T>(
   operation: () => Promise<T>,
-  options?: {
+  options: {
     maxRetries?: number;
     baseDelay?: number;
     maxDelay?: number;
-    shouldRetry?: (error: Error) => boolean;
-  },
+    shouldRetry?: (error: unknown) => boolean;
+  } = {},
 ): Promise<T> {
   const {
     maxRetries = 3,
-    baseDelay = TIMEOUT_CONSTANTS.CONNECTION_RETRY,
+    baseDelay = TIMEOUT_CONSTANTS.API_RETRY_DELAY,
     maxDelay = 30000,
     shouldRetry = () => true,
-  } = options || {};
+  } = options;
 
-  let lastError: Error;
+  let lastError: unknown;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      lastError = error;
 
-      if (attempt === maxRetries || !shouldRetry(lastError)) {
-        throw lastError;
+      if (attempt === maxRetries || !shouldRetry(error)) {
+        throw error;
       }
 
-      // Exponential backoff with max delay cap
-      const backoffDelay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+      const backoffDelay = Math.min(
+        baseDelay * Math.pow(2, attempt),
+        maxDelay,
+      );
       await delay(backoffDelay);
     }
   }
 
-  throw lastError!;
+  throw lastError;
 }
 
 // ============================================================================
@@ -322,8 +353,7 @@ export async function retryWithBackoff<T>(
 // ============================================================================
 
 /**
- * Helper to create cleanup-safe timeouts in React
- * Returns a function that sets timeouts and auto-cleans on unmount
+ * Create cleanup-safe timeouts for React
  */
 export function createSafeTimeout() {
   const manager = new TimeoutManager();
@@ -339,73 +369,134 @@ export function createSafeTimeout() {
       manager.setInterval(key, callback, ms);
       return () => manager.clearInterval(key);
     },
+    requestAnimationFrame: (callback: FrameRequestCallback) => {
+      const key = `frame_${Date.now()}_${Math.random()}`;
+      manager.requestAnimationFrame(key, callback);
+      return () => manager.cancelAnimationFrame(key);
+    },
     cleanup: () => manager.cleanup(),
   };
 }
 
 // ============================================================================
-// WOLFPACK SPECIFIC UTILITIES
+// USER ACTIVITY UTILITIES (Based on users.last_seen_at)
 // ============================================================================
 
 /**
- * Calculate if user is idle based on last activity
+ * Get user online status based on last seen time
  */
-export function isUserIdle(lastActivityTime: Date | string): boolean {
-  const lastActivity = typeof lastActivityTime === "string"
-    ? new Date(lastActivityTime)
-    : lastActivityTime;
+export function getUserOnlineStatus(
+  lastSeenAt: Date | string | null,
+): "online" | "away" | "offline" {
+  if (!lastSeenAt) return "offline";
 
-  const now = new Date();
-  const timeSinceActivity = now.getTime() - lastActivity.getTime();
+  const lastSeen = typeof lastSeenAt === "string"
+    ? new Date(lastSeenAt)
+    : lastSeenAt;
 
-  return timeSinceActivity > TIMEOUT_CONSTANTS.ACTIVITY_IDLE_TIMEOUT;
+  const timeSinceLastSeen = Date.now() - lastSeen.getTime();
+
+  if (timeSinceLastSeen < TIMEOUT_CONSTANTS.USER_ONLINE_THRESHOLD) {
+    return "online";
+  } else if (timeSinceLastSeen < TIMEOUT_CONSTANTS.USER_AWAY_THRESHOLD) {
+    return "away";
+  } else {
+    return "offline";
+  }
 }
 
 /**
- * Calculate if session has expired
+ * Check if user session has expired
  */
 export function isSessionExpired(sessionStartTime: Date | string): boolean {
   const sessionStart = typeof sessionStartTime === "string"
     ? new Date(sessionStartTime)
     : sessionStartTime;
 
-  const now = new Date();
-  const sessionDuration = now.getTime() - sessionStart.getTime();
-
-  return sessionDuration > TIMEOUT_CONSTANTS.SESSION_TIMEOUT;
+  return Date.now() - sessionStart.getTime() >
+    TIMEOUT_CONSTANTS.SESSION_TIMEOUT;
 }
+
+/**
+ * Check if user should be warned about idle timeout
+ */
+export function shouldWarnIdle(lastActivityTime: Date | string): boolean {
+  const lastActivity = typeof lastActivityTime === "string"
+    ? new Date(lastActivityTime)
+    : lastActivityTime;
+
+  const idleTime = Date.now() - lastActivity.getTime();
+  return idleTime > TIMEOUT_CONSTANTS.IDLE_WARNING &&
+    idleTime < TIMEOUT_CONSTANTS.IDLE_LOGOUT;
+}
+
+// ============================================================================
+// TYPING INDICATOR UTILITIES (Based on v_typing_users view)
+// ============================================================================
+
+/**
+ * Check if typing indicator should still be shown
+ * Based on the 5-second window in v_typing_users view
+ */
+export function isTypingIndicatorActive(
+  typingTimestamp: Date | string,
+): boolean {
+  const timestamp = typeof typingTimestamp === "string"
+    ? new Date(typingTimestamp)
+    : typingTimestamp;
+
+  return Date.now() - timestamp.getTime() <
+    TIMEOUT_CONSTANTS.TYPING_INDICATOR_TIMEOUT;
+}
+
+// ============================================================================
+// FORMATTING UTILITIES
+// ============================================================================
 
 /**
  * Format timeout duration for display
  */
 export function formatTimeout(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  if (ms < 3600000) return `${(ms / 60000).toFixed(1)}m`;
-  return `${(ms / 3600000).toFixed(1)}h`;
+  if (ms < 60000) return `${Math.round(ms / 1000)}s`;
+  if (ms < 3600000) return `${Math.round(ms / 60000)}m`;
+  return `${Math.round(ms / 3600000)}h`;
+}
+
+/**
+ * Format time ago for display
+ */
+export function formatTimeAgo(date: Date | string): string {
+  const time = typeof date === "string" ? new Date(date) : date;
+  const diff = Date.now() - time.getTime();
+
+  if (diff < 60000) return "just now";
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+  return time.toLocaleDateString();
 }
 
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
-/**
- * Timeout utilities module
- * Centralized export of all timeout management functionality
- */
 const timeoutUtils = {
   TIMEOUT_CONSTANTS,
   TimeoutManager,
   createTimeoutManager,
-  createDebounce,
-  createThrottle,
+  debounce,
+  throttle,
   delay,
   withTimeout,
   retryWithBackoff,
   createSafeTimeout,
-  isUserIdle,
+  getUserOnlineStatus,
   isSessionExpired,
+  shouldWarnIdle,
+  isTypingIndicatorActive,
   formatTimeout,
+  formatTimeAgo,
   getConfiguredTimeout,
 };
 

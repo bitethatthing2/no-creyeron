@@ -107,7 +107,7 @@ export default function ConversationPage() {
         .from('chat_conversations')
         .select(`
           *,
-          chat_participants!inner(
+          chat_participants(
             *,
             user:users(
               id,

@@ -46,9 +46,7 @@ export function ProfileImageUploader({
     
     try {
       // Use existing upload helper with avatars bucket
-      const publicUrl = await uploadImage(file, 'avatars', (progress) => {
-        // Could show progress here if needed
-      });
+      const publicUrl = await uploadImage(file, 'avatars');
 
       // Update user's profile image in database
       const { error: updateError } = await supabase

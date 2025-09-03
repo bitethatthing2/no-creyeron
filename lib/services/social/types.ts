@@ -2,11 +2,7 @@
 // SOCIAL SERVICE TYPES - SIDE HUSTLE APP
 // =============================================================================
 
-import type {
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-} from "@/types/database.types";
+import type { Tables, TablesInsert } from "@/types/database.types";
 
 // Extract types from the fresh database schema
 export type User = Tables<"users">;

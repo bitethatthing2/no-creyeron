@@ -5,7 +5,7 @@ import { Calendar, Music, Users, MapPin, Clock, Star, ArrowLeft } from 'lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 import Image from 'next/image';
 
 // Type definitions from your Supabase schema

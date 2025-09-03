@@ -1,97 +1,131 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import type { Database } from "@/lib/supabase/types";
 
-// Use the actual database types
-type ContentPost = Database["public"]["Tables"]["content_posts"]["Row"];
-type ContentComment = Database["public"]["Tables"]["content_comments"]["Row"];
+// Type aliases from your actual database schema
+type Tables = Database["public"]["Tables"];
+type ContentPost = Tables["content_posts"]["Row"];
+type ContentComment = Tables["content_comments"]["Row"];
+type UserPostInteraction = Tables["user_post_interactions"]["Row"];
+type User = Tables["users"]["Row"];
 
-// Enhanced post type with additional computed fields
-type WolfpackPost = ContentPost & {
-  username: string;
-  avatar_url?: string | null;
-  is_liked?: boolean; // Only available for authenticated users
-  user_post_interactions?: {
-    has_liked: boolean | null;
-    has_viewed: boolean | null;
-  } | null;
-};
+// Enhanced post type with joined user data
+interface EnhancedPost extends ContentPost {
+  // User data joined from the users table
+  user?: Pick<
+    User,
+    "id" | "username" | "display_name" | "avatar_url" | "profile_image_url"
+  >;
+  // Interaction data for authenticated users
+  user_interactions?: Pick<
+    UserPostInteraction,
+    "has_liked" | "has_viewed" | "view_count" | "liked_at"
+  >;
+  // Computed field for UI
+  is_liked?: boolean;
+  // Display fields
+  author_username?: string;
+  author_avatar?: string;
+  author_display_name?: string;
+}
+
+// Enhanced comment with user data
+interface EnhancedComment extends ContentComment {
+  user?: Pick<User, "id" | "username" | "display_name" | "avatar_url">;
+  author_username?: string;
+  author_avatar?: string;
+  replies?: EnhancedComment[];
+}
 
 interface FeedOptions {
   limit?: number;
   offset?: number;
-  currentUserId?: string;
+  userId?: string;
+  visibility?: "public" | "followers" | "private";
+  postType?: "video" | "image" | "text" | "carousel";
+  tags?: string[];
 }
 
 interface FeedResponse {
-  posts: WolfpackPost[];
+  posts: EnhancedPost[];
   hasMore: boolean;
-}
-
-interface LikePostResponse {
-  success: boolean;
   error?: string;
 }
 
-interface SharePostResponse {
+interface InteractionResponse {
   success: boolean;
-  shareUrl: string;
+  error?: string;
+  data?: unknown;
 }
 
-interface FollowResponse {
-  success: boolean;
-  isFollowing: boolean;
+interface CommentResponse {
+  comments: EnhancedComment[];
+  hasMore: boolean;
   error?: string;
 }
 
-interface UserPreferences {
-  showFollowingOnly: boolean;
-  contentFilters: string[];
-}
+export class FeedService {
+  private static supabase = getSupabaseBrowserClient();
 
-export class WolfpackFeedServiceEnhanced {
   /**
-   * Fetch public feed - accessible without authentication
-   * Returns posts without user-specific data like "is_liked"
+   * Fetch public feed - no authentication required
    */
   static async fetchPublicFeed(
     options: FeedOptions = {},
   ): Promise<FeedResponse> {
-    const { limit = 10, offset = 0 } = options;
+    const { limit = 10, offset = 0, postType, tags } = options;
 
     try {
-      // Fetch posts with public data only
-      const { data: posts, error } = await supabase
+      let query = this.supabase
         .from("content_posts")
         .select(`
           *,
-          users!content_posts_user_id_fkey(
+          user:users!content_posts_user_id_fkey(
+            id,
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            profile_image_url
           )
         `)
         .eq("is_active", true)
+        .eq("visibility", "public");
+
+      // Apply filters
+      if (postType) {
+        query = query.eq("post_type", postType);
+      }
+
+      if (tags && tags.length > 0) {
+        query = query.contains("tags", tags);
+      }
+
+      // Order and pagination
+      query = query
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
-      if (error) {
-        console.error("Error fetching public feed:", error);
-        throw error;
-      }
+      const { data: posts, error } = await query;
 
-      // Transform data for public consumption
-      const transformedPosts: WolfpackPost[] = (posts || []).map((post) => {
-        const user = Array.isArray(post.users) ? post.users[0] : post.users;
+      if (error) throw error;
+
+      // Transform posts for public consumption
+      const enhancedPosts: EnhancedPost[] = (posts || []).map((post) => {
+        const userData = Array.isArray(post.user) ? post.user[0] : post.user;
+
         return {
           ...post,
-          username: user?.display_name || user?.username || "Anonymous",
-          avatar_url: user?.avatar_url,
-          is_liked: undefined, // Not available for anonymous users
+          user: userData,
+          author_username: userData?.username || "anonymous",
+          author_display_name: userData?.display_name || userData?.username ||
+            "Anonymous",
+          author_avatar: userData?.avatar_url || userData?.profile_image_url ||
+            null,
+          is_liked: false, // Not available for unauthenticated users
         };
       });
 
       return {
-        posts: transformedPosts,
+        posts: enhancedPosts,
         hasMore: posts?.length === limit,
       };
     } catch (error) {
@@ -99,144 +133,200 @@ export class WolfpackFeedServiceEnhanced {
       return {
         posts: [],
         hasMore: false,
+        error: error instanceof Error ? error.message : "Failed to fetch feed",
       };
     }
   }
 
   /**
-   * Fetch authenticated feed - includes user-specific data
-   * Returns posts with "is_liked" status and personalized content
+   * Fetch authenticated feed with user interactions
    */
   static async fetchAuthenticatedFeed(
-    options: FeedOptions & { currentUserId: string },
+    userId: string,
+    options: FeedOptions = {},
   ): Promise<FeedResponse> {
-    const { limit = 10, offset = 0, currentUserId } = options;
+    const { limit = 10, offset = 0, visibility, postType, tags } = options;
 
     try {
-      // Fetch posts with user-specific data
-      const { data: posts, error } = await supabase
+      let query = this.supabase
         .from("content_posts")
         .select(`
           *,
-          users!content_posts_user_id_fkey(
+          user:users!content_posts_user_id_fkey(
+            id,
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            profile_image_url
           ),
           user_post_interactions!left(
             has_liked,
-            has_viewed
+            has_viewed,
+            view_count,
+            liked_at
           )
         `)
-        .eq("is_active", true)
-        .eq("user_post_interactions.user_id", currentUserId)
+        .eq("is_active", true);
+
+      // Add user interaction filter
+      query = query.or(
+        `user_post_interactions.user_id.eq.${userId},user_post_interactions.user_id.is.null`,
+      );
+
+      // Visibility filter for authenticated users
+      if (visibility) {
+        query = query.eq("visibility", visibility);
+      } else {
+        // Show public and follower content for authenticated users
+        query = query.in("visibility", ["public", "followers"]);
+      }
+
+      // Apply other filters
+      if (postType) {
+        query = query.eq("post_type", postType);
+      }
+
+      if (tags && tags.length > 0) {
+        query = query.contains("tags", tags);
+      }
+
+      // Order and pagination
+      query = query
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
-      if (error) {
-        console.error("Error fetching authenticated feed:", error);
-        throw error;
-      }
+      const { data: posts, error } = await query;
 
-      // Transform data for authenticated users
-      const transformedPosts: WolfpackPost[] = (posts || []).map((post) => {
-        const user = Array.isArray(post.users) ? post.users[0] : post.users;
+      if (error) throw error;
+
+      // Transform posts with interaction data
+      const enhancedPosts: EnhancedPost[] = (posts || []).map((post) => {
+        const userData = Array.isArray(post.user) ? post.user[0] : post.user;
         const interactions = Array.isArray(post.user_post_interactions)
-          ? post.user_post_interactions[0]
+          ? post.user_post_interactions.find((i) => i.user_id === userId)
           : post.user_post_interactions;
 
         return {
           ...post,
-          username: user?.display_name || user?.username || "Anonymous",
-          avatar_url: user?.avatar_url,
+          user: userData,
+          user_interactions: interactions,
+          author_username: userData?.username || "anonymous",
+          author_display_name: userData?.display_name || userData?.username ||
+            "Anonymous",
+          author_avatar: userData?.avatar_url || userData?.profile_image_url ||
+            null,
           is_liked: interactions?.has_liked || false,
-          user_post_interactions: interactions,
         };
       });
 
+      // Track views for posts not yet viewed
+      const unviewedPostIds = enhancedPosts
+        .filter((post) => !post.user_interactions?.has_viewed)
+        .map((post) => post.id);
+
+      if (unviewedPostIds.length > 0) {
+        this.trackViews(unviewedPostIds, userId);
+      }
+
       return {
-        posts: transformedPosts,
+        posts: enhancedPosts,
         hasMore: posts?.length === limit,
       };
     } catch (error) {
       console.error("Failed to fetch authenticated feed:", error);
-      // Fallback to public feed if authenticated feed fails
-      return this.fetchPublicFeed({ limit, offset });
+      // Fallback to public feed
+      return this.fetchPublicFeed(options);
     }
   }
 
   /**
-   * Smart feed fetcher - automatically chooses public or authenticated based on user status
+   * Smart feed fetcher - automatically chooses based on authentication
    */
   static async fetchFeed(options: FeedOptions = {}): Promise<FeedResponse> {
-    const { currentUserId } = options;
+    const { userId } = options;
 
-    if (currentUserId) {
-      return this.fetchAuthenticatedFeed({ ...options, currentUserId });
+    if (userId) {
+      return this.fetchAuthenticatedFeed(userId, options);
     } else {
       return this.fetchPublicFeed(options);
     }
   }
 
   /**
-   * Like a post - requires authentication
-   * Uses the correct table name from your schema: content_interactions
+   * Toggle like on a post
    */
-  static async likePost(
+  static async toggleLike(
     postId: string,
     userId: string,
-  ): Promise<LikePostResponse> {
+  ): Promise<InteractionResponse> {
     try {
-      // Check if already liked using content_interactions table
-      const { data: existingInteraction } = await supabase
-        .from("content_interactions")
-        .select("id")
-        .eq("content_id", postId)
+      // Check current like status from user_post_interactions
+      const { data: currentInteraction } = await this.supabase
+        .from("user_post_interactions")
+        .select("has_liked")
+        .eq("post_id", postId)
         .eq("user_id", userId)
-        .eq("interaction_type", "like")
         .single();
 
-      if (existingInteraction) {
-        // Unlike - remove the interaction
-        const { error } = await supabase
+      const isCurrentlyLiked = currentInteraction?.has_liked || false;
+
+      if (isCurrentlyLiked) {
+        // Unlike: Remove from content_interactions and update user_post_interactions
+        await this.supabase
           .from("content_interactions")
           .delete()
           .eq("content_id", postId)
           .eq("user_id", userId)
           .eq("interaction_type", "like");
 
-        if (error) throw error;
-
-        // Update user_post_interactions
-        const { error: updateError } = await supabase
+        await this.supabase
           .from("user_post_interactions")
           .update({
             has_liked: false,
+            liked_at: null,
             updated_at: new Date().toISOString(),
           })
           .eq("post_id", postId)
           .eq("user_id", userId);
 
-        if (updateError) {
-          console.warn("Failed to update user_post_interactions:", updateError);
+        // Decrement likes_count
+        try {
+          await this.supabase.rpc("increment", {
+            table_name: "content_posts",
+            column_name: "likes_count",
+            row_id: postId,
+            increment_value: -1,
+          });
+        } catch {
+          // If RPC doesn't exist, update directly
+          const { data } = await this.supabase
+            .from("content_posts")
+            .select("likes_count")
+            .eq("id", postId)
+            .single();
+          
+          if (data) {
+            await this.supabase
+              .from("content_posts")
+              .update({
+                likes_count: Math.max(0, (data.likes_count || 0) - 1),
+              })
+              .eq("id", postId);
+          }
         }
 
-        return { success: true };
+        return { success: true, data: { liked: false } };
       } else {
-        // Like - create new interaction
-        const { error } = await supabase
+        // Like: Add to content_interactions and update user_post_interactions
+        await this.supabase
           .from("content_interactions")
           .insert({
             content_id: postId,
             user_id: userId,
             interaction_type: "like",
-            created_at: new Date().toISOString(),
           });
 
-        if (error) throw error;
-
-        // Update or create user_post_interactions
-        const { error: upsertError } = await supabase
+        await this.supabase
           .from("user_post_interactions")
           .upsert({
             post_id: postId,
@@ -244,129 +334,261 @@ export class WolfpackFeedServiceEnhanced {
             has_liked: true,
             liked_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+          }, {
+            onConflict: "post_id,user_id",
           });
 
-        if (upsertError) {
-          console.warn("Failed to update user_post_interactions:", upsertError);
+        // Increment likes_count
+        try {
+          await this.supabase.rpc("increment", {
+            table_name: "content_posts",
+            column_name: "likes_count",
+            row_id: postId,
+            increment_value: 1,
+          });
+        } catch {
+          // If RPC doesn't exist, update directly
+          const { data } = await this.supabase
+            .from("content_posts")
+            .select("likes_count")
+            .eq("id", postId)
+            .single();
+          
+          if (data) {
+            await this.supabase
+              .from("content_posts")
+              .update({ likes_count: (data.likes_count || 0) + 1 })
+              .eq("id", postId);
+          }
         }
 
-        return { success: true };
+        return { success: true, data: { liked: true } };
       }
     } catch (error) {
-      console.error("Failed to like post:", error);
+      console.error("Failed to toggle like:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to like post",
+        error: error instanceof Error ? error.message : "Failed to toggle like",
       };
     }
   }
 
   /**
-   * Share a post - can be done without authentication
+   * Track post views
+   */
+  static async trackViews(postIds: string[], userId: string): Promise<void> {
+    try {
+      const interactions = postIds.map((postId) => ({
+        post_id: postId,
+        user_id: userId,
+        has_viewed: true,
+        view_count: 1,
+        last_viewed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+
+      await this.supabase
+        .from("user_post_interactions")
+        .upsert(interactions, {
+          onConflict: "post_id,user_id",
+          ignoreDuplicates: false,
+        });
+
+      // Track in content_interactions
+      const viewInteractions = postIds.map((postId) => ({
+        content_id: postId,
+        user_id: userId,
+        interaction_type: "view" as const,
+      }));
+
+      await this.supabase
+        .from("content_interactions")
+        .insert(viewInteractions)
+        .select(); // Ignore duplicates
+
+      // Update view counts on posts
+      for (const postId of postIds) {
+        try {
+          await this.supabase.rpc("increment", {
+            table_name: "content_posts",
+            column_name: "views_count",
+            row_id: postId,
+            increment_value: 1,
+          });
+        } catch {
+          // Fallback if RPC doesn't exist
+          const { data } = await this.supabase
+            .from("content_posts")
+            .select("views_count")
+            .eq("id", postId)
+            .single();
+          
+          if (data) {
+            await this.supabase
+              .from("content_posts")
+              .update({ views_count: (data.views_count || 0) + 1 })
+              .eq("id", postId);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to track views:", error);
+    }
+  }
+
+  /**
+   * Share a post
    */
   static async sharePost(
     postId: string,
     userId?: string,
-  ): Promise<SharePostResponse> {
+  ): Promise<InteractionResponse> {
     try {
-      const shareUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/social/feed?videoId=${postId}`
-        : `/social/feed?videoId=${postId}`;
+      const shareUrl = typeof window !== "undefined"
+        ? `${window.location.origin}/post/${postId}`
+        : `/post/${postId}`;
 
       // Track share if user is authenticated
       if (userId) {
-        const { error } = await supabase
+        await this.supabase
           .from("content_interactions")
           .insert({
             content_id: postId,
             user_id: userId,
             interaction_type: "share",
-            created_at: new Date().toISOString(),
           });
 
-        if (error) {
-          console.warn("Failed to track share:", error);
-        }
+        // Update share count
+        await this.supabase
+          .from("content_posts")
+          .select("shares_count")
+          .eq("id", postId)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              this.supabase
+                .from("content_posts")
+                .update({ shares_count: (data.shares_count || 0) + 1 })
+                .eq("id", postId);
+            }
+          });
+      }
+
+      // Copy to clipboard if available
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
       }
 
       return {
         success: true,
-        shareUrl,
+        data: { shareUrl },
       };
     } catch (error) {
       console.error("Failed to share post:", error);
       return {
         success: false,
-        shareUrl: "",
+        error: error instanceof Error ? error.message : "Failed to share post",
       };
     }
   }
 
   /**
-   * Get user's feed preferences (for authenticated users)
+   * Save/bookmark a post
    */
-  static async getUserFeedPreferences(): Promise<UserPreferences> {
+  static async toggleSave(
+    postId: string,
+    userId: string,
+  ): Promise<InteractionResponse> {
     try {
-      // This would fetch from user settings in your users table
-      // For now, return defaults
-      return {
-        showFollowingOnly: false,
-        contentFilters: [],
-      };
+      // Check if already saved
+      const { data: existing } = await this.supabase
+        .from("content_interactions")
+        .select("id")
+        .eq("content_id", postId)
+        .eq("user_id", userId)
+        .eq("interaction_type", "save")
+        .single();
+
+      if (existing) {
+        // Unsave
+        await this.supabase
+          .from("content_interactions")
+          .delete()
+          .eq("id", existing.id);
+
+        return { success: true, data: { saved: false } };
+      } else {
+        // Save
+        await this.supabase
+          .from("content_interactions")
+          .insert({
+            content_id: postId,
+            user_id: userId,
+            interaction_type: "save",
+          });
+
+        return { success: true, data: { saved: true } };
+      }
     } catch (error) {
-      console.error("Failed to get user preferences:", error);
+      console.error("Failed to toggle save:", error);
       return {
-        showFollowingOnly: false,
-        contentFilters: [],
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to save post",
       };
     }
   }
 
   /**
-   * Follow/unfollow a user - requires authentication
-   * Uses the correct table name: social_follows
+   * Follow/unfollow a user
    */
   static async toggleFollow(
     targetUserId: string,
     currentUserId: string,
-  ): Promise<FollowResponse> {
+  ): Promise<InteractionResponse> {
     try {
       // Check if already following
-      const { data: existingFollow } = await supabase
+      const { data: existing } = await this.supabase
         .from("social_follows")
         .select("id")
         .eq("follower_id", currentUserId)
         .eq("following_id", targetUserId)
         .single();
 
-      if (existingFollow) {
+      if (existing) {
         // Unfollow
-        const { error } = await supabase
+        await this.supabase
           .from("social_follows")
           .delete()
-          .eq("follower_id", currentUserId)
-          .eq("following_id", targetUserId);
+          .eq("id", existing.id);
 
-        if (error) throw error;
-        return { success: true, isFollowing: false };
+        return { success: true, data: { following: false } };
       } else {
         // Follow
-        const { error } = await supabase
+        await this.supabase
           .from("social_follows")
           .insert({
             follower_id: currentUserId,
             following_id: targetUserId,
-            created_at: new Date().toISOString(),
           });
 
-        if (error) throw error;
-        return { success: true, isFollowing: true };
+        // Create notification
+        await this.supabase
+          .from("notifications")
+          .insert({
+            recipient_id: targetUserId,
+            related_user_id: currentUserId,
+            type: "follow",
+            message: "started following you",
+            content_type: "user",
+            content_id: currentUserId,
+          });
+
+        return { success: true, data: { following: true } };
       }
     } catch (error) {
       console.error("Failed to toggle follow:", error);
       return {
         success: false,
-        isFollowing: false,
         error: error instanceof Error ? error.message : "Failed to follow user",
       };
     }
@@ -374,26 +596,44 @@ export class WolfpackFeedServiceEnhanced {
 
   /**
    * Add a comment to a post
+   * Note: content_comments uses 'video_id' for the post reference
    */
   static async addComment(
     postId: string,
     userId: string,
     content: string,
     parentCommentId?: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  ): Promise<InteractionResponse> {
     try {
-      const { error } = await supabase
+      const { data, error } = await this.supabase
         .from("content_comments")
         .insert({
-          video_id: postId, // Note: your schema uses video_id for post references
+          video_id: postId, // Schema uses video_id for post reference
           user_id: userId,
           content: content.trim(),
-          parent_comment_id: parentCommentId || null,
-          created_at: new Date().toISOString(),
-        });
+          parent_comment_id: parentCommentId,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
-      return { success: true };
+
+      // Update comment count
+      await this.supabase
+        .from("content_posts")
+        .select("comments_count")
+        .eq("id", postId)
+        .single()
+        .then(({ data: post }) => {
+          if (post) {
+            this.supabase
+              .from("content_posts")
+              .update({ comments_count: (post.comments_count || 0) + 1 })
+              .eq("id", postId);
+          }
+        });
+
+      return { success: true, data };
     } catch (error) {
       console.error("Failed to add comment:", error);
       return {
@@ -408,19 +648,17 @@ export class WolfpackFeedServiceEnhanced {
    */
   static async getComments(
     postId: string,
-    limit: number = 20,
-    offset: number = 0,
-  ): Promise<{
-    comments:
-      (ContentComment & { username: string; avatar_url?: string | null })[];
-    hasMore: boolean;
-  }> {
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<CommentResponse> {
+    const { limit = 20, offset = 0 } = options;
+
     try {
-      const { data: comments, error } = await supabase
+      const { data: comments, error } = await this.supabase
         .from("content_comments")
         .select(`
           *,
-          users!content_comments_user_id_fkey(
+          user:users!content_comments_user_id_fkey(
+            id,
             username,
             display_name,
             avatar_url
@@ -428,24 +666,62 @@ export class WolfpackFeedServiceEnhanced {
         `)
         .eq("video_id", postId)
         .eq("is_deleted", false)
+        .is("parent_comment_id", null) // Get top-level comments only
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
 
-      const transformedComments = (comments || []).map((comment) => {
-        const user = Array.isArray(comment.users)
-          ? comment.users[0]
-          : comment.users;
-        return {
-          ...comment,
-          username: user?.display_name || user?.username || "Anonymous",
-          avatar_url: user?.avatar_url,
-        };
-      });
+      // Transform comments
+      const enhancedComments: EnhancedComment[] = (comments || []).map(
+        (comment) => {
+          const userData = Array.isArray(comment.user)
+            ? comment.user[0]
+            : comment.user;
+
+          return {
+            ...comment,
+            user: userData,
+            author_username: userData?.username || "anonymous",
+            author_avatar: userData?.avatar_url || null,
+          };
+        },
+      );
+
+      // Fetch replies for each comment
+      for (const comment of enhancedComments) {
+        const { data: replies } = await this.supabase
+          .from("content_comments")
+          .select(`
+            *,
+            user:users!content_comments_user_id_fkey(
+              id,
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq("parent_comment_id", comment.id)
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: true });
+
+        if (replies) {
+          comment.replies = replies.map((reply) => {
+            const userData = Array.isArray(reply.user)
+              ? reply.user[0]
+              : reply.user;
+            return {
+              ...reply,
+              user: userData,
+              author_username: userData?.username || "anonymous",
+              author_avatar: userData?.avatar_url || null,
+            };
+          });
+        }
+      }
 
       return {
-        comments: transformedComments,
+        comments: enhancedComments,
         hasMore: comments?.length === limit,
       };
     } catch (error) {
@@ -453,6 +729,108 @@ export class WolfpackFeedServiceEnhanced {
       return {
         comments: [],
         hasMore: false,
+        error: error instanceof Error
+          ? error.message
+          : "Failed to get comments",
+      };
+    }
+  }
+
+  /**
+   * Get user's saved posts
+   */
+  static async getSavedPosts(
+    userId: string,
+    options: FeedOptions = {},
+  ): Promise<FeedResponse> {
+    const { limit = 10, offset = 0 } = options;
+
+    try {
+      // Get saved post IDs
+      const { data: savedInteractions, error: savedError } = await this.supabase
+        .from("content_interactions")
+        .select("content_id")
+        .eq("user_id", userId)
+        .eq("interaction_type", "save")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (savedError) throw savedError;
+
+      const postIds = savedInteractions?.map((i) => i.content_id) || [];
+
+      if (postIds.length === 0) {
+        return { posts: [], hasMore: false };
+      }
+
+      // Fetch full post data
+      const { data: posts, error: postsError } = await this.supabase
+        .from("content_posts")
+        .select(`
+          *,
+          user:users!content_posts_user_id_fkey(
+            id,
+            username,
+            display_name,
+            avatar_url,
+            profile_image_url
+          ),
+          user_post_interactions!left(
+            has_liked,
+            has_viewed,
+            view_count,
+            liked_at
+          )
+        `)
+        .in("id", postIds)
+        .eq("is_active", true);
+
+      if (postsError) throw postsError;
+
+      // Transform posts
+      const enhancedPosts: EnhancedPost[] = (posts || []).map((post) => {
+        const userData = Array.isArray(post.user) ? post.user[0] : post.user;
+        const interactions:
+          | Pick<
+            UserPostInteraction,
+            "has_liked" | "has_viewed" | "view_count" | "liked_at"
+          >
+          | undefined = Array.isArray(post.user_post_interactions)
+            ? post.user_post_interactions.find((i: UserPostInteraction) =>
+              i.user_id === userId
+            )
+            : post.user_post_interactions as
+              | Pick<
+                UserPostInteraction,
+                "has_liked" | "has_viewed" | "view_count" | "liked_at"
+              >
+              | undefined;
+
+        return {
+          ...post,
+          user: userData,
+          user_interactions: interactions,
+          author_username: userData?.username || "anonymous",
+          author_display_name: userData?.display_name || userData?.username ||
+            "Anonymous",
+          author_avatar: userData?.avatar_url || userData?.profile_image_url ||
+            null,
+          is_liked: interactions?.has_liked || false,
+        };
+      });
+
+      return {
+        posts: enhancedPosts,
+        hasMore: savedInteractions?.length === limit,
+      };
+    } catch (error) {
+      console.error("Failed to get saved posts:", error);
+      return {
+        posts: [],
+        hasMore: false,
+        error: error instanceof Error
+          ? error.message
+          : "Failed to get saved posts",
       };
     }
   }

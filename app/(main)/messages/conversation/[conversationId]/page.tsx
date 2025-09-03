@@ -7,7 +7,7 @@ import { ArrowLeft, Send, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { ConnectionStatus } from '@/components/shared/ConnectionStatus';
 import { debugLog } from '@/lib/debug';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 // TypeScript interfaces aligned with database schema
 
@@ -61,7 +61,7 @@ export default function ConversationPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params.conversationId as string;
-  const supabase = createClientComponentClient();
+  const supabase = getSupabaseBrowserClient();
   
   // Use our unified messaging hook
   const { 
@@ -107,7 +107,7 @@ export default function ConversationPage() {
         .from('chat_conversations')
         .select(`
           *,
-          chat_participants!inner(
+          chat_participants(
             *,
             user:users(
               id,

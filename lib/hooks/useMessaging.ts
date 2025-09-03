@@ -1,242 +1,113 @@
 import * as React from "react";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useAuth } from "@/contexts/AuthContext";
-import { debugLog, performanceLog } from "@/lib/debug";
+import { debugLog } from "@/lib/debug";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
 
-// Precise message type matching chat_messages table schema
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  content: string;
-  message_type: string | null;
-  media_url: string | null;
-  media_type: string | null;
-  media_thumbnail_url: string | null;
-  media_size: number | null; // bigint in DB
-  media_duration: number | null;
-  media_metadata: Record<string, unknown> | null; // jsonb - use Record instead of any
-  attachments: Record<string, unknown> | null; // jsonb - use Record instead of any
-  reply_to_id: string | null;
-  parent_message_id: string | null;
-  created_at: string | null;
-  edited_at: string | null;
-  deleted_at: string | null;
-  deleted_by: string | null;
-  is_deleted: boolean | null;
-  is_edited: boolean | null;
-  is_read: boolean | null;
-  read_at: string | null;
-  delivered_at: string | null;
-  status: string | null;
-  metadata: Record<string, unknown> | null; // jsonb - use Record instead of any
-  reactions_count: Record<string, number> | null; // jsonb - use Record instead of any
-  reply_count: number | null;
-  // Joined fields from users table (optional, populated via select)
-  sender?: {
-    id: string;
-    email: string;
-    first_name: string | null;
-    last_name: string | null;
-    display_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-    profile_image_url: string | null;
-  };
-  reply_to?: {
-    id: string;
-    content: string;
-    sender_id: string;
-    created_at: string | null;
-  };
+// Type aliases for cleaner code
+type Tables = Database["public"]["Tables"];
+type ChatMessage = Tables["chat_messages"]["Row"];
+type ChatConversation = Tables["chat_conversations"]["Row"];
+type ChatParticipant = Tables["chat_participants"]["Row"];
+type ChatMessageReaction = Tables["chat_message_reactions"]["Row"];
+type ChatMessageReceipt = Tables["chat_message_receipts"]["Row"];
+type User = Tables["users"]["Row"];
+
+// Insert types for creating new records
+type MessageInsert = Tables["chat_messages"]["Insert"];
+type ConversationInsert = Tables["chat_conversations"]["Insert"];
+type ParticipantInsert = Tables["chat_participants"]["Insert"];
+type ReactionInsert = Tables["chat_message_reactions"]["Insert"];
+type ReceiptInsert = Tables["chat_message_receipts"]["Insert"];
+
+// Extended types with joined data
+export interface MessageWithSender extends ChatMessage {
+  sender?: Pick<
+    User,
+    | "id"
+    | "email"
+    | "first_name"
+    | "last_name"
+    | "display_name"
+    | "username"
+    | "avatar_url"
+    | "profile_image_url"
+  >;
+  reactions?: ChatMessageReaction[];
+  receipts?: ChatMessageReceipt[];
+  reply_to?: Pick<ChatMessage, "id" | "content" | "sender_id" | "created_at">;
 }
 
-// Precise conversation type matching chat_conversations table schema
-export interface Conversation {
-  id: string;
-  conversation_type: string;
-  name: string | null;
-  description: string | null;
-  avatar_url: string | null;
-  created_by: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  last_message_at: string | null;
-  last_message_preview: string | null;
-  last_message_sender_id: string | null;
-  is_active: boolean | null;
-  metadata: Record<string, unknown> | null; // jsonb
-  // Computed/joined fields
+export interface ConversationWithParticipants extends ChatConversation {
+  participants?: ParticipantWithUser[];
   unread_count?: number;
-  participant_count?: number;
-  participants?: ConversationParticipant[];
-  other_participant?: UserProfile;
+  other_participant?: User; // For direct conversations
 }
 
-// Precise participant type matching chat_participants table schema
-export interface ConversationParticipant {
-  id: string;
-  conversation_id: string;
-  user_id: string;
-  role: string | null;
-  joined_at: string | null;
-  left_at: string | null;
-  last_read_at: string | null;
-  is_active: boolean | null;
-  notification_settings: {
-    muted?: boolean;
-    sound?: string;
-    vibrate?: boolean;
-    [key: string]: unknown;
-  } | null; // jsonb with known structure
-  // Joined user data
-  user?: UserProfile;
+export interface ParticipantWithUser extends ChatParticipant {
+  user?: Pick<
+    User,
+    | "id"
+    | "email"
+    | "first_name"
+    | "last_name"
+    | "display_name"
+    | "username"
+    | "avatar_url"
+    | "profile_image_url"
+  >;
 }
 
-// User profile type (subset of users table that we need)
-export interface UserProfile {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  display_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  profile_image_url: string | null;
-  is_online: boolean | null;
-  last_seen_at: string | null;
-  wolfpack_status: string | null;
-  bio: string | null;
-}
-
-// Message type for sending (transformed for display)
-export interface DisplayMessage extends Message {
-  // Flattened sender fields for easier access in UI
-  sender_first_name?: string | null;
-  sender_last_name?: string | null;
-  sender_display_name?: string | null;
-  sender_avatar_url?: string | null;
-  sender_username?: string | null;
-}
-
-// Message status enum
-export enum MessageStatus {
-  SENDING = "sending",
-  SENT = "sent",
-  DELIVERED = "delivered",
-  READ = "read",
-  FAILED = "failed",
-}
-
-// Conversation type enum
+// Enums matching backend constraints
 export enum ConversationType {
   DIRECT = "direct",
   GROUP = "group",
-  CHANNEL = "channel",
+  LOCATION = "location",
+  BROADCAST = "broadcast",
 }
 
-// Message type enum
 export enum MessageType {
   TEXT = "text",
+  IMAGE = "image",
+  SYSTEM = "system",
+  DELETED = "deleted",
+}
+
+export enum MediaType {
   IMAGE = "image",
   VIDEO = "video",
   AUDIO = "audio",
   FILE = "file",
-  SYSTEM = "system",
+  GIF = "gif",
 }
 
-// Helper types for Supabase operations
-type MessageInsert = {
-  conversation_id: string;
-  sender_id: string;
-  content: string;
-  message_type?: string | null;
-  media_url?: string | null;
-  media_type?: string | null;
-  media_thumbnail_url?: string | null;
-  media_size?: number | null;
-  media_duration?: number | null;
-  media_metadata?: Record<string, unknown> | null;
-  attachments?: Record<string, unknown> | null;
-  reply_to_id?: string | null;
-  parent_message_id?: string | null;
-  status?: string | null;
-  is_deleted?: boolean | null;
-  is_edited?: boolean | null;
-  is_read?: boolean | null;
-  metadata?: Record<string, unknown> | null;
-};
+export enum ParticipantRole {
+  ADMIN = "admin",
+  MODERATOR = "moderator",
+  MEMBER = "member",
+}
 
-type ConversationInsert = {
-  conversation_type: string;
-  name?: string | null;
-  description?: string | null;
-  avatar_url?: string | null;
-  created_by?: string | null;
-  is_active?: boolean | null;
-  metadata?: Record<string, unknown> | null;
-};
-
-type ParticipantInsert = {
-  conversation_id: string;
-  user_id: string;
-  role?: string | null;
-  is_active?: boolean | null;
-  notification_settings?: Record<string, unknown> | null;
-};
-
-// Notification payload for push notifications
-interface NotificationPayload {
-  title: string;
-  body: string;
-  icon?: string;
-  badge?: string;
+// Notification settings structure
+interface NotificationSettings {
+  muted?: boolean;
   sound?: string;
-  data?: {
-    conversationId: string;
-    messageId: string;
-    senderId: string;
-    type: "message" | "typing" | "read";
-    [key: string]: unknown;
-  };
-}
-
-// Types for debugging
-type MessagingEventData = {
-  userId?: string;
-  currentUserId?: string;
-  conversationId?: string;
-  status?: string;
-  limit?: number;
-  timestamp?: string;
+  vibrate?: boolean;
   [key: string]: unknown;
-};
-
-type ErrorContext = {
-  userId?: string;
-  conversationId?: string;
-  messageId?: string;
-  error?: unknown;
-};
-
-// Typing state for a user
-interface TypingState {
-  userId: string;
-  timestamp: string;
 }
 
+// Hook return interface
 interface UseMessagingReturn {
   // Data
-  conversations: Conversation[];
-  messages: DisplayMessage[];
+  conversations: ConversationWithParticipants[];
+  messages: MessageWithSender[];
   loading: boolean;
   error: string | null;
   currentUserId: string | null;
-  typingUsers: Map<string, string[]>; // conversationId -> array of userIds typing
+  typingUsers: Map<string, string[]>; // conversationId -> array of userIds
 
   // Conversation actions
   loadConversations: () => Promise<void>;
@@ -249,9 +120,9 @@ interface UseMessagingReturn {
   ) => Promise<string | null>;
   updateConversation: (
     conversationId: string,
-    updates: Partial<Conversation>,
+    updates: Partial<ConversationInsert>,
   ) => Promise<boolean>;
-  deleteConversation: (conversationId: string) => Promise<boolean>;
+  archiveConversation: (conversationId: string) => Promise<boolean>;
   leaveConversation: (conversationId: string) => Promise<boolean>;
 
   // Message actions
@@ -265,10 +136,18 @@ interface UseMessagingReturn {
     content: string,
     messageType?: MessageType,
     mediaUrl?: string,
+    mediaType?: MediaType,
   ) => Promise<boolean>;
   editMessage: (messageId: string, newContent: string) => Promise<boolean>;
   deleteMessage: (messageId: string) => Promise<boolean>;
-  markAsRead: (conversationId: string) => Promise<boolean>;
+
+  // Read receipts
+  markMessageAsRead: (messageId: string) => Promise<boolean>;
+  markConversationAsRead: (conversationId: string) => Promise<boolean>;
+
+  // Reactions
+  addReaction: (messageId: string, reaction: string) => Promise<boolean>;
+  removeReaction: (messageId: string, reaction: string) => Promise<boolean>;
 
   // Real-time actions
   subscribeToConversation: (conversationId: string) => () => void;
@@ -290,129 +169,33 @@ interface UseMessagingReturn {
   updateParticipantRole: (
     conversationId: string,
     userId: string,
-    role: string,
+    role: ParticipantRole,
   ) => Promise<boolean>;
 
   // Notification actions
-  requestNotificationPermission: () => Promise<boolean>;
   getNotificationSettings: (
     conversationId: string,
-  ) => Promise<ConversationParticipant["notification_settings"]>;
+  ) => Promise<NotificationSettings | null>;
   updateNotificationSettings: (
     conversationId: string,
-    settings: ConversationParticipant["notification_settings"],
+    settings: NotificationSettings,
   ) => Promise<boolean>;
-}
-
-// Helper function to send push notifications
-async function sendPushNotification(
-  userId: string,
-  notification: NotificationPayload,
-  supabaseClient: ReturnType<typeof createClientComponentClient>
-): Promise<boolean> {
-  try {
-    // Check if user has FCM tokens registered
-    const { data: tokens } = await supabaseClient
-      .from("user_fcm_tokens")
-      .select("token, platform")
-      .eq("user_id", userId)
-      .eq("is_active", true);
-
-    if (!tokens || tokens.length === 0) {
-      debugLog.messaging(
-        "No active FCM tokens for user",
-        { userId } as MessagingEventData,
-      );
-      return false;
-    }
-
-    // Send notification via your backend API that handles FCM
-    // This should be implemented in your backend
-    const response = await fetch("/api/notifications/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        tokens: tokens.map((t: { token: string; platform: string }) => t.token),
-        notification,
-      }),
-    });
-
-    return response.ok;
-  } catch (error) {
-    debugLog.error(
-      "Failed to send push notification",
-      error,
-      { userId } as ErrorContext,
-    );
-    return false;
-  }
-}
-
-// Helper function to play notification sound (for foreground notifications)
-function playNotificationSound(soundName: string = "default"): void {
-  try {
-    // Map sound names to audio files
-    const soundMap: Record<string, string> = {
-      "default": "/sounds/notification.mp3",
-      "message": "/sounds/message.mp3",
-      "ding": "/sounds/ding.mp3",
-      "pop": "/sounds/pop.mp3",
-    };
-
-    const audio = new Audio(soundMap[soundName] || soundMap["default"]);
-    audio.volume = 0.5;
-    audio.play().catch((err) => {
-      console.error("Failed to play notification sound", err);
-    });
-  } catch (error) {
-    console.error("Error playing notification sound", error);
-  }
-}
-
-// Helper function to show browser notification (for foreground)
-async function showBrowserNotification(
-  notification: NotificationPayload,
-): Promise<void> {
-  if (!("Notification" in window)) {
-    return;
-  }
-
-  if (Notification.permission === "granted") {
-    const notif = new Notification(notification.title, {
-      body: notification.body,
-      icon: notification.icon || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
-      badge: notification.badge || "/icons/badge.png",
-      tag: notification.data?.messageId || "message",
-      data: notification.data,
-    });
-
-    notif.onclick = () => {
-      window.focus();
-      // Navigate to conversation if data is provided
-      if (notification.data?.conversationId) {
-        window.location.href = `/messages/${notification.data.conversationId}`;
-      }
-      notif.close();
-    };
-  }
-  return;
 }
 
 export function useMessaging(): UseMessagingReturn {
   const { currentUser } = useAuth();
-  const [conversations, setConversations] = React.useState<Conversation[]>([]);
-  const [messages, setMessages] = React.useState<DisplayMessage[]>([]);
+  const [conversations, setConversations] = React.useState<
+    ConversationWithParticipants[]
+  >([]);
+  const [messages, setMessages] = React.useState<MessageWithSender[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [typingUsers, setTypingUsers] = React.useState<Map<string, string[]>>(
     new Map(),
   );
-  const [isAppFocused, setIsAppFocused] = React.useState(true);
-  const supabase = createClientComponentClient();
+
+  const supabase = getSupabaseBrowserClient();
 
   // Track active subscriptions
   const subscriptionsRef = React.useRef<Map<string, RealtimeChannel>>(
@@ -422,40 +205,19 @@ export function useMessaging(): UseMessagingReturn {
     new Map(),
   );
 
-  // Track app focus for notification handling
-  React.useEffect(() => {
-    const handleFocus = () => setIsAppFocused(true);
-    const handleBlur = () => setIsAppFocused(false);
-
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("blur", handleBlur);
-
-    // Check initial focus state
-    setIsAppFocused(document.hasFocus());
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("blur", handleBlur);
-    };
-  }, []);
-
-  // Get current user's database ID
+  // Set current user ID
   React.useEffect(() => {
     if (currentUser?.id) {
       setCurrentUserId(currentUser.id);
-    } else {
-      setCurrentUserId(null);
     }
   }, [currentUser]);
 
-  // Clean up subscriptions on unmount
+  // Cleanup subscriptions on unmount
   React.useEffect(() => {
-    // Capture the current ref values
     const subscriptions = subscriptionsRef.current;
     const typingTimeouts = typingTimeoutsRef.current;
 
     return () => {
-      // Use the captured values in cleanup
       subscriptions.forEach((channel) => {
         supabase.removeChannel(channel);
       });
@@ -463,588 +225,495 @@ export function useMessaging(): UseMessagingReturn {
         clearTimeout(timeout);
       });
     };
-  }, []);
+  }, [supabase]);
 
-  // Request notification permission
-  const requestNotificationPermission = React.useCallback(
-    async (): Promise<boolean> => {
-      if (!("Notification" in window)) {
-        debugLog.messaging(
-          "Browser does not support notifications",
-          {} as MessagingEventData,
-        );
-        return false;
-      }
-
-      try {
-        const permission = await Notification.requestPermission();
-        return permission === "granted";
-      } catch (error) {
-        debugLog.error(
-          "Failed to request notification permission",
-          error,
-          {} as ErrorContext,
-        );
-        return false;
-      }
-    },
-    [],
-  );
-
-  // Get notification settings for a conversation
-  const getNotificationSettings = React.useCallback(
-    async (
-      conversationId: string,
-    ): Promise<ConversationParticipant["notification_settings"]> => {
-      if (!currentUserId) return null;
-
-      try {
-        const { data } = await supabase
-          .from("chat_participants")
-          .select("notification_settings")
-          .eq("conversation_id", conversationId)
-          .eq("user_id", currentUserId)
-          .single();
-
-        return data?.notification_settings || null;
-      } catch (error) {
-        debugLog.error(
-          "Failed to get notification settings",
-          error,
-          { conversationId } as ErrorContext,
-        );
-        return null;
-      }
-    },
-    [currentUserId],
-  );
-
-  // Update notification settings for a conversation
-  const updateNotificationSettings = React.useCallback(
-    async (
-      conversationId: string,
-      settings: ConversationParticipant["notification_settings"],
-    ): Promise<boolean> => {
-      if (!currentUserId) return false;
-
-      try {
-        const { error } = await supabase
-          .from("chat_participants")
-          .update({ notification_settings: settings })
-          .eq("conversation_id", conversationId)
-          .eq("user_id", currentUserId);
-
-        if (error) throw error;
-        return true;
-      } catch (err) {
-        debugLog.error(
-          "Failed to update notification settings",
-          err,
-          { conversationId } as ErrorContext,
-        );
-        return false;
-      }
-    },
-    [currentUserId],
-  );
-
-  // Handle incoming message notification
-  const handleMessageNotification = React.useCallback(
-    async (message: Message, conversation: Conversation) => {
-      // Don't notify for own messages
-      if (message.sender_id === currentUserId) return;
-
-      // Check if conversation is muted
-      const settings = await getNotificationSettings(message.conversation_id);
-      if (settings?.muted) return;
-
-      // Get sender info
-      const { data: sender } = await supabase
-        .from("users")
-        .select("display_name, first_name, last_name, avatar_url")
-        .eq("id", message.sender_id)
-        .single();
-
-      const senderName = sender?.display_name ||
-        `${sender?.first_name || ""} ${sender?.last_name || ""}`.trim() ||
-        "Someone";
-
-      const notification: NotificationPayload = {
-        title: conversation.name || senderName,
-        body: message.message_type === "text"
-          ? message.content
-          : `Sent a ${message.message_type}`,
-        icon: sender?.avatar_url || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
-        sound: settings?.sound || "default",
-        data: {
-          conversationId: message.conversation_id,
-          messageId: message.id,
-          senderId: message.sender_id,
-          type: "message",
-        },
-      };
-
-      if (isAppFocused) {
-        // App is in foreground - show browser notification and play sound
-        await showBrowserNotification(notification);
-        if (settings?.sound !== "none") {
-          playNotificationSound(settings?.sound || "default");
-        }
-      } else {
-        // App is in background - send push notification
-        // Find all participants except sender to notify
-        const { data: participants } = await supabase
-          .from("chat_participants")
-          .select("user_id")
-          .eq("conversation_id", message.conversation_id)
-          .eq("is_active", true)
-          .neq("user_id", message.sender_id);
-
-        if (participants) {
-          for (const participant of participants) {
-            await sendPushNotification(participant.user_id, notification, supabase);
-          }
-        }
-      }
-    },
-    [currentUserId, isAppFocused, getNotificationSettings],
-  );
-
-  // Load all conversations for the current user
+  // Load conversations for current user
   const loadConversations = React.useCallback(async () => {
-    if (!currentUserId) {
-      debugLog.messaging(
-        "loadConversations",
-        { userId: currentUserId || "none" } as MessagingEventData,
-      );
-      return;
-    }
-
-    const startTime = performanceLog.start("loadConversations");
-    debugLog.messaging(
-      "loadConversations",
-      { userId: currentUserId } as MessagingEventData,
-    );
+    if (!currentUserId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // Get conversations with participants
-      const { data: convData, error: convError } = await supabase
-        .from("chat_conversations")
+      // Get conversations where user is an active participant
+      const { data: participantData, error: partError } = await supabase
+        .from("chat_participants")
         .select(`
-          *,
-          participants:chat_participants(
-            *,
-            user:users(
-              id,
-              email,
-              first_name,
-              last_name,
-              display_name,
-              username,
-              avatar_url,
-              profile_image_url,
-              is_online,
-              last_seen_at,
-              wolfpack_status
-            )
+          conversation_id,
+          conversation:chat_conversations!inner(
+            *
           )
         `)
-        .eq("participants.user_id", currentUserId)
-        .eq("participants.is_active", true)
-        .order("last_message_at", { ascending: false, nullsFirst: false });
+        .eq("user_id", currentUserId)
+        .eq("is_active", true);
 
-      if (convError) throw convError;
+      if (partError) throw partError;
 
-      // Calculate unread counts
-      const conversationsWithUnread = await Promise.all(
-        (convData || []).map(async (conv) => {
-          // Get unread count
-          const { count } = await supabase
+      // Extract unique conversations
+      const conversationIds = participantData?.map((p) => p.conversation_id) ||
+        [];
+
+      // Load full conversation data with participants
+      const conversationsWithData = await Promise.all(
+        conversationIds.map(async (convId) => {
+          // Get conversation
+          const { data: conv } = await supabase
+            .from("chat_conversations")
+            .select("*")
+            .eq("id", convId)
+            .single();
+
+          if (!conv) return null;
+
+          // Get participants
+          const { data: participants } = await supabase
+            .from("chat_participants")
+            .select(`
+              *,
+              user:users(
+                id, email, first_name, last_name, 
+                display_name, username, avatar_url, profile_image_url
+              )
+            `)
+            .eq("conversation_id", convId)
+            .eq("is_active", true);
+
+          // Get unread count using receipts
+          const { data: unreadMessages } = await supabase
             .from("chat_messages")
-            .select("*", { count: "exact", head: true })
-            .eq("conversation_id", conv.id)
-            .eq("is_deleted", false)
+            .select("id", { count: "exact" })
+            .eq("conversation_id", convId)
             .neq("sender_id", currentUserId)
-            .or(`is_read.is.false,is_read.is.null`);
-
-          // For direct conversations, get the other participant
-          let otherParticipant: UserProfile | undefined;
-          if (conv.conversation_type === "direct") {
-            const otherPart = conv.participants?.find(
-              (p: ConversationParticipant) => p.user_id !== currentUserId,
+            .not(
+              "id",
+              "in",
+              `(
+              SELECT message_id FROM chat_message_receipts 
+              WHERE user_id = '${currentUserId}' 
+              AND read_at IS NOT NULL
+            )`,
             );
-            if (otherPart?.user) {
-              otherParticipant = otherPart.user;
+
+          const unreadCount = unreadMessages?.length || 0;
+
+          // For direct conversations, identify the other participant
+          let otherParticipant: User | undefined;
+          if (conv.conversation_type === "direct" && participants) {
+            const other = participants.find((p) => p.user_id !== currentUserId);
+            if (other?.user) {
+              otherParticipant = other.user as User;
             }
           }
 
           return {
             ...conv,
-            unread_count: count || 0,
-            participant_count: conv.participants?.length || 0,
+            participants: participants as ParticipantWithUser[],
+            unread_count: unreadCount,
             other_participant: otherParticipant,
-          };
+          } as ConversationWithParticipants;
         }),
       );
 
-      setConversations(conversationsWithUnread);
+      const validConversations = conversationsWithData.filter(
+        Boolean,
+      ) as ConversationWithParticipants[];
+
+      // Sort by last message timestamp
+      validConversations.sort((a, b) => {
+        const timeA = a.last_message_at
+          ? new Date(a.last_message_at).getTime()
+          : 0;
+        const timeB = b.last_message_at
+          ? new Date(b.last_message_at).getTime()
+          : 0;
+        return timeB - timeA;
+      });
+
+      setConversations(validConversations);
       debugLog.success("loadConversations", {
-        count: conversationsWithUnread.length,
-      } as MessagingEventData);
-      performanceLog.end("loadConversations", startTime);
+        count: validConversations.length,
+      });
     } catch (err) {
-      debugLog.error(
-        "loadConversations",
-        err,
-        { currentUserId } as ErrorContext,
-      );
+      debugLog.error("loadConversations", err);
       setError(
         err instanceof Error ? err.message : "Failed to load conversations",
       );
     } finally {
       setLoading(false);
     }
-  }, [currentUserId]);
+  }, [currentUserId, supabase]);
 
-  // Load messages for a specific conversation
-  const loadMessages = React.useCallback(
-    async (conversationId: string, limit = 50, before?: string) => {
-      const startTime = performanceLog.start("loadMessages");
-      debugLog.messaging(
-        "loadMessages",
-        { conversationId, limit, before } as MessagingEventData,
-      );
+  // Load messages for a conversation
+  const loadMessages = React.useCallback(async (
+    conversationId: string,
+    limit = 50,
+    before?: string,
+  ) => {
+    setLoading(true);
+    setError(null);
 
-      setLoading(true);
-      setError(null);
+    try {
+      let query = supabase
+        .from("chat_messages")
+        .select(`
+          *,
+          sender:users!sender_id(
+            id, email, first_name, last_name,
+            display_name, username, avatar_url, profile_image_url
+          ),
+          reply_to:chat_messages!reply_to_id(
+            id, content, sender_id, created_at
+          )
+        `)
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-      try {
-        let query = supabase
-          .from("chat_messages")
-          .select(`
-            *,
-            sender:users!sender_id(
-              id,
-              email,
-              first_name,
-              last_name,
-              display_name,
-              username,
-              avatar_url,
-              profile_image_url
-            ),
-            reply_to:chat_messages!reply_to_id(
-              id,
-              content,
-              sender_id,
-              created_at
-            )
-          `)
-          .eq("conversation_id", conversationId)
-          .eq("is_deleted", false)
-          .order("created_at", { ascending: false })
-          .limit(limit);
+      // Filter out deleted messages
+      query = query.or("is_deleted.is.null,is_deleted.is.false");
 
-        if (before) {
-          query = query.lt("created_at", before);
-        }
-
-        const { data, error: msgError } = await query;
-
-        if (msgError) throw msgError;
-
-        // Transform messages to include flattened sender info for display
-        const transformedMessages: DisplayMessage[] = (data || []).map(
-          (msg) => ({
-            ...msg,
-            // Flatten sender info for easier access in UI
-            sender_first_name: msg.sender?.first_name,
-            sender_last_name: msg.sender?.last_name,
-            sender_display_name: msg.sender?.display_name,
-            sender_avatar_url: msg.sender?.avatar_url ||
-              msg.sender?.profile_image_url,
-            sender_username: msg.sender?.username,
-          }),
-        ).reverse(); // Reverse to get chronological order
-
-        setMessages(transformedMessages);
-        debugLog.success("loadMessages", {
-          count: transformedMessages.length,
-          conversationId,
-        } as MessagingEventData);
-        performanceLog.end("loadMessages", startTime);
-      } catch (err) {
-        debugLog.error("loadMessages", err, { conversationId } as ErrorContext);
-        setError(
-          err instanceof Error ? err.message : "Failed to load messages",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  // Send a message to a conversation
-  const sendMessage = React.useCallback(
-    async (
-      conversationId: string,
-      content: string,
-      messageType: MessageType = MessageType.TEXT,
-      mediaUrl?: string,
-    ) => {
-      if (!currentUserId || !content.trim()) return false;
-
-      try {
-        const messageData: MessageInsert = {
-          conversation_id: conversationId,
-          sender_id: currentUserId,
-          content: content.trim(),
-          message_type: messageType,
-          status: MessageStatus.SENT,
-          is_deleted: false,
-          is_edited: false,
-        };
-
-        if (mediaUrl) {
-          messageData.media_url = mediaUrl;
-          if (messageType === MessageType.IMAGE) {
-            messageData.media_type = "image";
-          } else if (messageType === MessageType.VIDEO) {
-            messageData.media_type = "video";
-          } else if (messageType === MessageType.AUDIO) {
-            messageData.media_type = "audio";
-          } else if (messageType === MessageType.FILE) {
-            messageData.media_type = "file";
-          }
-        }
-
-        const { error } = await supabase
-          .from("chat_messages")
-          .insert(messageData);
-
-        if (error) throw error;
-
-        // Update conversation's last message
-        await supabase
-          .from("chat_conversations")
-          .update({
-            last_message_at: new Date().toISOString(),
-            last_message_preview: content.substring(0, 100),
-            last_message_sender_id: currentUserId,
-          })
-          .eq("id", conversationId);
-
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to send message");
-        return false;
-      }
-    },
-    [currentUserId],
-  );
-
-  // Create or get a direct conversation with another user
-  const getOrCreateDirectConversation = React.useCallback(
-    async (otherUserId: string) => {
-      console.log("🔍 getOrCreateDirectConversation called with:", {
-        otherUserId,
-        currentUserId,
-        hasCurrentUser: !!currentUserId,
-      });
-
-      if (!currentUserId) {
-        console.error("❌ No current user ID available");
-        return null;
+      if (before) {
+        query = query.lt("created_at", before);
       }
 
-      try {
-        // First check if a direct conversation already exists
-        console.log("🔍 Checking for existing conversation...");
-        const { data: existing, error: existingError } = await supabase
-          .from("chat_participants")
-          .select(`
-            conversation_id,
-            conversation:chat_conversations(
-              id,
-              conversation_type
-            )
-          `)
-          .eq("user_id", currentUserId)
-          .eq("is_active", true);
+      const { data: messages, error: msgError } = await query;
 
-        if (existingError) {
-          console.error(
-            "❌ Error fetching existing conversations:",
-            existingError,
-          );
-          throw existingError;
-        }
+      if (msgError) throw msgError;
 
-        console.log("📊 Found participations:", existing?.length || 0);
+      // Load reactions for these messages
+      const messageIds = messages?.map((m) => m.id) || [];
+      const { data: reactions } = await supabase
+        .from("chat_message_reactions")
+        .select("*")
+        .in("message_id", messageIds);
 
-        // Find direct conversation with the other user
-        if (existing) {
-          for (const participation of existing) {
-            // The conversation is a single object, not an array
-            let conv = participation.conversation as
-              | { id: string; conversation_type: string }
-              | { id: string; conversation_type: string }[]
-              | null;
-            if (Array.isArray(conv)) {
-              conv = conv[0] || null;
-            }
-            console.log("🔍 Checking participation:", {
-              conversation_id: participation.conversation_id,
-              has_conversation: !!conv,
-              conversation_type: conv?.conversation_type,
-            });
+      // Load receipts for these messages
+      const { data: receipts } = await supabase
+        .from("chat_message_receipts")
+        .select("*")
+        .in("message_id", messageIds);
 
-            if (!conv) continue;
+      // Combine data
+      const messagesWithData: MessageWithSender[] = (messages || []).map(
+        (msg) => ({
+          ...msg,
+          reactions: reactions?.filter((r) => r.message_id === msg.id) || [],
+          receipts: receipts?.filter((r) => r.message_id === msg.id) || [],
+        }),
+      ).reverse(); // Reverse for chronological order
 
-            if (conv.conversation_type === "direct") {
-              console.log(
-                "📍 Found direct conversation, checking for other participant...",
-              );
-              const { data: otherParticipant } = await supabase
-                .from("chat_participants")
-                .select("user_id")
-                .eq("conversation_id", participation.conversation_id)
-                .eq("user_id", otherUserId)
-                .eq("is_active", true)
-                .single();
+      setMessages(messagesWithData);
+      debugLog.success("loadMessages", { count: messagesWithData.length });
+    } catch (err) {
+      debugLog.error("loadMessages", err);
+      setError(err instanceof Error ? err.message : "Failed to load messages");
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
-              if (otherParticipant) {
-                console.log(
-                  "✅ Found existing conversation with user:",
-                  participation.conversation_id,
-                );
-                return participation.conversation_id;
-              }
-            }
-          }
-        }
+  // Send a message
+  const sendMessage = React.useCallback(async (
+    conversationId: string,
+    content: string,
+    messageType: MessageType = MessageType.TEXT,
+    mediaUrl?: string,
+    mediaType?: MediaType,
+  ) => {
+    if (!currentUserId || !content.trim()) return false;
 
-        console.log("📝 No existing conversation found, creating new one...");
+    try {
+      const messageData: MessageInsert = {
+        conversation_id: conversationId,
+        sender_id: currentUserId,
+        content: content.trim(),
+        message_type: messageType,
+      };
 
-        // Create new conversation
-        const conversationInsert: ConversationInsert = {
-          conversation_type: ConversationType.DIRECT,
-          created_by: currentUserId,
-          is_active: true,
-        };
-
-        const { data: newConv, error: convError } = await supabase
-          .from("chat_conversations")
-          .insert(conversationInsert)
-          .select()
-          .single();
-
-        if (convError) throw convError;
-
-        // Add participants
-        const participants: ParticipantInsert[] = [
-          {
-            conversation_id: newConv!.id,
-            user_id: currentUserId,
-            role: "member",
-            is_active: true,
-          },
-          {
-            conversation_id: newConv!.id,
-            user_id: otherUserId,
-            role: "member",
-            is_active: true,
-          },
-        ];
-
-        const { error: partError } = await supabase
-          .from("chat_participants")
-          .insert(participants);
-
-        if (partError) throw partError;
-
-        console.log("✅ Successfully created new conversation:", newConv!.id);
-        return newConv!.id;
-      } catch (err) {
-        console.error("❌ Error in getOrCreateDirectConversation:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to create conversation",
-        );
-        return null;
+      if (mediaUrl && mediaType) {
+        messageData.media_url = mediaUrl;
+        messageData.media_type = mediaType;
       }
-    },
-    [currentUserId],
-  );
 
-  // Create a group conversation
-  const createGroupConversation = React.useCallback(
-    async (name: string, participantIds: string[]) => {
-      if (!currentUserId) return null;
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .insert(messageData)
+        .select()
+        .single();
 
-      try {
-        // Create new group conversation
-        const conversationInsert: ConversationInsert = {
-          conversation_type: ConversationType.GROUP,
-          name,
-          created_by: currentUserId,
-          is_active: true,
-        };
+      if (error) throw error;
 
-        const { data: newConv, error: convError } = await supabase
-          .from("chat_conversations")
-          .insert(conversationInsert)
-          .select()
-          .single();
+      // Update conversation's last message info
+      await supabase
+        .from("chat_conversations")
+        .update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: content.substring(0, 100),
+          last_message_sender_id: currentUserId,
+          message_count: (await supabase
+            .from("chat_messages")
+            .select("id", { count: "exact" })
+            .eq("conversation_id", conversationId)).count || 0,
+        })
+        .eq("id", conversationId);
 
-        if (convError) throw convError;
+      // Create notification for other participants
+      const { data: participants } = await supabase
+        .from("chat_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .eq("is_active", true)
+        .neq("user_id", currentUserId);
 
-        // Add all participants including creator
-        const participants: ParticipantInsert[] = [
-          currentUserId,
-          ...participantIds,
-        ].map((userId) => ({
-          conversation_id: newConv!.id,
-          user_id: userId,
-          role: userId === currentUserId ? "admin" : "member",
-          is_active: true,
+      if (participants) {
+        const notifications = participants.map((p) => ({
+          recipient_id: p.user_id,
+          type: "message",
+          message: `New message: ${content.substring(0, 50)}...`,
+          content_type: "message",
+          content_id: data.id,
+          related_user_id: currentUserId,
         }));
 
-        const { error: partError } = await supabase
-          .from("chat_participants")
-          .insert(participants);
-
-        if (partError) throw partError;
-
-        return newConv!.id;
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to create group conversation",
-        );
-        return null;
+        await supabase.from("notifications").insert(notifications);
       }
-    },
-    [currentUserId],
-  );
 
-  // Subscribe to real-time messages for a conversation
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message");
+      return false;
+    }
+  }, [currentUserId, supabase]);
+
+  // Get or create direct conversation
+  const getOrCreateDirectConversation = React.useCallback(async (
+    otherUserId: string,
+  ) => {
+    if (!currentUserId) return null;
+
+    try {
+      // Use the database function
+      const { data, error } = await supabase
+        .rpc("get_or_create_dm_conversation", {
+          other_user_id: otherUserId,
+        });
+
+      if (error) throw error;
+
+      return data?.conversation_id || null;
+    } catch (err) {
+      debugLog.error("getOrCreateDirectConversation", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to create conversation",
+      );
+      return null;
+    }
+  }, [currentUserId, supabase]);
+
+  // Create group conversation
+  const createGroupConversation = React.useCallback(async (
+    name: string,
+    participantIds: string[],
+  ) => {
+    if (!currentUserId) return null;
+
+    try {
+      // Create conversation
+      const conversationData: ConversationInsert = {
+        conversation_type: ConversationType.GROUP,
+        name,
+        created_by: currentUserId,
+        is_active: true,
+      };
+
+      const { data: conv, error: convError } = await supabase
+        .from("chat_conversations")
+        .insert(conversationData)
+        .select()
+        .single();
+
+      if (convError) throw convError;
+
+      // Add participants
+      const participants: ParticipantInsert[] = [
+        currentUserId,
+        ...participantIds,
+      ].map((userId) => ({
+        conversation_id: conv.id,
+        user_id: userId,
+        role: userId === currentUserId
+          ? ParticipantRole.ADMIN
+          : ParticipantRole.MEMBER,
+        is_active: true,
+      }));
+
+      const { error: partError } = await supabase
+        .from("chat_participants")
+        .insert(participants);
+
+      if (partError) throw partError;
+
+      return conv.id;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create group");
+      return null;
+    }
+  }, [currentUserId, supabase]);
+
+  // Mark message as read
+  const markMessageAsRead = React.useCallback(async (messageId: string) => {
+    if (!currentUserId) return false;
+
+    try {
+      // Check if receipt exists
+      const { data: existing } = await supabase
+        .from("chat_message_receipts")
+        .select("id")
+        .eq("message_id", messageId)
+        .eq("user_id", currentUserId)
+        .single();
+
+      if (existing) {
+        // Update existing receipt
+        const { error } = await supabase
+          .from("chat_message_receipts")
+          .update({ read_at: new Date().toISOString() })
+          .eq("id", existing.id);
+
+        if (error) throw error;
+      } else {
+        // Create new receipt
+        const receiptData: ReceiptInsert = {
+          message_id: messageId,
+          user_id: currentUserId,
+          delivered_at: new Date().toISOString(),
+          read_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from("chat_message_receipts")
+          .insert(receiptData);
+
+        if (error) throw error;
+      }
+
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to mark as read");
+      return false;
+    }
+  }, [currentUserId, supabase]);
+
+  // Mark entire conversation as read
+  const markConversationAsRead = React.useCallback(async (
+    conversationId: string,
+  ) => {
+    if (!currentUserId) return false;
+
+    try {
+      // Get all unread messages in conversation
+      const { data: messages } = await supabase
+        .from("chat_messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .neq("sender_id", currentUserId);
+
+      if (!messages || messages.length === 0) return true;
+
+      // Create receipts for all messages
+      const receipts: ReceiptInsert[] = messages.map((msg) => ({
+        message_id: msg.id,
+        user_id: currentUserId,
+        delivered_at: new Date().toISOString(),
+        read_at: new Date().toISOString(),
+      }));
+
+      // Insert receipts (upsert to handle existing ones)
+      for (const receipt of receipts) {
+        await supabase
+          .from("chat_message_receipts")
+          .upsert(receipt, {
+            onConflict: "message_id,user_id",
+          });
+      }
+
+      // Update participant's last_read_at
+      await supabase
+        .from("chat_participants")
+        .update({ last_read_at: new Date().toISOString() })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", currentUserId);
+
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to mark conversation as read",
+      );
+      return false;
+    }
+  }, [currentUserId, supabase]);
+
+  // Add reaction to message
+  const addReaction = React.useCallback(async (
+    messageId: string,
+    reaction: string,
+  ) => {
+    if (!currentUserId) return false;
+
+    try {
+      const reactionData: ReactionInsert = {
+        message_id: messageId,
+        user_id: currentUserId,
+        reaction,
+      };
+
+      const { error } = await supabase
+        .from("chat_message_reactions")
+        .insert(reactionData);
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add reaction");
+      return false;
+    }
+  }, [currentUserId, supabase]);
+
+  // Remove reaction from message
+  const removeReaction = React.useCallback(async (
+    messageId: string,
+    reaction: string,
+  ) => {
+    if (!currentUserId) return false;
+
+    try {
+      const { error } = await supabase
+        .from("chat_message_reactions")
+        .delete()
+        .eq("message_id", messageId)
+        .eq("user_id", currentUserId)
+        .eq("reaction", reaction);
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to remove reaction",
+      );
+      return false;
+    }
+  }, [currentUserId, supabase]);
+
+  // Subscribe to real-time messages
   const subscribeToConversation = React.useCallback(
     (conversationId: string) => {
-      // Remove existing subscription if any
-      const existingChannel = subscriptionsRef.current.get(conversationId);
-      if (existingChannel) {
-        supabase.removeChannel(existingChannel);
+      // Remove existing subscription
+      const existing = subscriptionsRef.current.get(conversationId);
+      if (existing) {
+        supabase.removeChannel(existing);
       }
-
-      // Get current conversation for notification context
-      const currentConversation = conversations.find((c) =>
-        c.id === conversationId
-      );
 
       const channel = supabase
         .channel(`messages:${conversationId}`)
@@ -1056,52 +725,22 @@ export function useMessaging(): UseMessagingReturn {
             table: "chat_messages",
             filter: `conversation_id=eq.${conversationId}`,
           },
-          async (
-            payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>,
-          ) => {
-            // Type guard for payload.new
-            const newRecord = payload.new as { id: string };
-            if (!newRecord.id) return;
-
+          async (payload: RealtimePostgresChangesPayload<ChatMessage>) => {
             // Fetch full message with sender info
             const { data } = await supabase
               .from("chat_messages")
               .select(`
-                *,
-                sender:users!sender_id(
-                  id,
-                  email,
-                  first_name,
-                  last_name,
-                  display_name,
-                  username,
-                  avatar_url,
-                  profile_image_url
-                )
-              `)
-              .eq("id", newRecord.id)
+              *,
+              sender:users!sender_id(
+                id, email, first_name, last_name,
+                display_name, username, avatar_url, profile_image_url
+              )
+            `)
+              .eq("id", payload.new.id)
               .single();
 
             if (data) {
-              const newMessage: DisplayMessage = {
-                ...data,
-                sender_first_name: data.sender?.first_name,
-                sender_last_name: data.sender?.last_name,
-                sender_display_name: data.sender?.display_name,
-                sender_avatar_url: data.sender?.avatar_url ||
-                  data.sender?.profile_image_url,
-                sender_username: data.sender?.username,
-              };
-
-              setMessages((prev) => [...prev, newMessage]);
-
-              // Handle notification for new message
-              if (currentConversation) {
-                await handleMessageNotification(
-                  data as Message,
-                  currentConversation,
-                );
-              }
+              setMessages((prev) => [...prev, data as MessageWithSender]);
             }
           },
         )
@@ -1113,39 +752,11 @@ export function useMessaging(): UseMessagingReturn {
             table: "chat_messages",
             filter: `conversation_id=eq.${conversationId}`,
           },
-          (
-            payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>,
-          ) => {
-            // Type guard for payload.new
-            const newRecord = payload.new as
-              & { id: string }
-              & Partial<DisplayMessage>;
-            if (!newRecord.id) return;
-
+          (payload: RealtimePostgresChangesPayload<ChatMessage>) => {
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === newRecord.id ? { ...msg, ...newRecord } : msg
+                msg.id === payload.new.id ? { ...msg, ...payload.new } : msg
               )
-            );
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "DELETE",
-            schema: "public",
-            table: "chat_messages",
-            filter: `conversation_id=eq.${conversationId}`,
-          },
-          (
-            payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>,
-          ) => {
-            // Type guard for payload.old
-            const oldRecord = payload.old as { id: string };
-            if (!oldRecord.id) return;
-
-            setMessages((prev) =>
-              prev.filter((msg) => msg.id !== oldRecord.id)
             );
           },
         )
@@ -1158,226 +769,146 @@ export function useMessaging(): UseMessagingReturn {
         subscriptionsRef.current.delete(conversationId);
       };
     },
-    [conversations, handleMessageNotification],
+    [supabase],
   );
 
-  // Subscribe to typing indicators
+  // Subscribe to typing indicators using database
   const subscribeToTypingIndicators = React.useCallback(
     (conversationId: string) => {
       const channel = supabase
         .channel(`typing:${conversationId}`)
-        .on("presence", { event: "sync" }, () => {
-          const state = channel.presenceState() as Record<
-            string,
-            TypingState[]
-          >;
-          const typing = new Set<string>();
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "chat_participants",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          async () => {
+            // Query the v_typing_users view for typing status
+            const { data } = await supabase
+              .from("v_typing_users")
+              .select("user_id")
+              .eq("conversation_id", conversationId)
+              .eq("is_typing", true);
 
-          Object.values(state).forEach((presences) => {
-            presences.forEach((presence) => {
-              if (presence.userId && presence.userId !== currentUserId) {
-                typing.add(presence.userId);
-              }
+            const typingUserIds = data?.map((d) => d.user_id) || [];
+
+            setTypingUsers((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(
+                conversationId,
+                typingUserIds.filter((id) => id !== currentUserId),
+              );
+              return newMap;
             });
-          });
-
-          setTypingUsers((prev) => {
-            const newMap = new Map(prev);
-            newMap.set(conversationId, Array.from(typing));
-            return newMap;
-          });
-        })
+          },
+        )
         .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
       };
     },
-    [currentUserId],
+    [currentUserId, supabase],
   );
 
   // Send typing indicator
-  const sendTypingIndicator = React.useCallback(
-    async (conversationId: string, isTyping: boolean) => {
-      if (!currentUserId) return;
+  const sendTypingIndicator = React.useCallback(async (
+    conversationId: string,
+    isTyping: boolean,
+  ) => {
+    if (!currentUserId) return;
 
-      const channel = supabase.channel(`typing:${conversationId}`);
+    try {
+      // Use the database function
+      await supabase.rpc("set_typing_status", {
+        p_conversation_id: conversationId,
+        p_is_typing: isTyping,
+      });
+    } catch (err) {
+      debugLog.error("sendTypingIndicator", err);
+    }
+  }, [currentUserId, supabase]);
 
-      if (isTyping) {
-        await channel.track({
-          userId: currentUserId,
-          timestamp: new Date().toISOString(),
-        });
+  // Edit message
+  const editMessage = React.useCallback(async (
+    messageId: string,
+    newContent: string,
+  ) => {
+    if (!currentUserId || !newContent.trim()) return false;
 
-        // Clear existing timeout
-        const existingTimeout = typingTimeoutsRef.current.get(conversationId);
-        if (existingTimeout) {
-          clearTimeout(existingTimeout);
-        }
+    try {
+      const { error } = await supabase
+        .from("chat_messages")
+        .update({
+          content: newContent.trim(),
+          edited_at: new Date().toISOString(),
+        })
+        .eq("id", messageId)
+        .eq("sender_id", currentUserId);
 
-        // Set timeout to stop typing after 3 seconds
-        const timeout = setTimeout(() => {
-          channel.untrack();
-          typingTimeoutsRef.current.delete(conversationId);
-        }, 3000);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to edit message");
+      return false;
+    }
+  }, [currentUserId, supabase]);
 
-        typingTimeoutsRef.current.set(conversationId, timeout);
-      } else {
-        await channel.untrack();
+  // Delete message
+  const deleteMessage = React.useCallback(async (messageId: string) => {
+    if (!currentUserId) return false;
 
-        const existingTimeout = typingTimeoutsRef.current.get(conversationId);
-        if (existingTimeout) {
-          clearTimeout(existingTimeout);
-          typingTimeoutsRef.current.delete(conversationId);
-        }
-      }
-    },
-    [currentUserId],
-  );
+    try {
+      const { error } = await supabase
+        .from("chat_messages")
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by: currentUserId,
+        })
+        .eq("id", messageId)
+        .eq("sender_id", currentUserId);
 
-  // Edit a message
-  const editMessage = React.useCallback(
-    async (messageId: string, newContent: string) => {
-      if (!currentUserId || !newContent.trim()) return false;
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete message");
+      return false;
+    }
+  }, [currentUserId, supabase]);
 
-      try {
-        const { error } = await supabase
-          .from("chat_messages")
-          .update({
-            content: newContent.trim(),
-            is_edited: true,
-            edited_at: new Date().toISOString(),
-          })
-          .eq("id", messageId)
-          .eq("sender_id", currentUserId);
+  // Update conversation
+  const updateConversation = React.useCallback(async (
+    conversationId: string,
+    updates: Partial<ConversationInsert>,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("chat_conversations")
+        .update(updates)
+        .eq("id", conversationId);
 
-        if (error) throw error;
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update conversation",
+      );
+      return false;
+    }
+  }, [supabase]);
 
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to edit message");
-        return false;
-      }
-    },
-    [currentUserId],
-  );
-
-  // Delete a message
-  const deleteMessage = React.useCallback(
-    async (messageId: string) => {
-      if (!currentUserId) return false;
-
-      try {
-        const { error } = await supabase
-          .from("chat_messages")
-          .update({
-            is_deleted: true,
-            deleted_at: new Date().toISOString(),
-            deleted_by: currentUserId,
-          })
-          .eq("id", messageId)
-          .eq("sender_id", currentUserId);
-
-        if (error) throw error;
-
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to delete message",
-        );
-        return false;
-      }
-    },
-    [currentUserId],
-  );
-
-  // Mark messages as read
-  const markAsRead = React.useCallback(
+  // Archive conversation
+  const archiveConversation = React.useCallback(
     async (conversationId: string) => {
-      if (!currentUserId) return false;
-
-      try {
-        const { error } = await supabase
-          .from("chat_messages")
-          .update({
-            is_read: true,
-            read_at: new Date().toISOString(),
-          })
-          .eq("conversation_id", conversationId)
-          .neq("sender_id", currentUserId)
-          .or(`is_read.is.false,is_read.is.null`);
-
-        if (error) throw error;
-
-        // Update participant's last read time
-        await supabase
-          .from("chat_participants")
-          .update({
-            last_read_at: new Date().toISOString(),
-          })
-          .eq("conversation_id", conversationId)
-          .eq("user_id", currentUserId);
-
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to mark as read");
-        return false;
-      }
+      return updateConversation(conversationId, { is_archived: true });
     },
-    [currentUserId],
+    [updateConversation],
   );
 
-  // Update conversation details
-  const updateConversation = React.useCallback(
-    async (conversationId: string, updates: Partial<Conversation>) => {
-      try {
-        // Filter out computed fields
-        const {
-          // other_participant is intentionally omitted to avoid unused variable error
-          ...dbUpdates
-        } = updates;
-
-        const { error } = await supabase
-          .from("chat_conversations")
-          .update(dbUpdates)
-          .eq("id", conversationId);
-
-        if (error) throw error;
-
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to update conversation",
-        );
-        return false;
-      }
-    },
-    [],
-  );
-
-  // Delete a conversation
-  const deleteConversation = React.useCallback(
-    async (conversationId: string) => {
-      try {
-        const { error } = await supabase
-          .from("chat_conversations")
-          .update({ is_active: false })
-          .eq("id", conversationId);
-
-        if (error) throw error;
-
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to delete conversation",
-        );
-        return false;
-      }
-    },
-    [],
-  );
-
-  // Leave a conversation
+  // Leave conversation
   const leaveConversation = React.useCallback(
     async (conversationId: string) => {
       if (!currentUserId) return false;
@@ -1393,7 +924,6 @@ export function useMessaging(): UseMessagingReturn {
           .eq("user_id", currentUserId);
 
         if (error) throw error;
-
         return true;
       } catch (err) {
         setError(
@@ -1402,83 +932,128 @@ export function useMessaging(): UseMessagingReturn {
         return false;
       }
     },
-    [currentUserId],
+    [currentUserId, supabase],
   );
 
-  // Add participants to conversation
-  const addParticipants = React.useCallback(
-    async (conversationId: string, userIds: string[]) => {
-      try {
-        const participants: ParticipantInsert[] = userIds.map((userId) => ({
-          conversation_id: conversationId,
-          user_id: userId,
-          role: "member",
-          is_active: true,
-        }));
+  // Add participants
+  const addParticipants = React.useCallback(async (
+    conversationId: string,
+    userIds: string[],
+  ) => {
+    try {
+      const participants: ParticipantInsert[] = userIds.map((userId) => ({
+        conversation_id: conversationId,
+        user_id: userId,
+        role: ParticipantRole.MEMBER,
+        is_active: true,
+      }));
 
-        const { error } = await supabase
-          .from("chat_participants")
-          .insert(participants);
+      const { error } = await supabase
+        .from("chat_participants")
+        .insert(participants);
 
-        if (error) throw error;
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to add participants",
+      );
+      return false;
+    }
+  }, [supabase]);
 
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to add participants",
-        );
-        return false;
-      }
-    },
-    [],
-  );
+  // Remove participant
+  const removeParticipant = React.useCallback(async (
+    conversationId: string,
+    userId: string,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("chat_participants")
+        .update({
+          is_active: false,
+          left_at: new Date().toISOString(),
+        })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
 
-  // Remove participant from conversation
-  const removeParticipant = React.useCallback(
-    async (conversationId: string, userId: string) => {
-      try {
-        const { error } = await supabase
-          .from("chat_participants")
-          .update({
-            is_active: false,
-            left_at: new Date().toISOString(),
-          })
-          .eq("conversation_id", conversationId)
-          .eq("user_id", userId);
-
-        if (error) throw error;
-
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to remove participant",
-        );
-        return false;
-      }
-    },
-    [],
-  );
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to remove participant",
+      );
+      return false;
+    }
+  }, [supabase]);
 
   // Update participant role
-  const updateParticipantRole = React.useCallback(
-    async (conversationId: string, userId: string, role: string) => {
-      try {
-        const { error } = await supabase
-          .from("chat_participants")
-          .update({ role })
-          .eq("conversation_id", conversationId)
-          .eq("user_id", userId);
+  const updateParticipantRole = React.useCallback(async (
+    conversationId: string,
+    userId: string,
+    role: ParticipantRole,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("chat_participants")
+        .update({ role })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
 
-        if (error) throw error;
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update role");
+      return false;
+    }
+  }, [supabase]);
 
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to update role");
-        return false;
-      }
-    },
-    [],
-  );
+  // Get notification settings
+  const getNotificationSettings = React.useCallback(async (
+    conversationId: string,
+  ): Promise<NotificationSettings | null> => {
+    if (!currentUserId) return null;
+
+    try {
+      const { data } = await supabase
+        .from("chat_participants")
+        .select("notification_settings")
+        .eq("conversation_id", conversationId)
+        .eq("user_id", currentUserId)
+        .single();
+
+      return (data?.notification_settings as NotificationSettings) || null;
+    } catch (err) {
+      debugLog.error("getNotificationSettings", err);
+      return null;
+    }
+  }, [currentUserId, supabase]);
+
+  // Update notification settings
+  const updateNotificationSettings = React.useCallback(async (
+    conversationId: string,
+    settings: NotificationSettings,
+  ) => {
+    if (!currentUserId) return false;
+
+    try {
+      const { error } = await supabase
+        .from("chat_participants")
+        .update({ notification_settings: settings })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update notification settings",
+      );
+      return false;
+    }
+  }, [currentUserId, supabase]);
 
   return {
     // Data
@@ -1494,7 +1069,7 @@ export function useMessaging(): UseMessagingReturn {
     getOrCreateDirectConversation,
     createGroupConversation,
     updateConversation,
-    deleteConversation,
+    archiveConversation,
     leaveConversation,
 
     // Message actions
@@ -1502,7 +1077,14 @@ export function useMessaging(): UseMessagingReturn {
     sendMessage,
     editMessage,
     deleteMessage,
-    markAsRead,
+
+    // Read receipts
+    markMessageAsRead,
+    markConversationAsRead,
+
+    // Reactions
+    addReaction,
+    removeReaction,
 
     // Real-time actions
     subscribeToConversation,
@@ -1515,7 +1097,6 @@ export function useMessaging(): UseMessagingReturn {
     updateParticipantRole,
 
     // Notification actions
-    requestNotificationPermission,
     getNotificationSettings,
     updateNotificationSettings,
   };
