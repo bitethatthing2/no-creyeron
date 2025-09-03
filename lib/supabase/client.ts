@@ -45,12 +45,13 @@ export interface AuthError extends SupabaseError {
   status: number
 }
 
-export function handleSupabaseError(error: any): SupabaseError {
-  if (error?.message) {
+export function handleSupabaseError(error: unknown): SupabaseError {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const err = error as { message: string; status?: number; code?: string };
     return {
-      message: error.message,
-      status: error.status || 500,
-      code: error.code
+      message: err.message,
+      status: err.status || 500,
+      code: err.code
     }
   }
   return {

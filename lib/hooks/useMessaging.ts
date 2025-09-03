@@ -1,5 +1,5 @@
 import * as React from "react";
-import { supabase } from "@/lib/supabase";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useAuth } from "@/contexts/AuthContext";
 import { debugLog, performanceLog } from "@/lib/debug";
 import {
@@ -308,10 +308,11 @@ interface UseMessagingReturn {
 async function sendPushNotification(
   userId: string,
   notification: NotificationPayload,
+  supabaseClient: ReturnType<typeof createClientComponentClient>
 ): Promise<boolean> {
   try {
     // Check if user has FCM tokens registered
-    const { data: tokens } = await supabase
+    const { data: tokens } = await supabaseClient
       .from("user_fcm_tokens")
       .select("token, platform")
       .eq("user_id", userId)
@@ -334,7 +335,7 @@ async function sendPushNotification(
       },
       body: JSON.stringify({
         userId,
-        tokens: tokens.map((t) => t.token),
+        tokens: tokens.map((t: { token: string; platform: string }) => t.token),
         notification,
       }),
     });
@@ -411,6 +412,7 @@ export function useMessaging(): UseMessagingReturn {
     new Map(),
   );
   const [isAppFocused, setIsAppFocused] = React.useState(true);
+  const supabase = createClientComponentClient();
 
   // Track active subscriptions
   const subscriptionsRef = React.useRef<Map<string, RealtimeChannel>>(
@@ -600,7 +602,7 @@ export function useMessaging(): UseMessagingReturn {
 
         if (participants) {
           for (const participant of participants) {
-            await sendPushNotification(participant.user_id, notification);
+            await sendPushNotification(participant.user_id, notification, supabase);
           }
         }
       }

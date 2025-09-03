@@ -2,20 +2,24 @@
 // SOCIAL SERVICE TYPES - SIDE HUSTLE APP
 // =============================================================================
 
-import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
+import type {
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "@/types/database.types";
 
 // Extract types from the fresh database schema
-export type User = Tables<'users'>;
-export type ContentPost = Tables<'content_posts'>;
-export type ContentComment = Tables<'content_comments'>;
-export type UserPostInteraction = Tables<'user_post_interactions'>;
-export type SocialFollow = Tables<'social_follows'>;
-export type SocialBlock = Tables<'social_blocks'>;
+export type User = Tables<"users">;
+export type ContentPost = Tables<"content_posts">;
+export type ContentComment = Tables<"content_comments">;
+export type UserPostInteraction = Tables<"user_post_interactions">;
+export type SocialFollow = Tables<"social_follows">;
+export type SocialBlock = Tables<"social_blocks">;
 
 // Insert and update types for mutations
-export type ContentPostInsert = TablesInsert<'content_posts'>;
-export type ContentCommentInsert = TablesInsert<'content_comments'>;
-export type UserPostInteractionInsert = TablesInsert<'user_post_interactions'>;
+export type ContentPostInsert = TablesInsert<"content_posts">;
+export type ContentCommentInsert = TablesInsert<"content_comments">;
+export type UserPostInteractionInsert = TablesInsert<"user_post_interactions">;
 
 // =============================================================================
 // SOCIAL FEED TYPES
@@ -37,7 +41,7 @@ export interface FeedVideoItem {
   created_at: string;
   updated_at: string | null;
   is_active: boolean;
-  
+
   // Extended content fields
   title?: string | null;
   description?: string | null;
@@ -66,28 +70,28 @@ export interface FeedVideoItem {
   effect_name?: string | null;
   slug?: string | null;
   seo_description?: string | null;
-  
+
   // User information (joined from users table)
   username: string;
   display_name?: string | null;
   avatar_url?: string | null;
   is_verified?: boolean | null;
-  
+
   // Computed/derived fields for UI
   is_liked?: boolean;
   is_following?: boolean;
   can_delete?: boolean;
-  
+
   // Legacy compatibility fields
   content_type?: string; // Maps to post_type
-  duration?: number; // Maps to duration_seconds  
+  duration?: number; // Maps to duration_seconds
   hashtags?: string[]; // Maps to tags
 }
 
 export interface SocialFeedRequest {
   limit?: number;
   offset?: number;
-  type?: 'for-you' | 'following' | 'trending';
+  type?: "for-you" | "following" | "trending";
   user_id?: string;
 }
 
@@ -126,7 +130,7 @@ export interface CreatePostResponse {
 
 export interface LikeActionRequest {
   post_id: string;
-  action: 'like' | 'unlike';
+  action: "like" | "unlike";
 }
 
 export interface LikeActionResponse {
@@ -140,7 +144,7 @@ export interface LikeActionResponse {
 
 export interface FollowActionRequest {
   user_id: string;
-  action: 'follow' | 'unfollow';
+  action: "follow" | "unfollow";
 }
 
 export interface FollowActionResponse {
@@ -154,7 +158,7 @@ export interface FollowActionResponse {
 
 export interface ShareActionRequest {
   post_id: string;
-  platform?: 'native' | 'copy-link' | 'social-media';
+  platform?: "native" | "copy-link" | "social-media";
 }
 
 export interface ShareActionResponse {
@@ -174,7 +178,7 @@ export interface GetCommentsRequest {
   post_id: string;
   limit?: number;
   offset?: number;
-  sort?: 'newest' | 'oldest' | 'popular';
+  sort?: "newest" | "oldest" | "popular";
 }
 
 export interface GetCommentsResponse {
@@ -234,7 +238,7 @@ export interface UserProfileResponse {
 
 export interface MediaUploadRequest {
   file: File | Blob;
-  type: 'video' | 'image';
+  type: "video" | "image";
   filename?: string;
 }
 
@@ -256,7 +260,7 @@ export interface MediaUploadResponse {
 
 export interface SearchRequest {
   query: string;
-  type?: 'users' | 'posts' | 'hashtags' | 'all';
+  type?: "users" | "posts" | "hashtags" | "all";
   limit?: number;
   offset?: number;
 }
@@ -283,7 +287,7 @@ export interface SearchResponse {
 
 export interface PostAnalyticsRequest {
   post_id: string;
-  time_range?: '24h' | '7d' | '30d' | '90d';
+  time_range?: "24h" | "7d" | "30d" | "90d";
 }
 
 export interface PostAnalyticsResponse {
@@ -319,7 +323,7 @@ export interface ReportContentRequest {
   post_id?: string;
   comment_id?: string;
   user_id?: string;
-  reason: 'spam' | 'harassment' | 'inappropriate' | 'copyright' | 'other';
+  reason: "spam" | "harassment" | "inappropriate" | "copyright" | "other";
   description?: string;
 }
 
@@ -327,7 +331,7 @@ export interface ReportContentResponse {
   success: boolean;
   data?: {
     report_id: string;
-    status: 'pending' | 'reviewed' | 'resolved';
+    status: "pending" | "reviewed" | "resolved";
   };
   error?: string;
 }
@@ -340,18 +344,20 @@ export interface ReportContentResponse {
  * Transform database post with user info to feed video item
  */
 export function transformToFeedVideoItem(
-  post: ContentPost & { 
-    users?: User | User[] | null;
-    user?: User | null; // Fallback for different query structures
-  }
+  post: ContentPost & {
+    users?: Partial<User> | Partial<User>[] | null;
+    user?: Partial<User> | null; // Fallback for different query structures
+  },
 ): FeedVideoItem {
   // Handle both array and single user joins from Supabase
-  const user = Array.isArray(post.users) ? post.users[0] : (post.users || post.user);
-  
+  const user = Array.isArray(post.users)
+    ? post.users[0]
+    : (post.users || post.user);
+
   return {
     // Core post data - direct mapping from database
     id: post.id,
-    user_id: post.user_id || '',
+    user_id: post.user_id || "",
     caption: post.caption,
     video_url: post.video_url,
     thumbnail_url: post.thumbnail_url,
@@ -363,7 +369,7 @@ export function transformToFeedVideoItem(
     created_at: post.created_at || new Date().toISOString(),
     updated_at: post.updated_at,
     is_active: post.is_active ?? true,
-    
+
     // Extended content fields - direct mapping
     title: post.title,
     description: post.description,
@@ -371,7 +377,15 @@ export function transformToFeedVideoItem(
     duration_seconds: post.duration_seconds,
     aspect_ratio: post.aspect_ratio,
     processing_status: post.processing_status,
-    metadata: post.metadata,
+    metadata: typeof post.metadata === "string"
+      ? (() => {
+        try {
+          return JSON.parse(post.metadata);
+        } catch {
+          return null;
+        }
+      })()
+      : post.metadata,
     is_featured: post.is_featured,
     visibility: post.visibility,
     allow_comments: post.allow_comments,
@@ -392,20 +406,20 @@ export function transformToFeedVideoItem(
     effect_name: post.effect_name,
     slug: post.slug,
     seo_description: post.seo_description,
-    
+
     // User information with fallbacks
-    username: user?.username || user?.email?.split('@')[0] || 'anonymous',
+    username: user?.username || user?.email?.split("@")[0] || "anonymous",
     display_name: user?.display_name || user?.first_name,
     avatar_url: user?.avatar_url || user?.profile_image_url,
     is_verified: user?.is_verified,
-    
+
     // Computed/derived fields - will be set by service layer
     is_liked: false,
     is_following: false,
     can_delete: false,
-    
+
     // Legacy compatibility fields
-    content_type: post.post_type || 'video',
+    content_type: post.post_type || "video",
     duration: post.duration_seconds || undefined,
     hashtags: post.tags || undefined,
   };
@@ -414,11 +428,14 @@ export function transformToFeedVideoItem(
 /**
  * Transform user data for social display
  */
-export function transformUserForSocial(user: User): Pick<User, 'id' | 'username' | 'display_name' | 'avatar_url'> {
+export function transformUserForSocial(
+  user: User,
+): Pick<User, "id" | "username" | "display_name" | "avatar_url"> {
   return {
     id: user.id,
-    username: user.username || user.email?.split('@')[0] || 'user',
-    display_name: user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || null,
+    username: user.username || user.email?.split("@")[0] || "user",
+    display_name: user.display_name ||
+      `${user.first_name || ""} ${user.last_name || ""}`.trim() || null,
     avatar_url: user.avatar_url || user.profile_image_url || null,
   };
 }
@@ -458,12 +475,12 @@ export const DEFAULT_POST_VALIDATION: PostValidation = {
   },
   video: {
     maxSize: 100 * 1024 * 1024, // 100MB
-    allowedFormats: ['mp4', 'webm', 'mov'],
+    allowedFormats: ["mp4", "webm", "mov"],
     maxDuration: 180, // 3 minutes
   },
   thumbnail: {
     maxSize: 5 * 1024 * 1024, // 5MB
-    allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+    allowedFormats: ["jpg", "jpeg", "png", "webp"],
     dimensions: {
       minWidth: 100,
       minHeight: 100,
@@ -498,8 +515,8 @@ export const SOCIAL_CONSTANTS = {
     FOLLOWS_PER_HOUR: 100,
   },
   MEDIA_SETTINGS: {
-    VIDEO_QUALITY_PRESETS: ['480p', '720p', '1080p'],
-    THUMBNAIL_SIZES: ['small', 'medium', 'large'],
-    SUPPORTED_CODECS: ['h264', 'vp9', 'av1'],
+    VIDEO_QUALITY_PRESETS: ["480p", "720p", "1080p"],
+    THUMBNAIL_SIZES: ["small", "medium", "large"],
+    SUPPORTED_CODECS: ["h264", "vp9", "av1"],
   },
 } as const;

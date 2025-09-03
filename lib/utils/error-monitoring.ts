@@ -205,7 +205,10 @@ declare global {
   interface Window {
     errors: Array<{
       type: string;
-      [key: string]: any;
+      message?: string;
+      stack?: string;
+      timestamp?: string;
+      [key: string]: unknown;
     }>;
   }
 }

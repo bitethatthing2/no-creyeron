@@ -9,34 +9,27 @@ import {
   Search, 
   MessageCircle, 
   Users, 
-  Send,
-  Circle,
   CheckCircle,
-  AlertCircle,
   Loader2,
   UserPlus,
-  MessagesSquare,
-  Clock,
-  Filter,
+  
   MoreVertical,
   Pin,
   Archive,
   Bell,
   BellOff,
   Trash2,
-  Edit3,
-  Hash,
   User
+
 } from 'lucide-react';
-import Image from 'next/image';
-import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
+import { format, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +41,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
 
 // Database Types matching Supabase schema exactly
 interface User {
@@ -86,12 +78,12 @@ interface ChatConversation {
   last_message_preview?: string | null;
   last_message_sender_id?: string | null;
   is_active?: boolean | null;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   participant_count?: number | null;
   message_count?: number | null;
   is_archived?: boolean | null;
   is_pinned?: boolean | null;
-  settings?: any;
+  settings?: Record<string, unknown>;
   slug?: string | null;
   is_group?: boolean | null;
 }
@@ -105,7 +97,7 @@ interface ChatParticipant {
   left_at?: string | null;
   last_read_at?: string | null;
   is_active?: boolean | null;
-  notification_settings?: any;
+  notification_settings?: { muted?: boolean } | null;
   updated_at?: string | null;
   user?: User;
 }
@@ -120,12 +112,12 @@ interface ChatMessage {
   edited_at?: string | null;
   deleted_at?: string | null;
   deleted_by?: string | null;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   reply_count?: number | null;
   media_url?: string | null;
   media_type?: string | null;
   media_thumbnail_url?: string | null;
-  attachments?: any;
+  attachments?: unknown;
   reply_to_id?: string | null;
   is_deleted?: boolean | null;
   is_edited?: boolean | null;
@@ -152,7 +144,7 @@ export default function MessagesInboxPage() {
   const [searchingUsers, setSearchingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'groups'>('all');
   const [showNewChatSheet, setShowNewChatSheet] = useState(false);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  // Removed unused selectedConversation state
 
   // Helper function to get display name
   const getDisplayName = (user: User | undefined | null): string => {
@@ -245,9 +237,10 @@ export default function MessagesInboxPage() {
       const conversationsWithDetails: ConversationWithDetails[] = [];
       
       for (const participantRecord of participantData || []) {
-        const conversation = Array.isArray(participantRecord.conversation)
-          ? participantRecord.conversation[0] as ChatConversation
-          : participantRecord.conversation as ChatConversation;
+        let conversation = participantRecord.conversation as ChatConversation | ChatConversation[] | undefined;
+        if (Array.isArray(conversation)) {
+          conversation = conversation[0];
+        }
         if (!conversation) continue;
 
         // Get all participants for this conversation
@@ -271,9 +264,7 @@ export default function MessagesInboxPage() {
         // For direct conversations, find the other user
         let otherUser: User | undefined;
         if (conversation.conversation_type === 'direct' && allParticipants) {
-            const otherParticipant: ChatParticipant | undefined = (allParticipants as ChatParticipant[]).find(
-            (p: ChatParticipant) => p.user_id !== currentUser.id
-            );
+          const otherParticipant = allParticipants.find(p => p.user_id !== currentUser.id);
           otherUser = otherParticipant?.user as User;
         }
 
@@ -366,9 +357,12 @@ export default function MessagesInboxPage() {
 
       // Find if there's already a direct conversation with this user
       for (const participant of existingParticipants || []) {
-        const conv = Array.isArray(participant.conversation)
-          ? participant.conversation[0] as ChatConversation
-          : participant.conversation as ChatConversation;
+        let conv: ChatConversation | undefined;
+        if (Array.isArray(participant.conversation)) {
+          conv = participant.conversation[0] as ChatConversation;
+        } else {
+          conv = participant.conversation as ChatConversation;
+        }
         if (conv?.conversation_type === 'direct') {
           const { data: otherParticipants } = await supabase
             .from('chat_participants')
@@ -617,7 +611,7 @@ export default function MessagesInboxPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="px-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'unread' | 'groups')} className="px-4">
           <TabsList className="grid w-full grid-cols-3 bg-gray-900/50">
             <TabsTrigger value="all" className="data-[state=active]:bg-red-600/20">
               All
@@ -693,8 +687,7 @@ export default function MessagesInboxPage() {
                 <div
                   key={conversation.id}
                   className={cn(
-                    "flex items-center gap-3 p-4 hover:bg-gray-900/30 cursor-pointer transition-colors",
-                    selectedConversation === conversation.id && "bg-gray-900/50"
+                    "flex items-center gap-3 p-4 hover:bg-gray-900/30 cursor-pointer transition-colors"
                   )}
                   onClick={() => router.push(`/messages/conversation/${conversation.id}`)}
                 >

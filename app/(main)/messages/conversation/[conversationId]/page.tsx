@@ -7,7 +7,7 @@ import { ArrowLeft, Send, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { ConnectionStatus } from '@/components/shared/ConnectionStatus';
 import { debugLog } from '@/lib/debug';
-import { supabase } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // TypeScript interfaces aligned with database schema
 
@@ -61,6 +61,7 @@ export default function ConversationPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params.conversationId as string;
+  const supabase = createClientComponentClient();
   
   // Use our unified messaging hook
   const { 
@@ -150,33 +151,34 @@ export default function ConversationPage() {
     setSending(true);
 
     try {
-      // Use RPC function or direct insert
+      // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Try using the send_message RPC function if it exists
-      const { error } = await supabase.rpc('send_message', {
-        p_conversation_id: conversationId,
-        p_content: messageText,
-        p_message_type: 'text',
-        p_media_url: null,
-        p_media_type: null,
-        p_reply_to_id: null
-      });
+      // Insert message directly (RPC function not available)
+      const { error: insertError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: messageText,
+          message_type: 'text',
+          is_deleted: false,
+          is_edited: false,
+          status: 'sent'
+        });
 
-      if (error) {
-        // Fallback to direct insert if RPC doesn't work
-        const { error: insertError } = await supabase
-          .from('chat_messages')
-          .insert({
-            conversation_id: conversationId,
-            sender_id: user.id,
-            content: messageText,
-            message_type: 'text'
-          });
+      if (insertError) throw insertError;
 
-        if (insertError) throw insertError;
-      }
+      // Update conversation's last message
+      await supabase
+        .from('chat_conversations')
+        .update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: messageText.substring(0, 100),
+          last_message_sender_id: user.id,
+        })
+        .eq('id', conversationId);
 
       // Message will appear via real-time subscription
       inputRef.current?.focus();

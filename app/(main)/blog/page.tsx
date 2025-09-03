@@ -82,6 +82,7 @@ export default function BlogPage() {
                   width={120}
                   height={48}
                   className="h-12 w-auto mr-4"
+                  style={{ height: 'auto' }}
                   priority
                 />
                 <h1 className="text-4xl md:text-6xl font-bold text-white">

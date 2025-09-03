@@ -33,7 +33,7 @@ export class RPCFallbacks {
   }
 
   // Fallback for join_wolfpack
-  static async joinMembership(userId: string, data: any) {
+  static async joinMembership(userId: string, data: { displayName?: string; emoji?: string }) {
     try {
       const { error } = await supabase
         .from("users")

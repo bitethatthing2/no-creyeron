@@ -140,7 +140,13 @@ export const checkAndClearCorruptedCookies = () => {
 /**
  * Complete auth cleanup and reset
  */
-export const cleanupAndResetAuth = async (supabase: any) => {
+interface SupabaseClient {
+  auth: {
+    signOut(): Promise<{ error: Error | null }>;
+  };
+}
+
+export const cleanupAndResetAuth = async (supabase: SupabaseClient) => {
   try {
     // 1. Sign out from Supabase (if possible)
     try {
@@ -152,10 +158,7 @@ export const cleanupAndResetAuth = async (supabase: any) => {
     // 2. Clear all auth cookies
     clearAllSupabaseAuthCookies();
 
-    // 3. Clear the Supabase client's internal state
-    if (supabase.auth.session) {
-      supabase.auth.session = null;
-    }
+    // 3. Clear the Supabase client's internal state (already handled by signOut above)
 
     // 4. Reload the page to ensure clean state
     if (typeof window !== 'undefined') {

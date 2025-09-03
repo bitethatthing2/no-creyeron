@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import type { FeedVideoItem, transformToFeedVideoItem } from '@/lib/services/social/types';
+import type { FeedVideoItem } from '@/lib/services/social/types';
+import { transformToFeedVideoItem } from '@/lib/services/social/types';
 import TikTokStyleFeed from '@/components/social/feed/TikTokStyleFeed';
 import { PostCreator } from '@/components/social/PostCreator';
 import ShareModal from '@/components/social/ShareModal';
@@ -129,6 +130,7 @@ function SocialFeedContent() {
           effect_name,
           slug,
           seo_description,
+          ingested_content_id,
           users!content_posts_user_id_fkey(
             id,
             username,
@@ -267,7 +269,7 @@ function SocialFeedContent() {
     if (video) {
       setShareVideoData({
         id: videoId,
-        caption: video.caption,
+        caption: video.caption ?? undefined,
         username: video.username
       });
       setShowShareModal(true);

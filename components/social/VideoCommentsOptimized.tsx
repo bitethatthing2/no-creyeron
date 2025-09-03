@@ -471,7 +471,7 @@ export default function VideoCommentsOptimized({
       <div key={comment.id} className={cn('mb-4', isReply && 'ml-8 border-l border-gray-700 pl-4')}>
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <div>
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0 overflow-hidden">
             {getUserAvatar(comment.user) !== 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png' ? (
               <Image
                 src={getUserAvatar(comment.user)}

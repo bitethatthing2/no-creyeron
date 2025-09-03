@@ -227,13 +227,18 @@ export interface AuthError {
 /**
  * Log authentication errors with context
  */
-export function logAuthError(error: any, context: string): void {
-  const errorMessage = error?.message || "Unknown auth error";
-  const errorCode = error?.code || error?.status || "unknown";
+export function logAuthError(error: unknown, context: string): void {
+  const errorMessage = error && typeof error === 'object' && 'message' in error 
+    ? (error as { message: string }).message 
+    : "Unknown auth error";
+  const errorCode = error && typeof error === 'object' 
+    ? ('code' in error ? (error as { code: string }).code : 
+       'status' in error ? (error as { status: string }).status : "unknown")
+    : "unknown";
 
   debugLog.error(`Auth Error - ${context}`, error, {
     action: context,
-    errorMessage,
+    error: errorMessage,
   });
 }
 

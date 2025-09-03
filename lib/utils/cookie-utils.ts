@@ -202,7 +202,13 @@ declare global {
 /**
  * Complete auth cleanup and reset
  */
-export async function cleanupAndResetAuth(supabase: any): Promise<{ success: boolean; error?: any }> {
+interface SupabaseClient {
+  auth: {
+    signOut(): Promise<{ error: Error | null }>;
+  };
+}
+
+export async function cleanupAndResetAuth(supabase: SupabaseClient): Promise<{ success: boolean; error?: Error | string }> {
   try {
     // 1. Sign out from Supabase (if possible)
     try {
@@ -215,9 +221,7 @@ export async function cleanupAndResetAuth(supabase: any): Promise<{ success: boo
     clearSupabaseCookies();
 
     // 3. Clear the Supabase client's internal state
-    if (supabase.auth.session) {
-      supabase.auth.session = null;
-    }
+    await supabase.auth.signOut();
 
     // 4. Reload the page to ensure clean state
     if (typeof window !== 'undefined') {
@@ -227,7 +231,7 @@ export async function cleanupAndResetAuth(supabase: any): Promise<{ success: boo
     return { success: true };
   } catch (error) {
     console.error('Error during auth cleanup:', error);
-    return { success: false, error };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 

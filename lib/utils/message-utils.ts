@@ -373,8 +373,26 @@ export interface MessageGroup {
   timestamp: string;
 }
 
+interface ChatMessageWithSender {
+  id: string;
+  conversation_id: string;
+  content: string;
+  created_at: string;
+  is_read: boolean | null;
+  reply_to_message_id?: string | null;
+  sender_user?: {
+    display_name?: string;
+    avatar_url?: string;
+  };
+  reactions?: Array<{
+    emoji: string;
+    reaction_count: number;
+    user_ids: string[];
+  }>;
+}
+
 export function groupMessages(
-  messages: any[],
+  messages: ChatMessageWithSender[],
   currentUserId: string,
 ): MessageGroup[] {
   // Reverse messages to handle them in chronological order (oldest first) for proper grouping
@@ -397,7 +415,7 @@ export function groupMessages(
         senderName: message.conversation_id === currentUserId
           ? "You"
           : (message.sender_user?.display_name || "Unknown"),
-        senderAvatar: message.sender_user?.profile_image_url,
+        senderAvatar: message.sender_user?.avatar_url,
         messages: [],
         timestamp: message.created_at,
       };
@@ -407,12 +425,12 @@ export function groupMessages(
     // Add message to current group
     currentGroup!.messages.push({
       id: message.id,
-      content: message.message,
+      content: message.content,
       timestamp: message.created_at,
-      isRead: message.is_read,
-      message: message.message,
+      isRead: message.is_read || false,
+      message: message.content,
       created_at: message.created_at,
-      is_read: message.is_read,
+      is_read: message.is_read || false,
       reply_to_message_id: message.reply_to_message_id,
       reactions: message.reactions,
     });
