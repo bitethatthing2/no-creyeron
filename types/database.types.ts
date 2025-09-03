@@ -110,6 +110,13 @@ export type Database = {
             foreignKeyName: "chat_conversations_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -121,6 +128,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
             columns: ["last_message_sender_id"]
             isOneToOne: false
@@ -132,6 +153,13 @@ export type Database = {
             columns: ["last_message_sender_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -177,6 +205,13 @@ export type Database = {
             foreignKeyName: "chat_message_reactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -185,6 +220,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -233,6 +275,13 @@ export type Database = {
             foreignKeyName: "chat_message_receipts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_message_receipts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -241,6 +290,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_message_receipts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -324,6 +380,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "chat_messages_deleted_by_fkey"
             columns: ["deleted_by"]
             isOneToOne: false
@@ -335,6 +405,13 @@ export type Database = {
             columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
           {
@@ -355,6 +432,13 @@ export type Database = {
             foreignKeyName: "chat_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -363,6 +447,13 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -413,6 +504,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "chat_participants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -424,6 +529,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -503,6 +615,13 @@ export type Database = {
             foreignKeyName: "content_comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -511,6 +630,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -542,6 +668,13 @@ export type Database = {
             foreignKeyName: "content_interactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -550,6 +683,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -689,6 +829,13 @@ export type Database = {
             foreignKeyName: "content_posts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "content_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -697,6 +844,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -929,6 +1083,13 @@ export type Database = {
             foreignKeyName: "notifications_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -940,6 +1101,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_user_fkey"
+            columns: ["related_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "notifications_related_user_fkey"
             columns: ["related_user_id"]
             isOneToOne: false
@@ -951,6 +1126,13 @@ export type Database = {
             columns: ["related_user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_user_fkey"
+            columns: ["related_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -994,6 +1176,13 @@ export type Database = {
             foreignKeyName: "user_fcm_tokens_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_fcm_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -1002,6 +1191,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_fcm_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -1030,6 +1226,13 @@ export type Database = {
             foreignKeyName: "social_blocks_blocked_id_fkey"
             columns: ["blocked_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "social_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -1041,6 +1244,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "social_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "social_blocks_blocker_id_fkey"
             columns: ["blocker_id"]
             isOneToOne: false
@@ -1052,6 +1269,13 @@ export type Database = {
             columns: ["blocker_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -1080,6 +1304,13 @@ export type Database = {
             foreignKeyName: "social_follows_follower_fkey"
             columns: ["follower_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "social_follows_follower_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -1091,6 +1322,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "social_follows_follower_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_following_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "social_follows_following_fkey"
             columns: ["following_id"]
             isOneToOne: false
@@ -1102,6 +1347,13 @@ export type Database = {
             columns: ["following_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_follows_following_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -1248,6 +1500,13 @@ export type Database = {
             foreignKeyName: "user_post_interactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_post_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -1256,6 +1515,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_post_interactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
         ]
@@ -1455,6 +1721,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "chat_messages_deleted_by_fkey"
             columns: ["deleted_by"]
             isOneToOne: false
@@ -1466,6 +1746,13 @@ export type Database = {
             columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
             referencedColumns: ["id"]
           },
           {
@@ -1486,6 +1773,13 @@ export type Database = {
             foreignKeyName: "chat_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles_with_stats"
             referencedColumns: ["id"]
           },
@@ -1496,7 +1790,24 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      user_message_stats: {
+        Row: {
+          conversations_count: number | null
+          last_message_at: string | null
+          total_messages: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
       }
       user_profiles_with_stats: {
         Row: {
@@ -1539,6 +1850,90 @@ export type Database = {
         }
         Relationships: []
       }
+      v_active_conversations: {
+        Row: {
+          actual_participant_count: number | null
+          avatar_url: string | null
+          conversation_type: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          is_archived: boolean | null
+          is_group: boolean | null
+          is_pinned: boolean | null
+          last_message_at: string | null
+          last_message_preview: string | null
+          last_message_sender_id: string | null
+          latest_message_time: string | null
+          message_count: number | null
+          metadata: Json | null
+          name: string | null
+          participant_count: number | null
+          settings: Json | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_last_message_sender_id_fkey"
+            columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_menu_full: {
         Row: {
           allergens: string[] | null
@@ -1567,6 +1962,72 @@ export type Database = {
         }
         Relationships: []
       }
+      v_typing_users: {
+        Row: {
+          conversation_id: string | null
+          display_name: string | null
+          is_typing: boolean | null
+          typing_timestamp: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_message_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_activity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_user_activity: {
+        Row: {
+          conversations_joined: number | null
+          display_name: string | null
+          id: string | null
+          last_message_at: string | null
+          last_seen_at: string | null
+          messages_sent: number | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_comment: {
@@ -1578,12 +2039,24 @@ export type Database = {
         Returns: Json
       }
       batch_update_trending_scores: {
-        Args: { updates: Json }
+        Args: { updates: Json } | { updates: Json }
         Returns: undefined
       }
       block_user: {
         Args: { target_user_id: string }
         Returns: Json
+      }
+      check_system_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      check_user_session_status: {
+        Args: { p_email?: string }
+        Returns: Json
+      }
+      cleanup_old_typing_indicators: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_post: {
         Args: {
@@ -1601,11 +2074,23 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      get_api_documentation: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_complete_menu: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
       get_conversation_messages: {
+        Args: {
+          p_before_message_id?: string
+          p_conversation_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      get_conversation_messages_enhanced: {
         Args: {
           p_before_message_id?: string
           p_conversation_id: string
@@ -1624,6 +2109,10 @@ export type Database = {
       }
       get_current_user_id: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_display_name: {
+        Args: { p_user_id: string }
         Returns: string
       }
       get_last_cleanup_status: {
@@ -1645,6 +2134,14 @@ export type Database = {
       }
       get_or_create_dm_conversation: {
         Args: { other_user_id: string }
+        Returns: Json
+      }
+      get_performance_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_user_conversations: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       get_user_feed: {
@@ -1669,6 +2166,10 @@ export type Database = {
       }
       get_user_profile_with_counts: {
         Args: { target_user_id: string }
+        Returns: Json
+      }
+      handle_user_logout: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       increment_view_counts: {
@@ -1714,6 +2215,25 @@ export type Database = {
         }
         Returns: Json
       }
+      send_message_safe: {
+        Args: {
+          p_content: string
+          p_conversation_id: string
+          p_media_type?: string
+          p_media_url?: string
+          p_message_type?: string
+          p_reply_to_id?: string
+        }
+        Returns: Json
+      }
+      set_typing_status: {
+        Args: { p_conversation_id: string; p_is_typing?: boolean }
+        Returns: Json
+      }
+      subscribe_to_conversation_messages: {
+        Args: { p_conversation_id: string }
+        Returns: Json
+      }
       toggle_follow: {
         Args: { target_user_id: string }
         Returns: Json
@@ -1728,6 +2248,10 @@ export type Database = {
       }
       unfollow_user: {
         Args: { target_user_id: string }
+        Returns: Json
+      }
+      update_user_presence: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       update_user_profile: {

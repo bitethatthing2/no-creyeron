@@ -20,7 +20,7 @@ interface AvatarOptions {
 }
 
 // Default fallback icon
-export const DEFAULT_AVATAR_ICON = '/icons/wolf-icon-light-screen.png';
+export const DEFAULT_AVATAR_ICON = 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
 
 /**
  * Get cache-busted version of default avatar icon

@@ -2,38 +2,86 @@
 // SOCIAL SERVICE TYPES - SIDE HUSTLE APP
 // =============================================================================
 
-import type { Tables } from '@/types/database.types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
 
-// Extract types from the database
+// Extract types from the fresh database schema
 export type User = Tables<'users'>;
 export type ContentPost = Tables<'content_posts'>;
 export type ContentComment = Tables<'content_comments'>;
+export type UserPostInteraction = Tables<'user_post_interactions'>;
+export type SocialFollow = Tables<'social_follows'>;
+export type SocialBlock = Tables<'social_blocks'>;
+
+// Insert and update types for mutations
+export type ContentPostInsert = TablesInsert<'content_posts'>;
+export type ContentCommentInsert = TablesInsert<'content_comments'>;
+export type UserPostInteractionInsert = TablesInsert<'user_post_interactions'>;
 
 // =============================================================================
 // SOCIAL FEED TYPES
 // =============================================================================
 
+// Enhanced FeedVideoItem that includes both database fields and computed values
 export interface FeedVideoItem {
+  // Core post data from content_posts table
   id: string;
   user_id: string;
-  username: string;
-  display_name?: string;
-  avatar_url?: string;
-  caption: string;
-  video_url?: string;
-  thumbnail_url?: string;
-  duration?: number;
-  views_count: number;
+  caption: string | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  post_type: string | null;
   likes_count: number;
   comments_count: number;
   shares_count: number;
+  views_count: number;
   created_at: string;
+  updated_at: string | null;
+  is_active: boolean;
+  
+  // Extended content fields
+  title?: string | null;
+  description?: string | null;
+  tags?: string[] | null;
+  duration_seconds?: number | null;
+  aspect_ratio?: string | null;
+  processing_status?: string | null;
+  metadata?: Record<string, unknown> | null;
+  is_featured?: boolean | null;
+  visibility?: string | null;
+  allow_comments?: boolean | null;
+  allow_duets?: boolean | null;
+  allow_stitches?: boolean | null;
+  is_ad?: boolean | null;
+  source?: string | null;
+  trending_score?: number | null;
+  algorithm_boost?: number | null;
+  images?: string[] | null;
+  featured_at?: string | null;
+  location_tag?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
+  music_id?: string | null;
+  music_name?: string | null;
+  effect_id?: string | null;
+  effect_name?: string | null;
+  slug?: string | null;
+  seo_description?: string | null;
+  
+  // User information (joined from users table)
+  username: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  is_verified?: boolean | null;
+  
+  // Computed/derived fields for UI
   is_liked?: boolean;
   is_following?: boolean;
   can_delete?: boolean;
-  is_verified?: boolean;
-  music_name?: string;
-  hashtags?: string[];
+  
+  // Legacy compatibility fields
+  content_type?: string; // Maps to post_type
+  duration?: number; // Maps to duration_seconds  
+  hashtags?: string[]; // Maps to tags
 }
 
 export interface SocialFeedRequest {
@@ -289,29 +337,76 @@ export interface ReportContentResponse {
 // =============================================================================
 
 /**
- * Transform database post to feed video item
+ * Transform database post with user info to feed video item
  */
-export function transformToFeedVideoItem(post: ContentPost & { user?: User }): FeedVideoItem {
+export function transformToFeedVideoItem(
+  post: ContentPost & { 
+    users?: User | User[] | null;
+    user?: User | null; // Fallback for different query structures
+  }
+): FeedVideoItem {
+  // Handle both array and single user joins from Supabase
+  const user = Array.isArray(post.users) ? post.users[0] : (post.users || post.user);
+  
   return {
+    // Core post data - direct mapping from database
     id: post.id,
     user_id: post.user_id || '',
-    username: post.user?.username || post.user?.email?.split('@')[0] || 'user',
-    display_name: post.user?.display_name || post.user?.first_name || undefined,
-    avatar_url: post.user?.avatar_url || post.user?.profile_image_url || undefined,
-    caption: post.caption || '',
-    video_url: post.video_url || undefined,
-    thumbnail_url: post.thumbnail_url || undefined,
-    duration: post.duration_seconds || undefined,
-    views_count: post.views_count || 0,
+    caption: post.caption,
+    video_url: post.video_url,
+    thumbnail_url: post.thumbnail_url,
+    post_type: post.post_type,
     likes_count: post.likes_count || 0,
     comments_count: post.comments_count || 0,
     shares_count: post.shares_count || 0,
+    views_count: post.views_count || 0,
     created_at: post.created_at || new Date().toISOString(),
-    is_liked: false, // Will be populated by service
-    is_following: false, // Will be populated by service
-    can_delete: false, // Will be populated by service
-    is_verified: post.user?.is_verified || false,
-    music_name: post.music_name || undefined,
+    updated_at: post.updated_at,
+    is_active: post.is_active ?? true,
+    
+    // Extended content fields - direct mapping
+    title: post.title,
+    description: post.description,
+    tags: post.tags,
+    duration_seconds: post.duration_seconds,
+    aspect_ratio: post.aspect_ratio,
+    processing_status: post.processing_status,
+    metadata: post.metadata,
+    is_featured: post.is_featured,
+    visibility: post.visibility,
+    allow_comments: post.allow_comments,
+    allow_duets: post.allow_duets,
+    allow_stitches: post.allow_stitches,
+    is_ad: post.is_ad,
+    source: post.source,
+    trending_score: post.trending_score,
+    algorithm_boost: post.algorithm_boost,
+    images: post.images,
+    featured_at: post.featured_at,
+    location_tag: post.location_tag,
+    location_lat: post.location_lat,
+    location_lng: post.location_lng,
+    music_id: post.music_id,
+    music_name: post.music_name,
+    effect_id: post.effect_id,
+    effect_name: post.effect_name,
+    slug: post.slug,
+    seo_description: post.seo_description,
+    
+    // User information with fallbacks
+    username: user?.username || user?.email?.split('@')[0] || 'anonymous',
+    display_name: user?.display_name || user?.first_name,
+    avatar_url: user?.avatar_url || user?.profile_image_url,
+    is_verified: user?.is_verified,
+    
+    // Computed/derived fields - will be set by service layer
+    is_liked: false,
+    is_following: false,
+    can_delete: false,
+    
+    // Legacy compatibility fields
+    content_type: post.post_type || 'video',
+    duration: post.duration_seconds || undefined,
     hashtags: post.tags || undefined,
   };
 }

@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const bucket = formData.get("bucket") as string ||
-      "wolfpack-videos";
+      "videos";
     const fileName = formData.get("fileName") as string;
     const contentType = formData.get("contentType") as string;
 

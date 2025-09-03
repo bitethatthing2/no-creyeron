@@ -45,8 +45,8 @@ export function ProfileImageUploader({
     setUploading(true);
     
     try {
-      // Use existing upload helper with user-avatars bucket
-      const publicUrl = await uploadImage(file, 'user-avatars', (progress) => {
+      // Use existing upload helper with avatars bucket
+      const publicUrl = await uploadImage(file, 'avatars', (progress) => {
         // Could show progress here if needed
       });
 

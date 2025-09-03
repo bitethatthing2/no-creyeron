@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
         const fileName =
           `profile/${userFolder}/${timestamp}-${randomString}.${fileExt}`;
 
-        // Upload to the 'images' bucket using standard Supabase upload
+        // Upload to the 'avatars' bucket using standard Supabase upload
         const { error: uploadError } = await supabase.storage
-          .from("images")
+          .from("avatars")
           .upload(fileName, file, {
             contentType: file.type,
             upsert: false,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
-          .from("images")
+          .from("avatars")
           .getPublicUrl(fileName);
 
         // Create image record in database
@@ -162,9 +162,9 @@ export async function POST(request: NextRequest) {
       const fileName =
         `${imageType}/${userFolder}/${timestamp}-${randomString}.${fileExt}`;
 
-      // Upload to the 'images' bucket using standard Supabase upload
+      // Upload to the 'content' bucket using standard Supabase upload
       const { error: uploadError } = await supabase.storage
-        .from("images")
+        .from("content")
         .upload(fileName, file, {
           contentType: file.type,
           upsert: false,
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from("images")
+        .from("content")
         .getPublicUrl(fileName);
 
       // Create image record in database

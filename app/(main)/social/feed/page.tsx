@@ -4,42 +4,17 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import type { FeedVideoItem } from '@/lib/services/social/types';
-import { transformToFeedVideoItem } from '@/lib/services/social/types';
+import type { FeedVideoItem, transformToFeedVideoItem } from '@/lib/services/social/types';
 import TikTokStyleFeed from '@/components/social/feed/TikTokStyleFeed';
 import { PostCreator } from '@/components/social/PostCreator';
 import ShareModal from '@/components/social/ShareModal';
 import VideoComments from '@/components/social/VideoCommentsOptimized';
-import CameraTest from '@/components/CameraTest';
 import { Loader2, Sparkles } from 'lucide-react';
 import type { SocialVideoItem as TikTokVideoItem } from '@/components/social/feed/TikTokStyleFeed';
 
-// Type definitions for API responses
-interface RawFeedItem {
-  id: string;
-  [key: string]: unknown;
-}
-
-interface FeedProcessorResponse {
-  success: boolean;
-  data?: RawFeedItem[];
-  error?: string;
-}
 
 interface CommentPayload {
   video_id: string;
-}
-
-interface PostUpdatePayload {
-  id: string;
-  likes_count?: number | null;
-  like_count?: number | null;
-  comments_count?: number | null;
-  comment_count?: number | null;
-  views_count?: number | null;
-  view_count?: number | null;
-  shares_count?: number | null;
-  share_count?: number | null;
 }
 
 function SocialFeedContent() {
@@ -65,12 +40,38 @@ function SocialFeedContent() {
   } | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const [showCameraTest, setShowCameraTest] = useState(false);
 
   // Debug showPostCreator state changes
   useEffect(() => {
     console.log('[FEED] showPostCreator state changed to:', showPostCreator);
   }, [showPostCreator]);
+
+  // Load user's liked posts on mount
+  useEffect(() => {
+    const loadUserLikes = async () => {
+      if (!currentUser?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_post_interactions')
+          .select('post_id')
+          .eq('user_id', currentUser.id)
+          .eq('has_liked', true);
+        
+        if (error) throw error;
+        
+        if (data) {
+          setUserLikes(new Set(data.map(item => item.post_id)));
+        }
+      } catch (err) {
+        console.error('[FEED] Error loading user likes:', err);
+      }
+    };
+    
+    if (isAuthenticated && currentUser) {
+      loadUserLikes();
+    }
+  }, [isAuthenticated, currentUser]);
 
   // Load feed from service
   const loadFeed = useCallback(async (loadMore = false) => {
@@ -84,7 +85,7 @@ function SocialFeedContent() {
       }
       setError(null);
 
-      // Query content_posts directly with only needed fields
+      // Query content_posts with proper left join for nullable user_id
       let query = supabase
         .from('content_posts')
         .select(`
@@ -93,14 +94,42 @@ function SocialFeedContent() {
           caption,
           video_url,
           thumbnail_url,
-          content_type,
+          post_type,
           likes_count,
           comments_count,
           shares_count,
           views_count,
           created_at,
+          updated_at,
           is_active,
-          user:users!user_id(
+          title,
+          description,
+          tags,
+          duration_seconds,
+          aspect_ratio,
+          processing_status,
+          metadata,
+          is_featured,
+          visibility,
+          allow_comments,
+          allow_duets,
+          allow_stitches,
+          is_ad,
+          source,
+          trending_score,
+          algorithm_boost,
+          images,
+          featured_at,
+          location_tag,
+          location_lat,
+          location_lng,
+          music_id,
+          music_name,
+          effect_id,
+          effect_name,
+          slug,
+          seo_description,
+          users!content_posts_user_id_fkey(
             id,
             username,
             display_name,
@@ -125,8 +154,8 @@ function SocialFeedContent() {
         throw new Error(`Database query failed: ${postsError.message}`);
       }
 
-      // Transform the posts data using the existing transform function
-      const transformedVideos: FeedVideoItem[] = (posts || []).map((post) => 
+      // Transform posts using the centralized utility
+      const transformedVideos: FeedVideoItem[] = (posts || []).map(post => 
         transformToFeedVideoItem(post)
       );
       
@@ -147,6 +176,8 @@ function SocialFeedContent() {
       } else {
         // Replace videos for fresh load
         setVideos(transformedVideos);
+        // Reset pagination
+        setLastCreatedAt(null);
       }
       
     } catch (err) {
@@ -155,7 +186,7 @@ function SocialFeedContent() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, videos, lastCreatedAt]);
 
   // Auth redirect and initial load
   useEffect(() => {
@@ -216,8 +247,7 @@ function SocialFeedContent() {
     return () => {
       channel.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videos.length]); // Only re-subscribe when number of videos changes
+  }, [videos]); // Only re-subscribe when videos change
 
   // Check for camera param
   useEffect(() => {
@@ -245,6 +275,11 @@ function SocialFeedContent() {
   }, [videos]);
 
   const handleLike = useCallback(async (videoId: string) => {
+    if (!currentUser?.id) {
+      console.error('No current user');
+      return;
+    }
+
     // Optimistic update
     const isCurrentlyLiked = userLikes.has(videoId);
     
@@ -269,18 +304,41 @@ function SocialFeedContent() {
         : video
     ));
 
-    // Make the actual request to toggle like via Supabase Edge Function or direct DB call
     try {
-      // Call your edge function or Supabase function here
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      const { error: toggleError } = await supabase.rpc('toggle_post_like', {
-        p_post_id: videoId,
-        p_user_id: session.user.id
+      // Use the correct RPC function signature
+      // The first version of toggle_post_like only takes post_id and uses the current session user
+      const { data, error: toggleError } = await supabase.rpc('toggle_post_like', {
+        post_id: videoId
       });
       
       if (toggleError) throw toggleError;
+      
+      // Update counts based on response if available
+      if (data) {
+        const likeData = data as { liked?: boolean; likes_count?: number; like_count?: number };
+        const newLikesCount = likeData.likes_count ?? likeData.like_count;
+        
+        if (newLikesCount !== undefined) {
+          setVideos(prev => prev.map(video => 
+            video.id === videoId 
+              ? { ...video, likes_count: newLikesCount }
+              : video
+          ));
+        }
+        
+        // Update user likes based on server response
+        if (likeData.liked !== undefined) {
+          setUserLikes(prev => {
+            const newLikes = new Set(prev);
+            if (likeData.liked) {
+              newLikes.add(videoId);
+            } else {
+              newLikes.delete(videoId);
+            }
+            return newLikes;
+          });
+        }
+      }
       
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -306,7 +364,7 @@ function SocialFeedContent() {
           : video
       ));
     }
-  }, [userLikes]);
+  }, [userLikes, currentUser]);
 
   const handleComment = useCallback((videoId: string) => {
     setActiveVideoId(videoId);
@@ -319,11 +377,12 @@ function SocialFeedContent() {
     }
 
     try {
-      // Delete the post via Supabase
+      // Delete the post via Supabase (soft delete)
       const { error: deleteError } = await supabase
         .from('content_posts')
         .update({ is_active: false })
-        .eq('id', videoId);
+        .eq('id', videoId)
+        .eq('user_id', currentUser?.id); // Ensure user owns the post
       
       if (deleteError) throw deleteError;
       
@@ -332,7 +391,7 @@ function SocialFeedContent() {
       console.error('Error deleting video:', error);
       alert('Failed to delete video');
     }
-  }, []);
+  }, [currentUser]);
 
   const handleFollow = useCallback(async (userId: string) => {
     console.log('Follow user:', userId);
@@ -414,6 +473,7 @@ function SocialFeedContent() {
               <p>Loading: {loading.toString()}</p>
               <p>Error: {error || 'None'}</p>
               <p>Authenticated: {isAuthenticated.toString()}</p>
+              <p>User ID: {currentUser?.id || 'None'}</p>
             </div>
           )}
           
@@ -433,12 +493,6 @@ function SocialFeedContent() {
               className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg text-sm transition-colors"
             >
               🔄 Refresh Feed
-            </button>
-            <button 
-              onClick={() => setShowCameraTest(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm transition-colors"
-            >
-              🎥 Test Camera
             </button>
           </div>
         </div>
@@ -507,7 +561,6 @@ function SocialFeedContent() {
         />
       )}
 
-      {showCameraTest && <CameraTest />}
     </>
   );
 }

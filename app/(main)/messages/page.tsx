@@ -27,6 +27,26 @@ interface Conversation {
   other_user_is_online?: boolean;
   other_participants?: { id: string; name: string; avatar_url?: string }[];
   last_message_sender?: { id: string; name: string; avatar_url?: string };
+  
+  // API-provided data structure for direct conversations
+  other_user?: {
+    id: string;
+    display_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    username?: string | null;
+    avatar_url: string;
+    is_online: boolean;
+  };
+  
+  // API-provided data structure for group conversations
+  participants?: Array<{
+    id: string;
+    display_name: string;
+    username?: string | null;
+    avatar_url: string;
+  }>;
+  
   // Legacy format for backward compatibility
   user_id?: string;
   display_name?: string;
@@ -192,13 +212,29 @@ export default function MessagesInboxPage() {
 
   const getDisplayName = (conversation: Conversation): string => {
     // Skip generic placeholders and ID-based names
-    const invalidNames = ['chat participant', 'unknown user', 'wolf pack member', 'new message', 'new conversation', ''];
+    const invalidNames = ['chat participant', 'unknown user', 'wolf pack member', 'Wolf Pack Member', 'new message', 'new conversation', 'unnamed conversation', 'member', 'Member', ''];
     
-    // Try to get a valid display name
+    // For direct conversations, check for other_user first (from the API)
+    if ((conversation as any).other_user) {
+      const otherUser = (conversation as any).other_user;
+      
+      // Try to construct full name from first_name and last_name
+      const fullName = `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim();
+      if (fullName && !invalidNames.includes(fullName.toLowerCase())) {
+        return fullName;
+      }
+      
+      // Fallback to display_name
+      if (otherUser.display_name && !invalidNames.includes(otherUser.display_name.toLowerCase().trim())) {
+        return otherUser.display_name;
+      }
+    }
+    
+    // Try to get a valid display name from various fields
     const possibleNames = [
       conversation.other_user_name,
       conversation.display_name,
-      conversation.name,
+      conversation.name && !invalidNames.includes(conversation.name.toLowerCase().trim()) ? conversation.name : null,
       conversation.other_user_username,
       conversation.username
     ];
@@ -215,13 +251,14 @@ export default function MessagesInboxPage() {
     }
     
     // Check if this is a new conversation without messages
-    if (!conversation.last_message || conversation.last_message === '') {
+    const lastMessage = conversation.last_message_preview || conversation.last_message || '';
+    if (!lastMessage) {
       return 'New Conversation';
     }
     
     // We have messages but couldn't get the name - this is an error state
-    console.error(`Failed to get name for conversation ${conversation.id} with message: ${conversation.last_message}`);
-    return 'Unknown User';
+    console.error(`Failed to get name for conversation ${conversation.id} with message: ${lastMessage}`);
+    return 'Wolf Pack Member';
   };
 
   const formatTime = (timestamp: string | undefined): string => {
@@ -465,10 +502,20 @@ export default function MessagesInboxPage() {
           ) : (
             <div className="divide-y divide-gray-800">
               {filteredConversations.map((conversation) => {
-                const avatarUrl = conversation.other_user_avatar || conversation.avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+                // Get avatar URL - prefer API-provided other_user data
+                const avatarUrl = conversation.other_user?.avatar_url || 
+                                 conversation.other_user_avatar || 
+                                 conversation.avatar_url || 
+                                 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+                
                 const lastMessage = conversation.last_message_preview || conversation.last_message || '';
                 const lastMessageTime = conversation.last_message_at || conversation.last_message_time;
-                const isOnline = conversation.other_user_is_online || conversation.is_online || false;
+                
+                // Get online status - prefer API-provided other_user data
+                const isOnline = conversation.other_user?.is_online || 
+                                conversation.other_user_is_online || 
+                                conversation.is_online || 
+                                false;
 
                 return (
                   <button

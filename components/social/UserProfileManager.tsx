@@ -10,7 +10,7 @@ import { ProfileImageUploader } from '@/components/shared/ImageHistoryViewer';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { createBrowserClient } from '@supabase/ssr';
+import { supabase } from '@/lib/supabase';
 import { 
   Camera, 
   Save, 
@@ -114,10 +114,6 @@ export function UserProfileManager() {
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setSaving] = React.useState(false);
-  const supabase = React.useMemo(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  ), []);
   
   // Form state with proper typing
   const [formData, setFormData] = React.useState<FormData>({

@@ -9,10 +9,10 @@ type ProgressCallback = (progress: number) => void;
 export async function uploadImage(
   file: File | Blob,
   bucket:
-    | "images"
-    | "wolfpack-images"
-    | "wolfpack-thumbnails"
-    | "user-avatars" = "wolfpack-images",
+    | "content"
+    | "avatars"
+    | "thumbnails"
+    | "videos" = "content",
   progressCallback?: ProgressCallback,
 ): Promise<string> {
   try {
@@ -87,7 +87,7 @@ export async function uploadVideo(
     // Use the API endpoint for video uploads to avoid client-side timeout issues
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("bucket", "wolfpack-content_posts");
+    formData.append("bucket", "videos");
     formData.append("fileName", fileName);
     formData.append("contentType", file.type);
 
@@ -201,7 +201,7 @@ export function generateVideoThumbnail(file: File): Promise<File> {
 export async function uploadFileViaAPI(
   file: File,
   itemId?: string,
-  imageType: string = "wolfpack",
+  imageType: string = "content",
 ): Promise<string> {
   try {
     const formData = new FormData();

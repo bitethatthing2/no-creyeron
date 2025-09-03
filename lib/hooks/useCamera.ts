@@ -78,17 +78,24 @@ export function useCamera() {
       // Store the stream reference
       currentStreamRef.current = stream;
       
-      if (videoRef.current) {
-        console.log('[Camera] Setting video srcObject, current srcObject:', videoRef.current.srcObject);
-        videoRef.current.srcObject = stream;
-        // Let the video element handle autoplay - don't force play()
-        videoRef.current.playsInline = true;
-        videoRef.current.muted = true;
-        videoRef.current.controls = false;
-        console.log('[Camera] Video element configured');
-      } else {
-        console.warn('[Camera] videoRef.current is null!');
-      }
+      // Retry mechanism for video element assignment
+      const assignVideoStream = (retries = 3) => {
+        if (videoRef.current) {
+          console.log('[Camera] Setting video srcObject, current srcObject:', videoRef.current.srcObject);
+          videoRef.current.srcObject = stream;
+          videoRef.current.playsInline = true;
+          videoRef.current.muted = true;
+          videoRef.current.controls = false;
+          console.log('[Camera] Video element configured');
+        } else if (retries > 0) {
+          console.warn('[Camera] videoRef.current is null! Retrying in 100ms...');
+          setTimeout(() => assignVideoStream(retries - 1), 100);
+        } else {
+          console.warn('[Camera] videoRef.current is null! Max retries exceeded.');
+        }
+      };
+      
+      assignVideoStream();
 
       console.log('[Camera] Setting state to active...');
       setState(prev => ({

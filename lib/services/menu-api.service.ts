@@ -8,19 +8,14 @@ import {
   MenuTypeResponse,
 } from "@/types/functions/MENU_ITEMS";
 
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database.types";
 import {
   menuCategories as localCategories,
   menuItems as localMenuItems,
 } from "@/lib/data/menu-items";
 
-// Initialize Supabase client
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    "https://tvnpgbjypnezoasbhbwx.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-);
+// Using centralized Supabase client
 
 // Type for database category
 interface DatabaseCategory {

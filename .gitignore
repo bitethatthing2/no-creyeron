@@ -33,6 +33,14 @@ next-env.d.ts
 # Sensitive credential files
 client_secret.json
 service_key.json
+.ssh-credentials.md
+*ssh-credentials*
+*.pem
+*.key
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
 public/food-menu-images/
 public/drink-menu-images/
 # Docker binaries and builds

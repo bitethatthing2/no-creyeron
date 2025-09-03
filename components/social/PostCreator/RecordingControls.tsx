@@ -65,7 +65,7 @@ function RecordingControlsComponent({
                   : "text-white/70 hover:text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
-              aria-pressed={recordingMode === 'photo' ? 'true' : 'false'}
+              aria-pressed={recordingMode === 'photo'}
               aria-label="Switch to photo mode"
             >
               <Camera className="w-4 h-4 mr-2" />
@@ -84,7 +84,7 @@ function RecordingControlsComponent({
                   : "text-white/70 hover:text-white",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
-              aria-pressed={recordingMode === 'video' ? 'true' : 'false'}
+              aria-pressed={recordingMode === 'video'}
               aria-label="Switch to video mode"
             >
               <Video className="w-4 h-4 mr-2" />

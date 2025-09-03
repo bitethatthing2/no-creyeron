@@ -13,10 +13,10 @@ import { toast } from '@/components/ui/use-toast';
 import styles from './TikTokStyleFeed.module.css';
 
 // Import types from centralized location
-import type { FeedVideoItem, SocialVideoItem } from '@/lib/services/social/types';
+import type { FeedVideoItem } from '@/lib/services/social/types';
 
-// Re-export for components that import from here
-export type { SocialVideoItem };
+// Define SocialVideoItem as alias for consistency with existing code
+export type SocialVideoItem = FeedVideoItem;
 
 interface TikTokStyleFeedProps {
   content_posts: FeedVideoItem[];
@@ -69,6 +69,8 @@ export default function TikTokStyleFeed({
   const [videoErrors, setVideoErrors] = React.useState<Set<string>>(new Set());
   const [loadedVideos, setLoadedVideos] = React.useState<SocialVideoItem[]>(content_posts);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const [preloadedVideos, setPreloadedVideos] = React.useState<Set<number>>(new Set());
+  const [videoLoadStates, setVideoLoadStates] = React.useState<Map<string, 'loading' | 'loaded' | 'error'>>(new Map());
   
   // Video stats state with correct property names
   const [videoStats, setVideoStats] = React.useState<Map<string, { 
@@ -83,6 +85,8 @@ export default function TikTokStyleFeed({
   const isScrolling = React.useRef(false);
   const observerRef = React.useRef<IntersectionObserver | null>(null);
   const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const preloadTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const memoryCleanupRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Enable user interaction on first document interaction
   React.useEffect(() => {
@@ -163,23 +167,104 @@ export default function TikTokStyleFeed({
     };
   }, [onLoadMore, hasMore, isLoadingMore]);
 
-  // Auto-play current video and load adjacent videos lazily
-  React.useEffect(() => {
-    const currentVideo = videoRefs.current[currentIndex];
+  // Advanced video preloading and memory management
+  const preloadVideo = React.useCallback((index: number) => {
+    const video = videoRefs.current[index];
+    const videoData = loadedVideos[index];
     
-    // Load video sources for current and adjacent videos
+    if (!video || !videoData?.video_url || preloadedVideos.has(index)) {
+      return;
+    }
+
+    setVideoLoadStates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(videoData.id, 'loading');
+      return newMap;
+    });
+
+    video.src = videoData.video_url;
+    video.preload = 'metadata';
+    video.load();
+    
+    const handleCanPlay = () => {
+      setPreloadedVideos(prev => new Set(prev).add(index));
+      setVideoLoadStates(prev => {
+        const newMap = new Map(prev);
+        newMap.set(videoData.id, 'loaded');
+        return newMap;
+      });
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+    };
+
+    const handleError = () => {
+      setVideoErrors(prev => new Set(prev).add(videoData.id));
+      setVideoLoadStates(prev => {
+        const newMap = new Map(prev);
+        newMap.set(videoData.id, 'error');
+        return newMap;
+      });
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+    };
+
+    video.addEventListener('canplay', handleCanPlay, { once: true });
+    video.addEventListener('error', handleError, { once: true });
+  }, [loadedVideos, preloadedVideos]);
+
+  // Memory management - clean up videos far from current position
+  const cleanupDistantVideos = React.useCallback(() => {
     videoRefs.current.forEach((video, index) => {
-      if (video && Math.abs(index - currentIndex) <= 1) {
-        const videoData = loadedVideos[index];
-        if (videoData?.video_url && !video.src) {
-          video.src = videoData.video_url;
+      if (video && Math.abs(index - currentIndex) > 3) {
+        // Remove src to free memory, but keep the element
+        if (video.src) {
+          video.pause();
+          video.removeAttribute('src');
           video.load();
+          setPreloadedVideos(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          });
         }
       }
     });
+  }, [currentIndex]);
+
+  // Auto-play current video and intelligently preload adjacent videos
+  React.useEffect(() => {
+    const currentVideo = videoRefs.current[currentIndex];
+    
+    // Immediate preload for current video
+    if (!preloadedVideos.has(currentIndex)) {
+      preloadVideo(currentIndex);
+    }
+    
+    // Delayed preload for adjacent videos to avoid blocking current video
+    if (preloadTimeoutRef.current) {
+      clearTimeout(preloadTimeoutRef.current);
+    }
+    
+    preloadTimeoutRef.current = setTimeout(() => {
+      // Preload next video (higher priority)
+      if (currentIndex < loadedVideos.length - 1) {
+        preloadVideo(currentIndex + 1);
+      }
+      // Preload previous video (lower priority)
+      if (currentIndex > 0) {
+        preloadVideo(currentIndex - 1);
+      }
+    }, 500);
+    
+    // Schedule memory cleanup
+    if (memoryCleanupRef.current) {
+      clearTimeout(memoryCleanupRef.current);
+    }
+    
+    memoryCleanupRef.current = setTimeout(cleanupDistantVideos, 2000);
     
     // Play current video
-    if (currentVideo && userInteracted) {
+    if (currentVideo && userInteracted && preloadedVideos.has(currentIndex)) {
       currentVideo.play().catch((error) => {
         if (error.name === 'NotAllowedError') {
           console.info('Video autoplay blocked by browser policy - user interaction required');
@@ -189,14 +274,25 @@ export default function TikTokStyleFeed({
       });
     }
 
-    // Pause all other videos
+    // Pause all other videos and reset playback position
     videoRefs.current.forEach((video, index) => {
       if (video && index !== currentIndex) {
         video.pause();
-        video.currentTime = 0;
+        if (video.currentTime > 0) {
+          video.currentTime = 0;
+        }
       }
     });
-  }, [currentIndex, userInteracted, loadedVideos]);
+
+    return () => {
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current);
+      }
+      if (memoryCleanupRef.current) {
+        clearTimeout(memoryCleanupRef.current);
+      }
+    };
+  }, [currentIndex, userInteracted, loadedVideos, preloadedVideos, preloadVideo, cleanupDistantVideos]);
 
   // Handle scroll with snap behavior
   const handleScroll = React.useCallback(() => {
@@ -430,28 +526,50 @@ export default function TikTokStyleFeed({
              !video.video_url.includes('placeholder') && 
              !video.video_url.includes('sample') && 
              !video.video_url.includes('test') ? (
+              <>
               <video
                 ref={el => { videoRefs.current[index] = el; }}
-                src={Math.abs(index - currentIndex) <= 1 ? video.video_url : undefined}
                 poster={video.thumbnail_url}
                 className={cn("absolute inset-0 w-full h-full object-cover", styles.videoElement)}
                 loop
                 muted={muted}
                 playsInline
-                preload={Math.abs(index - currentIndex) <= 1 ? "metadata" : "none"}
+                preload="none"
                 crossOrigin="anonymous"
                 onClick={handleVideoClick}
+                onLoadStart={() => {
+                  setVideoLoadStates(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(video.id, 'loading');
+                    return newMap;
+                  });
+                }}
+                onCanPlay={() => {
+                  setVideoLoadStates(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(video.id, 'loaded');
+                    return newMap;
+                  });
+                }}
                 onError={() => {
                   setVideoErrors(prev => new Set(prev).add(video.id));
-                }}
-                onLoadedData={() => {
-                  setVideoErrors(prev => {
-                    const newSet = new Set(prev);
-                    newSet.delete(video.id);
-                    return newSet;
+                  setVideoLoadStates(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(video.id, 'error');
+                    return newMap;
                   });
                 }}
               />
+              
+              {/* Loading indicator for videos */}
+              {videoLoadStates.get(video.id) === 'loading' && index === currentIndex && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                </div>
+              )}
+              </>
             ) : (
               <div className="absolute inset-0 w-full h-full">
                 <Image

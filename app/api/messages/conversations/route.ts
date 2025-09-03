@@ -68,6 +68,8 @@ interface TransformedConversation {
   other_user?: {
     id: string;
     display_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     username?: string | null;
     avatar_url: string;
     is_online: boolean;
@@ -323,10 +325,18 @@ export async function GET() {
                   : userRaw as User;
 
                 if (otherUser) {
+                  console.log("🔍 Other user data:", {
+                    id: otherUser.id,
+                    first_name: otherUser.first_name,
+                    last_name: otherUser.last_name,
+                    display_name: otherUser.display_name,
+                    username: otherUser.username
+                  });
+                  
                   const fullName = `${otherUser.first_name || ""} ${
                     otherUser.last_name || ""
                   }`.trim();
-                  const displayName = otherUser.display_name || fullName ||
+                  const displayName = fullName || otherUser.display_name ||
                     otherUser.username || "Wolf Pack Member";
 
                   // Check if user is online (last seen within 5 minutes)
@@ -340,6 +350,8 @@ export async function GET() {
                   baseConversation.other_user = {
                     id: otherUser.id,
                     display_name: displayName,
+                    first_name: otherUser.first_name,
+                    last_name: otherUser.last_name,
                     username: otherUser.username,
                     avatar_url: otherUser.avatar_url ||
                       otherUser.profile_image_url || "https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png",
@@ -388,7 +400,7 @@ export async function GET() {
                   const fullName = `${user.first_name || ""} ${
                     user.last_name || ""
                   }`.trim();
-                  const displayName = user.display_name || fullName ||
+                  const displayName = fullName || user.display_name ||
                     user.username || "Member";
 
                   return {

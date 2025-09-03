@@ -38,8 +38,7 @@ export const metadata: Metadata = {
     default: 'Side Hustle',
     template: '%s | Side Hustle'
   },
-  description: 'Order food and drinks at Side Hustle - A faster, app-like experience with offline access',
-  manifest: '/manifest.json',
+  description: 'TikTok-style social feed and restaurant ordering app with offline access',
   icons: {
     icon: [
       { url: `${STORAGE_URL}/icons/favicon.png`, type: 'image/png' },

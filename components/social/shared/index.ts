@@ -2,7 +2,7 @@
 
 // Export all chat-related components
 export { MessageItem } from "./MessageItem";
-export { ChatInput } from "./ChatInput";
+export { default as ChatInput } from "./ChatInput";
 export { ReactionButtons } from "./ReactionButtons";
 
 // Type exports (if needed)

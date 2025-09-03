@@ -103,7 +103,9 @@
       "Read(/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/**)",
       "Bash(git remote set-url:*)",
       "Bash(psql:*)",
-      "WebFetch(domain:dequeuniversity.com)"
+      "WebFetch(domain:dequeuniversity.com)",
+      "Bash(npm run types:generate:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

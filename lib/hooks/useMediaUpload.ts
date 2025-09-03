@@ -50,11 +50,11 @@ export function useMediaUpload() {
       // Determine file extension based on type
       const fileExtension = file.type.includes('video') ? 'webm' : 'jpg';
       const fileName = `${Date.now()}_${currentUser.id}.${fileExtension}`;
-      const filePath = `content/${currentUser.id}/${fileName}`;
+      const filePath = `${currentUser.id}/${fileName}`;
 
       // Upload to Supabase storage
       const { data, error } = await supabase.storage
-        .from('content-media')
+        .from('content')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -66,7 +66,7 @@ export function useMediaUpload() {
 
       // Get the public URL
       const { data: publicUrlData } = supabase.storage
-        .from('content-media')
+        .from('content')
         .getPublicUrl(filePath);
 
       setState(prev => ({
@@ -120,22 +120,28 @@ export function useMediaUpload() {
         user_id: currentUser.id,
         caption: caption || '',
         [isVideo ? 'video_url' : 'thumbnail_url']: mediaUrl,
-        content_type: isVideo ? 'video' : 'image',
-        status: 'published' as const,
-        is_public: true,
+        post_type: isVideo ? 'video' : 'image',
+        visibility: 'public',
+        is_active: true,
+        processing_status: 'completed',
         likes_count: 0,
         comments_count: 0,
         shares_count: 0,
-        views_count: 0,
-        created_at: new Date().toISOString()
+        views_count: 0
       };
 
-      const { error: insertError } = await supabase
-        .from('content_posts')
-        .insert([postData]);
+      // Create post via API endpoint instead of direct database insertion
+      const response = await fetch('/api/posts/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
 
-      if (insertError) {
-        throw insertError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create post');
       }
 
       setState(prev => ({
