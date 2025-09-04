@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { messagingHelpers } from '@/lib/utils/messaging-helpers';
 import { 
   ArrowLeft, 
   Search, 
@@ -12,15 +13,14 @@ import {
   CheckCircle,
   Loader2,
   UserPlus,
-  
   MoreVertical,
   Pin,
   Archive,
   Bell,
   BellOff,
-  Trash2,
-  User
-
+  User,
+  Check,
+  CheckCheck
 } from 'lucide-react';
 import { format, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DropdownMenu,
@@ -42,383 +41,342 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
-// Database Types matching Supabase schema exactly
+// Type definitions
 interface User {
   id: string;
   email: string;
-  first_name?: string | null;
-  last_name?: string | null;
   username: string;
   display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   avatar_url?: string | null;
   profile_image_url?: string | null;
   bio?: string | null;
-  location?: string | null;
-  city?: string | null;
-  state?: string | null;
-  country?: string | null;
-  account_status?: string | null;
   is_verified?: boolean | null;
-  is_private?: boolean | null;
   last_seen_at?: string | null;
-  created_at: string;
-  updated_at: string;
+  account_status?: string | null;
 }
 
-interface ChatConversation {
+interface ConversationData {
   id: string;
   conversation_type: 'direct' | 'group' | 'location' | 'broadcast';
   name?: string | null;
-  description?: string | null;
   avatar_url?: string | null;
-  created_by?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
   last_message_at?: string | null;
   last_message_preview?: string | null;
   last_message_sender_id?: string | null;
-  is_active?: boolean | null;
-  metadata?: Record<string, unknown>;
+  is_pinned?: boolean | null;
+  is_archived?: boolean | null;
   participant_count?: number | null;
   message_count?: number | null;
-  is_archived?: boolean | null;
-  is_pinned?: boolean | null;
-  settings?: Record<string, unknown>;
-  slug?: string | null;
-  is_group?: boolean | null;
+  is_active?: boolean | null;
 }
 
-interface ChatParticipant {
-  id: string;
+interface ParticipantData {
   conversation_id: string;
   user_id: string;
-  role?: 'admin' | 'moderator' | 'member' | null;
-  joined_at?: string | null;
-  left_at?: string | null;
   last_read_at?: string | null;
-  is_active?: boolean | null;
   notification_settings?: { muted?: boolean } | null;
-  updated_at?: string | null;
-  user?: User;
+  user?: User | null;
+  is_active?: boolean | null;
 }
 
-interface ChatMessage {
+interface MessageData {
   id: string;
-  conversation_id: string;
-  sender_id: string;
   content: string;
-  message_type?: 'text' | 'image' | 'system' | 'deleted' | null;
-  created_at?: string | null;
-  edited_at?: string | null;
-  deleted_at?: string | null;
-  deleted_by?: string | null;
-  metadata?: Record<string, unknown>;
-  reply_count?: number | null;
-  media_url?: string | null;
-  media_type?: string | null;
-  media_thumbnail_url?: string | null;
-  attachments?: unknown;
-  reply_to_id?: string | null;
+  created_at: string;
+  sender_id: string;
+  message_type?: string | null;
   is_deleted?: boolean | null;
-  is_edited?: boolean | null;
-  sender?: User;
+  sender?: User | null;
 }
 
-interface ConversationWithDetails extends ChatConversation {
-  participants?: ChatParticipant[];
-  unread_count?: number;
-  last_message?: ChatMessage;
-  other_user?: User; // For direct messages
+interface ConversationWithDetails extends ConversationData {
+  participants: ParticipantData[];
+  last_message?: MessageData | null;
+  unread_count: number;
+  other_user?: User | null;
+  is_muted?: boolean;
+  my_last_read_at?: string | null;
 }
+
+// Default avatar URL
+const DEFAULT_AVATAR = 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
 
 export default function MessagesInboxPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
   const supabase = getSupabaseBrowserClient();
 
-  // State management
+  // State
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
   const [searchUsers, setSearchUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchingUsers, setSearchingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'groups'>('all');
   const [showNewChatSheet, setShowNewChatSheet] = useState(false);
-  // Removed unused selectedConversation state
+  const [creatingChat, setCreatingChat] = useState(false);
 
-  // Helper function to get display name
+  // Helper: Get display name for a user
   const getDisplayName = (user: User | undefined | null): string => {
-    if (!user) return 'Wolf Pack Member';
+    if (!user) return 'Unknown User';
     
-    // Try display_name first (most likely to be set by user)
-    if (user.display_name && user.display_name.trim()) return user.display_name.trim();
+    // Prioritize display_name if it exists and is not empty
+    if (user.display_name?.trim()) return user.display_name.trim();
     
-    // Try full name
-    const firstName = user.first_name?.trim() || '';
-    const lastName = user.last_name?.trim() || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-    if (fullName) return fullName;
+    // Use username as second priority (this should be the main identifier)
+    if (user.username?.trim()) return user.username.trim();
     
-    // Then username
-    if (user.username && user.username.trim()) return user.username.trim();
+    // Only fall back to email prefix as last resort
+    if (user.email) return user.email.split('@')[0];
     
-    // Fallback
-    return 'Wolf Pack Member';
+    return 'Unknown User';
   };
 
-  // Helper function to get avatar URL
+  // Helper: Get avatar URL for a user
   const getAvatarUrl = (user: User | undefined | null): string => {
-    if (!user) return 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
-    return user.avatar_url || user.profile_image_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+    if (!user) return DEFAULT_AVATAR;
+    return user.avatar_url || user.profile_image_url || DEFAULT_AVATAR;
   };
 
-  // Helper function to format time
+  // Helper: Format timestamp for messages
   const formatMessageTime = (timestamp: string | null | undefined): string => {
     if (!timestamp) return '';
     
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMin = differenceInMinutes(now, date);
-    
-    if (diffInMin < 1) return 'now';
-    if (diffInMin < 60) return `${diffInMin}m`;
-    if (diffInMin < 1440) return `${Math.floor(diffInMin / 60)}h`;
-    
-    if (isToday(date)) return format(date, 'HH:mm');
-    if (isYesterday(date)) return 'Yesterday';
-    
-    return format(date, 'MMM d');
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffInMin = differenceInMinutes(now, date);
+      
+      if (diffInMin < 1) return 'now';
+      if (diffInMin < 60) return `${diffInMin}m`;
+      if (diffInMin < 1440) return `${Math.floor(diffInMin / 60)}h`;
+      
+      if (isToday(date)) return format(date, 'HH:mm');
+      if (isYesterday(date)) return 'Yesterday';
+      
+      const diffInDays = Math.floor(diffInMin / 1440);
+      if (diffInDays < 7) return `${diffInDays}d ago`;
+      if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
+      
+      return format(date, 'MMM d');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '';
+    }
   };
 
-  // Check if user is online
+  // Helper: Check if user is online
   const isUserOnline = (lastSeenAt: string | null | undefined): boolean => {
     if (!lastSeenAt) return false;
-    const lastSeen = new Date(lastSeenAt);
-    const now = new Date();
-    const diffInMin = differenceInMinutes(now, lastSeen);
-    return diffInMin < 5; // Consider online if seen in last 5 minutes
+    try {
+      const lastSeen = new Date(lastSeenAt);
+      const now = new Date();
+      const diffInMin = differenceInMinutes(now, lastSeen);
+      return diffInMin < 5;
+    } catch {
+      return false;
+    }
   };
 
-  // Load conversations from Supabase
+  // Load conversations - FIXED VERSION
   const loadConversations = useCallback(async () => {
     if (!currentUser) {
-      console.log('❌ No current user, skipping conversation load');
+      console.log('No current user, skipping conversation load');
       return;
     }
 
     try {
-      console.log('🔄 Loading conversations for user:', currentUser.id);
+      console.log('Loading conversations for user:', currentUser.id);
       setLoading(true);
-      setError(null);
 
-      // Get conversations where user is a participant
-      const { data: participantData, error: participantError } = await supabase
+      // Step 1: Get participant records
+      const { data: participantRecords, error: participantError } = await supabase
         .from('chat_participants')
-        .select(`
-          conversation_id,
-          last_read_at,
-          notification_settings,
-          conversation:chat_conversations(*)
-        `)
+        .select('conversation_id, last_read_at, notification_settings')
         .eq('user_id', currentUser.id)
         .eq('is_active', true);
 
       if (participantError) {
-        console.error('❌ Error loading conversations:', participantError);
+        console.error('Error loading participant records:', participantError);
         toast.error('Failed to load conversations');
         return;
       }
 
-      console.log('📊 Found participant records:', participantData?.length || 0);
-
-      if (!participantData || participantData.length === 0) {
-        console.log('📭 No conversations found');
+      if (!participantRecords || participantRecords.length === 0) {
+        console.log('No conversations found');
         setConversations([]);
         return;
       }
 
-      // Process conversations
+      const conversationIds = participantRecords.map(p => p.conversation_id);
+      console.log(`Found ${conversationIds.length} conversations`);
+
+      // Step 2: Get conversation details
+      const { data: conversationsData, error: convError } = await supabase
+        .from('chat_conversations')
+        .select('*')
+        .in('id', conversationIds)
+        .eq('is_active', true);
+
+      if (convError) {
+        console.error('Error loading conversations:', convError);
+        toast.error('Failed to load conversation details');
+        return;
+      }
+
+      if (!conversationsData) {
+        setConversations([]);
+        return;
+      }
+
+      // Step 3: Process each conversation
       const conversationsWithDetails: ConversationWithDetails[] = [];
-      
-      for (const participantRecord of participantData) {
-        let conversation = participantRecord.conversation as ChatConversation | ChatConversation[] | undefined;
-        
-        // Handle nested array structure
-        if (Array.isArray(conversation)) {
-          conversation = conversation[0];
-        }
-        
-        if (!conversation || !conversation.is_active) {
-          console.log('⚠️ Skipping inactive/missing conversation');
-          continue;
-        }
 
-        console.log('🔍 Processing conversation:', conversation.id, conversation.conversation_type);
+      for (const conversation of conversationsData) {
+        const myParticipantRecord = participantRecords.find(
+          p => p.conversation_id === conversation.id
+        );
 
-        // Get participants first
-        const { data: allParticipants } = await supabase
+        // Get all participants WITHOUT join to avoid array issues
+        const { data: participantsList, error: participantsError } = await supabase
           .from('chat_participants')
           .select('*')
           .eq('conversation_id', conversation.id)
           .eq('is_active', true);
 
-        // For direct conversations, find the other user
-        let otherUser: User | undefined;
-        if (conversation.conversation_type === 'direct' && allParticipants) {
-          console.log('📋 Participants in direct conversation:', allParticipants.map(p => ({ user_id: p.user_id, currentUser: currentUser.id })));
-          const otherParticipant = allParticipants.find(p => p.user_id !== currentUser.id);
-          if (otherParticipant) {
-            console.log('👤 Found other participant:', otherParticipant.user_id);
-            // Fetch the user data separately
-            const { data: userData } = await supabase
-              .from('users')
-              .select(`
-                id,
-                email,
-                first_name,
-                last_name,
-                display_name,
-                username,
-                avatar_url,
-                profile_image_url,
-                is_verified,
-                bio,
-                location,
-                city,
-                state,
-                country,
-                account_status,
-                is_private,
-                last_seen_at,
-                created_at,
-                updated_at
-              `)
-              .eq('id', otherParticipant.user_id)
-              .single();
-            
-            if (userData) {
-              otherUser = userData as User;
-              console.log('✅ Found user data for participant:', userData.display_name || userData.username || userData.email);
-              // Attach user data to participant for consistency
-              otherParticipant.user = userData;
-            } else {
-              // Skip broken direct conversations that don't have the other participant
-              console.log('⚠️ Skipping broken direct conversation - missing user data for participant:', otherParticipant.user_id);
-              continue;
-            }
-          } else {
-            console.log('⚠️ No other participant found in direct conversation:', conversation.id);
-            continue;
-          }
+        if (participantsError) {
+          console.error('Error loading participants:', participantsError);
+          continue;
         }
-        
-        // Fetch user data for all participants to enrich the data
-        if (allParticipants && allParticipants.length > 0) {
-          const userIds = allParticipants.map(p => p.user_id);
-          const { data: usersData } = await supabase
-            .from('users')
-            .select(`
-              id,
-              first_name,
-              last_name,
-              display_name,
-              username,
-              avatar_url,
-              profile_image_url,
-              is_verified
-            `)
-            .in('id', userIds);
+
+        if (!participantsList) {
+          continue;
+        }
+
+        // Get user data separately to avoid join issues
+        const userIds = participantsList.map(p => p.user_id);
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select(`
+            id,
+            email,
+            username,
+            display_name,
+            first_name,
+            last_name,
+            avatar_url,
+            profile_image_url,
+            is_verified,
+            last_seen_at,
+            bio,
+            account_status
+          `)
+          .in('id', userIds);
+
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+          continue;
+        }
+
+        // Attach user data to participants
+        const participantsWithUsers: ParticipantData[] = participantsList.map(participant => ({
+          ...participant,
+          user: usersData?.find(u => u.id === participant.user_id) || null
+        }));
+
+        // For direct conversations, find the other user
+        let otherUser: User | null = null;
+        if (conversation.conversation_type === 'direct') {
+          const otherParticipant = participantsWithUsers.find(p => p.user_id !== currentUser.id);
+          if (otherParticipant?.user) {
+            otherUser = otherParticipant.user;
+          }
           
-          // Attach user data to participants
-          if (usersData) {
-            allParticipants.forEach(participant => {
-              const userData = usersData.find(u => u.id === participant.user_id);
-              if (userData) {
-                participant.user = userData;
-              }
-            });
+          // Skip broken direct conversations
+          if (!otherUser) {
+            console.log('Skipping direct conversation without other user');
+            continue;
           }
         }
 
         // Get the last message
-        const { data: lastMessageData } = await supabase
+        const { data: messages, error: msgError } = await supabase
           .from('chat_messages')
-          .select(`
-            id,
-            content,
-            created_at,
-            sender_id,
-            message_type,
-            sender:users(
-              id,
-              display_name,
-              username,
-              first_name,
-              last_name,
-              avatar_url,
-              profile_image_url
-            )
-          `)
+          .select('*')
           .eq('conversation_id', conversation.id)
           .eq('is_deleted', false)
           .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
+
+        if (msgError) {
+          console.error('Error loading messages:', msgError);
+        }
+
+        const lastMessage = messages?.[0] || null;
+
+        // Get sender info for last message if exists
+        if (lastMessage && usersData) {
+          const sender = usersData.find(u => u.id === lastMessage.sender_id);
+          if (sender) {
+            lastMessage.sender = sender;
+          }
+        }
 
         // Calculate unread count
-        const { count: unreadCount } = await supabase
-          .from('chat_messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', conversation.id)
-          .neq('sender_id', currentUser.id)
-          .eq('is_deleted', false)
-          .gt('created_at', participantRecord.last_read_at || '1970-01-01');
+        let unreadCount = 0;
+        if (myParticipantRecord?.last_read_at) {
+          const { count } = await supabase
+            .from('chat_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conversation.id)
+            .neq('sender_id', currentUser.id)
+            .eq('is_deleted', false)
+            .gt('created_at', myParticipantRecord.last_read_at);
+          
+          unreadCount = count || 0;
+        }
 
+        // Build the conversation object
         const conversationWithDetails: ConversationWithDetails = {
           ...conversation,
-          participants: allParticipants as ChatParticipant[],
-          unread_count: unreadCount || 0,
-          last_message: lastMessageData ? {
-            ...lastMessageData,
-            conversation_id: conversation.id
-          } as ChatMessage : undefined,
+          participants: participantsWithUsers,
+          last_message: lastMessage,
+          unread_count: unreadCount,
           other_user: otherUser,
-          last_message_at: lastMessageData?.created_at || conversation.last_message_at,
-          last_message_preview: lastMessageData?.content || conversation.last_message_preview,
-          last_message_sender_id: lastMessageData?.sender_id || conversation.last_message_sender_id
+          is_muted: myParticipantRecord?.notification_settings?.muted || false,
+          my_last_read_at: myParticipantRecord?.last_read_at,
+          last_message_at: lastMessage?.created_at || conversation.last_message_at,
+          last_message_preview: lastMessage?.content || conversation.last_message_preview,
+          last_message_sender_id: lastMessage?.sender_id || conversation.last_message_sender_id
         };
 
         conversationsWithDetails.push(conversationWithDetails);
-        console.log('✅ Added conversation:', conversation.id, {
-          type: conversation.conversation_type,
-          name: conversation.name,
-          otherUser: otherUser ? (otherUser.display_name || otherUser.username || otherUser.email) : 'N/A',
-          lastMessage: conversationWithDetails.last_message_preview,
-          unreadCount: conversationWithDetails.unread_count
-        });
       }
 
-      // Sort by last message time (most recent first)
+      // Sort conversations
       conversationsWithDetails.sort((a, b) => {
+        if (a.is_pinned && !b.is_pinned) return -1;
+        if (!a.is_pinned && b.is_pinned) return 1;
+        
         const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
         const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
         return bTime - aTime;
       });
 
-      console.log('✅ Loaded', conversationsWithDetails.length, 'conversations');
+      console.log(`Successfully loaded ${conversationsWithDetails.length} conversations`);
       setConversations(conversationsWithDetails);
-
+      
     } catch (error) {
-      console.error('❌ Error in loadConversations:', error);
-      toast.error('An error occurred while loading conversations');
-      setError('Failed to load conversations');
+      console.error('Unexpected error loading conversations:', error);
+      toast.error('Failed to load conversations');
     } finally {
       setLoading(false);
     }
   }, [currentUser, supabase]);
 
-  // Search for users
+  // Search for users - FIXED VERSION
   const searchForUsers = useCallback(async () => {
     if (!currentUser || !searchQuery.trim()) {
       setSearchUsers([]);
@@ -428,213 +386,151 @@ export default function MessagesInboxPage() {
     try {
       setSearchingUsers(true);
 
-      const { data: users, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select(`
-          id,
-          email,
-          first_name,
-          last_name,
-          display_name,
-          username,
-          avatar_url,
-          profile_image_url,
-          is_verified,
+          id, 
+          email, 
+          username, 
+          display_name, 
+          avatar_url, 
+          profile_image_url, 
+          is_verified, 
           bio,
-          account_status,
-          created_at,
-          updated_at
+          account_status
         `)
-        .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
+        .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
         .neq('id', currentUser.id)
-        .eq('account_status', 'active')
-        .limit(20);
+        .limit(10);
 
       if (error) {
         console.error('Error searching users:', error);
-        toast.error('Failed to search users');
+        setSearchUsers([]);
         return;
       }
 
-      setSearchUsers(users || []);
+      // Ensure we have an array of users
+      const users: User[] = data || [];
+      setSearchUsers(users);
+      
     } catch (error) {
       console.error('Error in searchForUsers:', error);
-      toast.error('An error occurred while searching');
+      setSearchUsers([]);
     } finally {
       setSearchingUsers(false);
     }
   }, [currentUser, searchQuery, supabase]);
 
-  // Create or navigate to direct conversation
+  // Start a direct chat - USING HELPER FUNCTIONS
   const handleStartDirectChat = async (userId: string) => {
-    if (!currentUser) {
-      toast.error('Please log in to start a conversation');
-      return;
-    }
+    if (!currentUser?.id || creatingChat) return;
 
     try {
-      console.log('🚀 Starting direct chat with user:', userId);
-      
-      // First check if a direct conversation already exists
-      console.log('🔍 Checking for existing conversation...');
-      const { data: existingParticipants, error: existingError } = await supabase
-        .from('chat_participants')
-        .select(`
-          conversation_id,
-          conversation:chat_conversations(
-            id,
-            conversation_type,
-            created_by,
-            is_active
-          )
-        `)
-        .eq('user_id', currentUser.id)
-        .eq('is_active', true);
+      setCreatingChat(true);
+      console.log('Starting direct chat with user:', userId);
 
-      if (existingError) {
-        console.error('❌ Error checking existing conversations:', existingError);
-        // Continue with creation anyway
-      }
+      const conversationId = await messagingHelpers.createOrGetDirectConversation(
+        currentUser.id,
+        userId
+      );
 
-      // Find if there's already a direct conversation with this user
-      if (existingParticipants) {
-        for (const participant of existingParticipants) {
-          const conv = Array.isArray(participant.conversation) 
-            ? participant.conversation[0] 
-            : participant.conversation;
-          
-          if (conv && conv.conversation_type === 'direct' && conv.is_active) {
-            // Check if the other user is in this conversation
-            const { data: otherParticipant } = await supabase
-              .from('chat_participants')
-              .select('user_id')
-              .eq('conversation_id', conv.id)
-              .eq('user_id', userId)
-              .eq('is_active', true)
-              .single();
-
-            if (otherParticipant) {
-              console.log('✅ Found existing conversation:', conv.id);
-              setShowNewChatSheet(false);
-              setSearchQuery('');
-              router.push(`/messages/conversation/${conv.id}`);
-              return;
-            }
-          }
-        }
-      }
-
-      console.log('📝 Creating new conversation...');
-      
-      // Create new direct conversation
-      const { data: newConversation, error: convError } = await supabase
-        .from('chat_conversations')
-        .insert({
-          conversation_type: 'direct',
-          created_by: currentUser.id,
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (convError) {
-        console.error('❌ Error creating conversation:', convError);
-        toast.error('Failed to create conversation - please check your connection');
+      if (!conversationId) {
+        toast.error('Failed to create conversation');
         return;
       }
 
-      console.log('✅ Created conversation:', newConversation.id);
-
-      // Add participants
-      const { error: participantError } = await supabase
-        .from('chat_participants')
-        .insert([
-          { 
-            conversation_id: newConversation.id, 
-            user_id: currentUser.id, 
-            role: 'member',
-            is_active: true
-          },
-          { 
-            conversation_id: newConversation.id, 
-            user_id: userId, 
-            role: 'member',
-            is_active: true
-          }
-        ]);
-
-      if (participantError) {
-        console.error('❌ Error adding participants:', participantError);
-        toast.error('Failed to add participants - please try again');
-        return;
-      }
-
-      console.log('✅ Added participants successfully');
+      console.log('Got conversation ID:', conversationId);
       
-      // Close the new chat sheet and navigate
+      // Close sheet and navigate
       setShowNewChatSheet(false);
       setSearchQuery('');
-      router.push(`/messages/conversation/${newConversation.id}`);
+      setSearchUsers([]);
+      
+      router.push(`/messages/conversation/${conversationId}`);
       
     } catch (error) {
-      console.error('❌ Error starting direct chat:', error);
-      toast.error('Failed to start conversation');
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setCreatingChat(false);
     }
   };
 
-  // Handle conversation actions
+  // Conversation actions
   const handlePinConversation = async (conversationId: string, isPinned: boolean) => {
-    const { error } = await supabase
-      .from('chat_conversations')
-      .update({ is_pinned: !isPinned })
-      .eq('id', conversationId);
+    try {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ is_pinned: !isPinned })
+        .eq('id', conversationId);
 
-    if (error) {
-      toast.error('Failed to update conversation');
-    } else {
+      if (error) throw error;
+      
       toast.success(isPinned ? 'Conversation unpinned' : 'Conversation pinned');
-      loadConversations();
+      await loadConversations();
+    } catch (error) {
+      console.error('Error pinning conversation:', error);
+      toast.error('Failed to update conversation');
     }
   };
 
   const handleArchiveConversation = async (conversationId: string, isArchived: boolean) => {
-    const { error } = await supabase
-      .from('chat_conversations')
-      .update({ is_archived: !isArchived })
-      .eq('id', conversationId);
+    try {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ is_archived: !isArchived })
+        .eq('id', conversationId);
 
-    if (error) {
-      toast.error('Failed to update conversation');
-    } else {
+      if (error) throw error;
+      
       toast.success(isArchived ? 'Conversation unarchived' : 'Conversation archived');
-      loadConversations();
+      await loadConversations();
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      toast.error('Failed to update conversation');
     }
   };
 
-  const handleMuteConversation = async (conversationId: string, participantId: string, isMuted: boolean) => {
-    const { error } = await supabase
-      .from('chat_participants')
-      .update({ 
-        notification_settings: { muted: !isMuted } 
-      })
-      .eq('conversation_id', conversationId)
-      .eq('user_id', currentUser?.id);
+  const handleMuteConversation = async (conversationId: string, isMuted: boolean) => {
+    if (!currentUser) return;
+    
+    try {
+      const { error } = await supabase
+        .from('chat_participants')
+        .update({ 
+          notification_settings: { muted: !isMuted } 
+        })
+        .eq('conversation_id', conversationId)
+        .eq('user_id', currentUser.id);
 
-    if (error) {
-      toast.error('Failed to update notification settings');
-    } else {
+      if (error) throw error;
+      
       toast.success(isMuted ? 'Notifications enabled' : 'Notifications muted');
-      loadConversations();
+      await loadConversations();
+    } catch (error) {
+      console.error('Error muting conversation:', error);
+      toast.error('Failed to update notification settings');
     }
   };
 
-  // Set up real-time subscriptions
+  // Real-time subscriptions
   useEffect(() => {
     if (!currentUser) return;
 
-    // Subscribe to conversation updates
-    const conversationChannel = supabase
-      .channel('conversations')
+    const channel = supabase
+      .channel(`inbox-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        () => {
+          console.log('New message event detected');
+          loadConversations();
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -643,24 +539,14 @@ export default function MessagesInboxPage() {
           table: 'chat_conversations'
         },
         () => {
-          loadConversations();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages'
-        },
-        () => {
+          console.log('Conversation update detected');
           loadConversations();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(conversationChannel);
+      supabase.removeChannel(channel);
     };
   }, [currentUser, supabase, loadConversations]);
 
@@ -671,57 +557,59 @@ export default function MessagesInboxPage() {
     }
   }, [currentUser, loadConversations]);
 
-  // Search effect
+  // Search users effect
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchForUsers();
-      } else {
-        setSearchUsers([]);
-      }
+    if (!showNewChatSheet || !searchQuery.trim()) {
+      setSearchUsers([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      searchForUsers();
     }, 300);
 
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, searchForUsers]);
+    return () => clearTimeout(timer);
+  }, [searchQuery, showNewChatSheet, searchForUsers]);
 
-  // Filter conversations based on active tab
+  // Filter conversations
   const filteredConversations = useMemo(() => {
     let filtered = [...conversations];
 
-    // Apply tab filter
+    // Tab filter
     switch (activeTab) {
       case 'unread':
-        filtered = filtered.filter(c => (c.unread_count || 0) > 0);
+        filtered = filtered.filter(c => c.unread_count > 0);
         break;
       case 'groups':
         filtered = filtered.filter(c => c.conversation_type === 'group');
         break;
     }
 
-    // Apply search filter
+    // Search filter
     if (searchQuery.trim() && !showNewChatSheet) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(conv => {
         if (conv.conversation_type === 'direct' && conv.other_user) {
           const name = getDisplayName(conv.other_user).toLowerCase();
-          return name.includes(query);
+          const username = conv.other_user.username?.toLowerCase() || '';
+          return name.includes(query) || username.includes(query);
         }
         return conv.name?.toLowerCase().includes(query) || false;
       });
     }
 
-    // Sort: pinned first, then by last message time
-    filtered.sort((a, b) => {
-      if (a.is_pinned && !b.is_pinned) return -1;
-      if (!a.is_pinned && b.is_pinned) return 1;
-      const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-      const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-      return bTime - aTime;
-    });
+    // Exclude archived unless searching
+    if (!searchQuery.includes('archived')) {
+      filtered = filtered.filter(c => !c.is_archived);
+    }
 
     return filtered;
   }, [conversations, activeTab, searchQuery, showNewChatSheet]);
 
+  // Total unread count
+  const totalUnread = conversations.filter(c => c.unread_count > 0).length;
+
+  // Redirect if not logged in
   if (!currentUser) {
     router.push('/login');
     return null;
@@ -746,43 +634,36 @@ export default function MessagesInboxPage() {
                 Messages
               </h1>
               <p className="text-xs text-gray-400">
-                {conversations.length} conversations
+                {conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}
+                {totalUnread > 0 && ` • ${totalUnread} unread`}
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={loadConversations}
-              variant="outline"
-              className="border-red-600/20 text-red-400 hover:bg-red-600/10"
-              disabled={loading}
-            >
-              🔄 Reload
-            </Button>
-            <Button
-              onClick={() => setShowNewChatSheet(true)}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowNewChatSheet(true)}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            New Chat
+          </Button>
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full pl-10 bg-gray-900/50 border-gray-800 focus:border-red-500 text-white placeholder-gray-500"
-            />
+        {!showNewChatSheet && (
+          <div className="px-4 pb-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search conversations..."
+                className="w-full pl-10 bg-gray-900/50 border-gray-800 focus:border-red-500 text-white placeholder-gray-500"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'unread' | 'groups')} className="px-4">
@@ -792,9 +673,9 @@ export default function MessagesInboxPage() {
             </TabsTrigger>
             <TabsTrigger value="unread" className="data-[state=active]:bg-red-600/20">
               Unread
-              {conversations.filter(c => (c.unread_count || 0) > 0).length > 0 && (
-                <Badge className="ml-2 bg-red-600" variant="secondary">
-                  {conversations.filter(c => (c.unread_count || 0) > 0).length}
+              {totalUnread > 0 && (
+                <Badge className="ml-2 bg-red-600 text-white h-5 min-w-[20px] px-1">
+                  {totalUnread}
                 </Badge>
               )}
             </TabsTrigger>
@@ -816,6 +697,7 @@ export default function MessagesInboxPage() {
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-3 w-48" />
                 </div>
+                <Skeleton className="h-4 w-12" />
               </div>
             ))}
           </div>
@@ -823,30 +705,12 @@ export default function MessagesInboxPage() {
           <div className="flex flex-col items-center justify-center py-20">
             <MessageCircle className="h-16 w-16 text-gray-600 mb-4" />
             <h3 className="text-lg font-semibold text-gray-300 mb-2">
-              {searchQuery ? 'No conversations found' : 'No conversations yet'}
+              {searchQuery ? 'No conversations found' : activeTab === 'unread' ? 'No unread messages' : 'No conversations yet'}
             </h3>
             <p className="text-gray-500 text-center px-4 mb-6">
-              {error ? (
-                <>
-                  Error: {error}
-                  <br />
-                  <Button 
-                    onClick={loadConversations} 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    disabled={loading}
-                  >
-                    Try Again
-                  </Button>
-                </>
-              ) : searchQuery ? (
-                'Try a different search term'
-              ) : (
-                'Start a conversation with someone from the Wolf Pack'
-              )}
+              {searchQuery ? 'Try a different search term' : 'Start a conversation with someone'}
             </p>
-            {!error && (
+            {!searchQuery && (
               <Button
                 onClick={() => setShowNewChatSheet(true)}
                 className="bg-red-600 hover:bg-red-700"
@@ -859,55 +723,52 @@ export default function MessagesInboxPage() {
         ) : (
           <div className="divide-y divide-gray-800/50">
             {filteredConversations.map((conversation) => {
-              // Get display name with better fallbacks
               let displayName: string;
-              if (conversation.conversation_type === 'direct') {
-                if (conversation.other_user) {
-                  displayName = getDisplayName(conversation.other_user);
-                } else {
-                  // Try to get name from participants
-                  const otherParticipant = conversation.participants?.find(p => p.user_id !== currentUser.id);
-                  if (otherParticipant?.user) {
-                    displayName = getDisplayName(otherParticipant.user as User);
-                  } else {
-                    displayName = 'Unknown User';
-                  }
-                }
-              } else {
-                displayName = conversation.name || 'Group Chat';
-              }
-              
-              // Get avatar URL with better fallbacks
               let avatarUrl: string;
-              if (conversation.conversation_type === 'direct') {
-                if (conversation.other_user) {
-                  avatarUrl = getAvatarUrl(conversation.other_user);
-                } else {
-                  // Try to get avatar from participants
-                  const otherParticipant = conversation.participants?.find(p => p.user_id !== currentUser.id);
-                  if (otherParticipant?.user) {
-                    avatarUrl = getAvatarUrl(otherParticipant.user as User);
-                  } else {
-                    avatarUrl = 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
-                  }
-                }
+              let showOnlineStatus = false;
+              let isOnline = false;
+              
+              if (conversation.conversation_type === 'direct' && conversation.other_user) {
+                displayName = getDisplayName(conversation.other_user);
+                avatarUrl = getAvatarUrl(conversation.other_user);
+                showOnlineStatus = true;
+                isOnline = isUserOnline(conversation.other_user.last_seen_at);
+              } else if (conversation.conversation_type === 'group') {
+                displayName = conversation.name || 'Group Chat';
+                avatarUrl = conversation.avatar_url || DEFAULT_AVATAR;
               } else {
-                avatarUrl = conversation.avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+                displayName = conversation.name || 'Conversation';
+                avatarUrl = conversation.avatar_url || DEFAULT_AVATAR;
               }
 
-              const isOnline = conversation.conversation_type === 'direct' 
-                ? isUserOnline(conversation.other_user?.last_seen_at)
-                : false;
-
-              const isMuted = conversation.participants?.find(
-                p => p.user_id === currentUser.id
-              )?.notification_settings?.muted || false;
+              let lastMessageText = '';
+              if (conversation.last_message) {
+                if (conversation.last_message.sender_id === currentUser.id) {
+                  lastMessageText = 'You: ';
+                } else if (conversation.conversation_type === 'group' && conversation.last_message.sender) {
+                  const senderName = getDisplayName(conversation.last_message.sender);
+                  lastMessageText = `${senderName}: `;
+                }
+                
+                if (conversation.last_message.is_deleted) {
+                  lastMessageText += 'Message deleted';
+                } else if (conversation.last_message.message_type === 'image') {
+                  lastMessageText += '📷 Photo';
+                } else {
+                  lastMessageText += conversation.last_message.content;
+                }
+              } else if (conversation.last_message_preview) {
+                lastMessageText = conversation.last_message_preview;
+              } else {
+                lastMessageText = 'No messages yet';
+              }
 
               return (
                 <div
                   key={conversation.id}
                   className={cn(
-                    "flex items-center gap-3 p-4 hover:bg-gray-900/30 cursor-pointer transition-colors"
+                    "flex items-center gap-3 p-4 hover:bg-gray-900/30 cursor-pointer transition-colors",
+                    conversation.unread_count > 0 && "bg-gray-900/20"
                   )}
                   onClick={() => router.push(`/messages/conversation/${conversation.id}`)}
                 >
@@ -919,12 +780,14 @@ export default function MessagesInboxPage() {
                         {displayName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    {isOnline && (
-                      <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-black" />
+                    
+                    {showOnlineStatus && isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-black" />
                     )}
+                    
                     {conversation.conversation_type === 'group' && (
-                      <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-gray-800 rounded-full border-2 border-black flex items-center justify-center">
-                        <Users className="h-3 w-3 text-gray-400" />
+                      <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-gray-800 rounded-full border-2 border-black flex items-center justify-center">
+                        <Users className="h-2.5 w-2.5 text-gray-400" />
                       </div>
                     )}
                   </div>
@@ -933,48 +796,57 @@ export default function MessagesInboxPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white truncate">
+                        <h3 className={cn(
+                          "font-semibold truncate",
+                          conversation.unread_count > 0 ? "text-white" : "text-gray-200"
+                        )}>
                           {displayName}
                         </h3>
-                        {conversation.is_pinned && (
-                          <Pin className="h-3 w-3 text-red-500" />
-                        )}
-                        {isMuted && (
-                          <BellOff className="h-3 w-3 text-gray-500" />
-                        )}
-                        {conversation.other_user?.is_verified && (
-                          <CheckCircle className="h-3 w-3 text-blue-500" />
-                        )}
+                        
+                        <div className="flex items-center gap-1">
+                          {conversation.is_pinned && (
+                            <Pin className="h-3 w-3 text-red-500" />
+                          )}
+                          {conversation.is_muted && (
+                            <BellOff className="h-3 w-3 text-gray-500" />
+                          )}
+                          {conversation.other_user?.is_verified && (
+                            <CheckCircle className="h-3 w-3 text-blue-500" />
+                          )}
+                        </div>
                       </div>
+                      
                       <span className="text-xs text-gray-500">
                         {formatMessageTime(conversation.last_message_at)}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-400 truncate">
-                        {conversation.last_message ? (
-                          <>
-                            {conversation.last_message.sender_id === currentUser.id && (
-                              <span className="text-gray-500">You: </span>
-                            )}
-                            {conversation.last_message.message_type === 'image' ? (
-                              <span className="italic">📷 Image</span>
-                            ) : conversation.last_message.is_deleted ? (
-                              <span className="italic">Message deleted</span>
-                            ) : (
-                              conversation.last_message.content
-                            )}
-                          </>
-                        ) : (
-                          <span className="italic">No messages yet</span>
-                        )}
+                      <p className={cn(
+                        "text-sm truncate pr-2",
+                        conversation.unread_count > 0 ? "text-gray-300" : "text-gray-400"
+                      )}>
+                        {lastMessageText}
                       </p>
-                      {(conversation.unread_count || 0) > 0 && (
-                        <Badge className="bg-red-600 text-white min-w-[20px] h-5">
-                          {conversation.unread_count}
-                        </Badge>
-                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        {conversation.last_message?.sender_id === currentUser.id && (
+                          <div className="text-gray-500">
+                            {conversation.my_last_read_at && conversation.last_message?.created_at && 
+                             new Date(conversation.my_last_read_at) >= new Date(conversation.last_message.created_at) ? (
+                              <CheckCheck className="h-4 w-4 text-blue-500" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                          </div>
+                        )}
+                        
+                        {conversation.unread_count > 0 && (
+                          <Badge className="bg-red-600 text-white min-w-[20px] h-5 px-1.5">
+                            {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -993,30 +865,28 @@ export default function MessagesInboxPage() {
                         }}
                       >
                         <Pin className="h-4 w-4 mr-2" />
-                        {conversation.is_pinned ? 'Unpin' : 'Pin'}
+                        {conversation.is_pinned ? 'Unpin' : 'Pin'} conversation
                       </DropdownMenuItem>
+                      
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMuteConversation(
-                            conversation.id, 
-                            conversation.id,
-                            isMuted
-                          );
+                          handleMuteConversation(conversation.id, conversation.is_muted || false);
                         }}
                       >
-                        {isMuted ? (
+                        {conversation.is_muted ? (
                           <>
                             <Bell className="h-4 w-4 mr-2" />
-                            Unmute
+                            Unmute notifications
                           </>
                         ) : (
                           <>
                             <BellOff className="h-4 w-4 mr-2" />
-                            Mute
+                            Mute notifications
                           </>
                         )}
                       </DropdownMenuItem>
+                      
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1026,11 +896,21 @@ export default function MessagesInboxPage() {
                         <Archive className="h-4 w-4 mr-2" />
                         {conversation.is_archived ? 'Unarchive' : 'Archive'}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-gray-800" />
-                      <DropdownMenuItem className="text-red-500">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
+                      
+                      {conversation.conversation_type === 'direct' && conversation.other_user && (
+                        <>
+                          <DropdownMenuSeparator className="bg-gray-800" />
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/profile/${conversation.other_user?.username || conversation.other_user?.id}`);
+                            }}
+                          >
+                            <User className="h-4 w-4 mr-2" />
+                            View profile
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -1046,7 +926,7 @@ export default function MessagesInboxPage() {
           <SheetHeader>
             <SheetTitle className="text-white">Start New Conversation</SheetTitle>
             <SheetDescription className="text-gray-400">
-              Search for Wolf Pack members to start a conversation
+              Search for users to start a conversation
             </SheetDescription>
           </SheetHeader>
 
@@ -1057,7 +937,7 @@ export default function MessagesInboxPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or username..."
+                placeholder="Search by name, username or email..."
                 className="w-full pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                 autoFocus
               />
@@ -1068,20 +948,16 @@ export default function MessagesInboxPage() {
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-red-500" />
                 </div>
-              ) : searchUsers.length === 0 && searchQuery ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No users found</p>
+              ) : searchUsers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {searchQuery ? 'No users found' : 'Start typing to search for users'}
                 </div>
-              ) : searchUsers.length > 0 ? (
+              ) : (
                 <div className="space-y-2">
                   {searchUsers.map((user) => (
                     <div
                       key={user.id}
-                      onClick={() => {
-                        handleStartDirectChat(user.id);
-                        setShowNewChatSheet(false);
-                        setSearchQuery('');
-                      }}
+                      onClick={() => handleStartDirectChat(user.id)}
                       className="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
                     >
                       <Avatar className="h-10 w-10">
@@ -1100,7 +976,7 @@ export default function MessagesInboxPage() {
                             <CheckCircle className="h-3 w-3 text-blue-500" />
                           )}
                         </div>
-                        {user.username && (
+                        {user.username && user.username !== user.display_name && (
                           <p className="text-sm text-gray-500">@{user.username}</p>
                         )}
                         {user.bio && (
@@ -1108,15 +984,19 @@ export default function MessagesInboxPage() {
                         )}
                       </div>
 
-                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                        Message
+                      <Button 
+                        size="sm" 
+                        className="bg-red-600 hover:bg-red-700"
+                        disabled={creatingChat}
+                      >
+                        {creatingChat ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Message'
+                        )}
                       </Button>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Start typing to search for users</p>
                 </div>
               )}
             </ScrollArea>

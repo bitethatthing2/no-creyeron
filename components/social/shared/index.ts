@@ -6,7 +6,7 @@ export { default as ChatInput } from "./ChatInput";
 export { ReactionButtons } from "./ReactionButtons";
 
 // Type exports (if needed)
-export type { MessageItemProps, MessageWithDetails } from "./MessageItem";
+export type { MessageItemProps } from "./MessageItem";
 
 // If you have other chat components, add them here:
 // export { ChatHeader } from './ChatHeader';

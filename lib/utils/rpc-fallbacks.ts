@@ -235,7 +235,7 @@ export async function getUserFeed(limit: number = 20, offset: number = 0) {
  */
 export async function togglePostLike(postId: string) {
   const { data, error } = await supabase.rpc("toggle_post_like", {
-    post_id: postId,
+    p_post_id: postId,
   });
   return { data, error };
 }
@@ -287,10 +287,118 @@ export async function batchUpdateTrendingScores(
  * Get or create a direct message conversation
  */
 export async function getOrCreateDmConversation(otherUserId: string) {
-  const { data, error } = await supabase.rpc("get_or_create_dm_conversation", {
-    other_user_id: otherUserId,
-  });
-  return { data, error };
+  try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: { message: 'Not authenticated', code: 'UNAUTHENTICATED' } };
+    }
+
+    const currentUserId = user.id;
+
+    // Check if trying to create conversation with self
+    if (currentUserId === otherUserId) {
+      return { data: null, error: { message: 'Cannot create conversation with yourself', code: 'INVALID_USER' } };
+    }
+
+    // First, check if conversation already exists
+    const { data: existingConversations, error: searchError } = await supabase
+      .from('chat_conversations')
+      .select(`
+        id,
+        conversation_type,
+        created_by,
+        created_at,
+        is_active,
+        chat_participants!inner(user_id)
+      `)
+      .eq('conversation_type', 'direct')
+      .eq('is_active', true)
+      .filter('chat_participants.user_id', 'in', `(${currentUserId},${otherUserId})`)
+      .filter('chat_participants.is_active', 'eq', true);
+
+    if (searchError) {
+      return { data: null, error: searchError };
+    }
+
+    // Find conversation with exactly these two users
+    let existingConversation = null;
+    if (existingConversations && existingConversations.length > 0) {
+      for (const conv of existingConversations) {
+        const { data: participants } = await supabase
+          .from('chat_participants')
+          .select('user_id')
+          .eq('conversation_id', conv.id)
+          .eq('is_active', true);
+        
+        if (participants && participants.length === 2) {
+          const userIds = participants.map(p => p.user_id).sort();
+          const targetIds = [currentUserId, otherUserId].sort();
+          if (JSON.stringify(userIds) === JSON.stringify(targetIds)) {
+            existingConversation = conv;
+            break;
+          }
+        }
+      }
+    }
+
+    // If conversation exists, return it
+    if (existingConversation) {
+      return {
+        data: {
+          id: existingConversation.id,
+          conversation_type: existingConversation.conversation_type,
+          created_by: existingConversation.created_by,
+          created_at: existingConversation.created_at,
+          is_active: existingConversation.is_active,
+          existing: true
+        },
+        error: null
+      };
+    }
+
+    // Create new conversation
+    const { data: newConversation, error: createError } = await supabase
+      .from('chat_conversations')
+      .insert({
+        conversation_type: 'direct',
+        created_by: currentUserId,
+        is_active: true
+      })
+      .select('id, conversation_type, created_by, created_at, is_active')
+      .single();
+
+    if (createError || !newConversation) {
+      return { data: null, error: createError || { message: 'Failed to create conversation' } };
+    }
+
+    // Add both participants
+    const { error: participantError } = await supabase
+      .from('chat_participants')
+      .insert([
+        { conversation_id: newConversation.id, user_id: currentUserId, role: 'member', is_active: true },
+        { conversation_id: newConversation.id, user_id: otherUserId, role: 'member', is_active: true }
+      ]);
+
+    if (participantError) {
+      return { data: null, error: participantError };
+    }
+
+    // Return the created conversation
+    return {
+      data: {
+        id: newConversation.id,
+        conversation_type: newConversation.conversation_type,
+        created_by: newConversation.created_by,
+        created_at: newConversation.created_at,
+        is_active: newConversation.is_active,
+        existing: false
+      },
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: { message: String(error), code: 'UNEXPECTED_ERROR' } };
+  }
 }
 
 /**

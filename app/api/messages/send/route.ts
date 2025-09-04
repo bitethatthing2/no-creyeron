@@ -98,38 +98,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Use the RPC function to get or create conversation
-      const { data: conversationResult, error: conversationError } =
-        await supabase
-          .rpc("get_or_create_dm_conversation", {
-            other_user_id: finalRecipientId,
-          });
+      // Import the messaging helpers
+      const { messagingHelpers } = await import("@/lib/utils/messaging-helpers");
+      
+      // Use the helper function to get or create conversation
+      const conversationId = await messagingHelpers.createOrGetDirectConversation(
+        user.id,
+        finalRecipientId
+      );
 
-      if (conversationError || !conversationResult) {
-        console.error("Error with conversation function:", conversationError);
-
-        // Fallback: Try to find existing conversation manually
-        const { data: existingConversation } = await supabase
-          .from("chat_conversations")
-          .select("id")
-          .eq("conversation_type", "direct")
-          .single();
-
-        if (existingConversation) {
-          finalConversationId = existingConversation.id;
-        } else {
-          return NextResponse.json(
-            {
-              error: "Failed to get or create conversation",
-              details: conversationError?.message,
-            },
-            { status: 500 },
-          );
-        }
-      } else {
-        finalConversationId = conversationResult.conversation_id ||
-          conversationResult.id || conversationResult;
+      if (!conversationId) {
+        console.error("Failed to create or get conversation");
+        return NextResponse.json(
+          {
+            error: "Failed to get or create conversation",
+          },
+          { status: 500 },
+        );
       }
+
+      finalConversationId = conversationId;
     }
 
     // Validate that user is a participant in the conversation

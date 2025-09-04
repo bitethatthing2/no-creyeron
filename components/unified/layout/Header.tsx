@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getUserDisplayName as getDisplayName, getUserAvatarUrl } from '@/types/chat';
 
 // Types based on your actual database schema
 interface UserProfile {
@@ -225,16 +226,11 @@ export function Header({
     return pathname.startsWith(href);
   };
 
-  // Get display name for user
-  const getUserDisplayName = () => {
-    if (!userProfile) return 'User';
-    return userProfile.display_name || userProfile.username || 'User';
-  };
+  // Get display name for user using centralized utility
+  const displayName = getDisplayName(userProfile as any);
 
-  // Get avatar URL
-  const getAvatarUrl = () => {
-    return userProfile?.avatar_url || userProfile?.profile_image_url || null;
-  };
+  // Get avatar URL using centralized utility
+  const avatarUrl = getUserAvatarUrl(userProfile as any);
   
   return (
     <header 
@@ -320,10 +316,10 @@ export function Header({
                         className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent"
                       >
                         <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-400 to-pink-400">
-                          {getAvatarUrl() ? (
+                          {avatarUrl ? (
                             <Image
-                              src={getAvatarUrl()!}
-                              alt={getUserDisplayName()}
+                              src={avatarUrl}
+                              alt={displayName}
                               fill
                               className="object-cover"
                             />
@@ -332,7 +328,7 @@ export function Header({
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                          <p className="text-sm font-medium">{displayName}</p>
                           {userProfile.is_verified && (
                             <p className="text-xs text-primary">✓ Verified</p>
                           )}
@@ -537,10 +533,10 @@ export function Header({
                 className="hidden md:flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
               >
                 <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-400 to-pink-400">
-                  {getAvatarUrl() ? (
+                  {avatarUrl ? (
                     <Image
-                      src={getAvatarUrl()!}
-                      alt={getUserDisplayName()}
+                      src={avatarUrl}
+                      alt={displayName}
                       fill
                       className="object-cover"
                     />

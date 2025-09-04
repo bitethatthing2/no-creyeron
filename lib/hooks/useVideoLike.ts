@@ -170,7 +170,7 @@ export function useVideoLike(
       // Call the database function to toggle the like
       const { data, error } = await supabase
         .rpc("toggle_post_like", {
-          post_id: postId,
+          p_post_id: postId,
         });
 
       if (error) {

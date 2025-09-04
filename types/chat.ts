@@ -40,7 +40,7 @@ export type ChatParticipantUpdate =
   Database["public"]["Tables"]["chat_participants"]["Update"];
 
 // ============================================
-// Extended Types with Relationships
+// Extended Types with Relationships (Updated)
 // ============================================
 
 /**
@@ -50,7 +50,15 @@ export interface MessageWithSender extends ChatMessage {
   sender:
     | Pick<
       User,
-      "id" | "display_name" | "username" | "avatar_url" | "profile_image_url"
+      | "id" 
+      | "email"
+      | "display_name" 
+      | "first_name"
+      | "last_name"
+      | "username" 
+      | "avatar_url" 
+      | "profile_image_url"
+      | "is_verified"
     >
     | null;
   reactions?: Array<{
@@ -59,7 +67,7 @@ export interface MessageWithSender extends ChatMessage {
     user_id: string | null;
     message_id: string | null;
     created_at: string | null;
-    user?: Pick<User, "id" | "display_name" | "username">;
+    user?: Pick<User, "id" | "email" | "display_name" | "first_name" | "last_name" | "username" | "is_verified">;
   }>;
   receipts?: ChatMessageReceipt[];
   reply_to?: Pick<ChatMessage, "id" | "content" | "sender_id"> | null;
@@ -83,11 +91,15 @@ export interface ConversationWithParticipants extends ChatConversation {
     user: Pick<
       User,
       | "id"
+      | "email"
       | "display_name"
+      | "first_name"
+      | "last_name"
       | "username"
       | "avatar_url"
       | "profile_image_url"
       | "account_status"
+      | "is_verified"
     >;
   }>;
   last_message?:
@@ -103,11 +115,15 @@ export interface ParticipantWithUser extends ChatParticipant {
   user: Pick<
     User,
     | "id"
+    | "email"
     | "display_name"
+    | "first_name"
+    | "last_name"
     | "username"
     | "avatar_url"
     | "profile_image_url"
     | "account_status"
+    | "is_verified"
   >;
 }
 
@@ -393,9 +409,11 @@ export interface SendMessageResponse {
  * Response from get_or_create_dm_conversation function
  */
 export interface GetOrCreateDMResponse {
-  conversation_id: string;
-  is_new: boolean;
+  success: boolean;
+  conversation_id?: string;
   conversation?: ChatConversation;
+  is_new?: boolean;
+  error?: string;
 }
 
 /**
@@ -439,6 +457,131 @@ export interface RealtimeReactionPayload {
 }
 
 // ============================================
+// Hook Return Types
+// ============================================
+
+/**
+ * Return type for useMessaging hook
+ */
+// UseMessagingReturn interface is defined in /lib/hooks/useMessaging.ts 
+// to avoid conflicts and keep it close to the hook implementation
+
+/**
+ * Options for message loading
+ */
+export interface MessageLoadOptions {
+  limit?: number;
+  beforeMessageId?: string;
+  afterMessageId?: string;
+  includeReactions?: boolean;
+  includeReceipts?: boolean;
+}
+
+/**
+ * Options for conversation loading
+ */
+export interface ConversationLoadOptions {
+  includeArchived?: boolean;
+  conversationType?: ConversationType;
+  limit?: number;
+  search?: string;
+}
+
+// ============================================
+// API Response Types
+// ============================================
+
+/**
+ * Generic API response wrapper
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  code?: string;
+  message?: string;
+}
+
+/**
+ * Response for conversation list API
+ */
+export interface ConversationListResponse extends ApiResponse<ConversationWithParticipants[]> {
+  total_count?: number;
+  has_more?: boolean;
+}
+
+/**
+ * Response for message list API
+ */
+export interface MessageListResponse extends ApiResponse<MessageWithSender[]> {
+  conversation_id: string;
+  has_more?: boolean;
+  oldest_message_id?: string | null;
+  newest_message_id?: string | null;
+}
+
+// ============================================
+// UI State Types
+// ============================================
+
+/**
+ * State for message input component
+ */
+export interface MessageInputState {
+  content: string;
+  isTyping: boolean;
+  replyTo: MessageWithSender | null;
+  attachments: File[];
+  isUploading: boolean;
+  mentions: User[];
+}
+
+/**
+ * State for conversation list component
+ */
+export interface ConversationListState {
+  selectedConversationId: string | null;
+  searchQuery: string;
+  filter: ConversationFilters;
+  sortBy: 'recent' | 'unread' | 'name';
+}
+
+/**
+ * State for message list component
+ */
+export interface MessageListState {
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  highlightedMessageId: string | null;
+  selectedMessages: Set<string>;
+}
+
+// ============================================
+// Validation and Error Types
+// ============================================
+
+/**
+ * Message validation result
+ */
+export interface MessageValidation {
+  isValid: boolean;
+  errors: string[];
+  sanitizedContent?: string;
+  wordCount?: number;
+  containsSpam?: boolean;
+}
+
+/**
+ * Rate limiting information
+ */
+export interface RateLimit {
+  allowed: number;
+  remaining: number;
+  resetTime: Date;
+  blocked: boolean;
+}
+
+// ============================================
 // JSON Type Guards (for runtime type checking)
 // ============================================
 
@@ -462,4 +605,101 @@ export function isValidParticipantRole(role: string): role is ParticipantRole {
 
 export function isValidReactionEmoji(emoji: string): emoji is ReactionEmoji {
   return AVAILABLE_REACTIONS.includes(emoji as ReactionEmoji);
+}
+
+// ============================================
+// User Display Name Utilities
+// ============================================
+
+/**
+ * Interface for user objects that contain name fields
+ */
+export interface UserWithNames {
+  id: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  is_verified?: boolean | null;
+  avatar_url?: string | null;
+  profile_image_url?: string | null;
+}
+
+/**
+ * Get the display name for a user, prioritizing real names
+ * 
+ * Priority order:
+ * 1. display_name (if set and not empty)
+ * 2. first_name + last_name (if either is set)
+ * 3. username (if set and not empty)
+ * 4. email prefix (if available)
+ * 5. 'Unknown User' as fallback
+ */
+export function getUserDisplayName(user: UserWithNames | null | undefined): string {
+  if (!user) return 'Unknown User';
+  
+  // First priority: display_name
+  if (user.display_name?.trim()) {
+    return user.display_name.trim();
+  }
+  
+  // Second priority: construct from first_name and last_name
+  const firstName = user.first_name?.trim() || '';
+  const lastName = user.last_name?.trim() || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  if (fullName) {
+    return fullName;
+  }
+  
+  // Third priority: username
+  if (user.username?.trim()) {
+    return user.username.trim();
+  }
+  
+  // Fourth priority: email prefix (if available)
+  if ('email' in user && user.email?.trim()) {
+    return user.email.split('@')[0];
+  }
+  
+  return 'Unknown User';
+}
+
+/**
+ * Get the full name (first + last) for a user
+ * Returns null if neither first_name nor last_name is available
+ */
+export function getUserFullName(user: UserWithNames | null | undefined): string | null {
+  if (!user) return null;
+  
+  const firstName = user.first_name?.trim() || '';
+  const lastName = user.last_name?.trim() || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  
+  return fullName || null;
+}
+
+/**
+ * Get initials from a user's name
+ * Uses display name or full name to generate initials
+ */
+export function getUserInitials(user: UserWithNames | null | undefined): string {
+  if (!user) return 'U';
+  
+  const displayName = getUserDisplayName(user);
+  
+  return displayName
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U';
+}
+
+/**
+ * Get the best avatar URL for a user
+ */
+export function getUserAvatarUrl(user: { avatar_url?: string | null; profile_image_url?: string | null } | null | undefined): string | null {
+  if (!user) return null;
+  return user.avatar_url || user.profile_image_url || null;
 }

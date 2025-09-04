@@ -310,7 +310,7 @@ function SocialFeedContent() {
       // Use the correct RPC function signature
       // The first version of toggle_post_like only takes post_id and uses the current session user
       const { data, error: toggleError } = await supabase.rpc('toggle_post_like', {
-        post_id: videoId
+        p_post_id: videoId
       });
       
       if (toggleError) throw toggleError;

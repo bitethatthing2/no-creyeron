@@ -373,26 +373,12 @@ export interface MessageGroup {
   timestamp: string;
 }
 
-interface ChatMessageWithSender {
-  id: string;
-  conversation_id: string;
-  content: string;
-  created_at: string;
-  is_read: boolean | null;
-  reply_to_message_id?: string | null;
-  sender_user?: {
-    display_name?: string;
-    avatar_url?: string;
-  };
-  reactions?: Array<{
-    emoji: string;
-    reaction_count: number;
-    user_ids: string[];
-  }>;
-}
+// Using centralized MessageWithSender type from @/types/chat
+import type { MessageWithSender } from "@/types/chat";
+import { getUserDisplayName, getUserAvatarUrl } from "@/types/chat";
 
 export function groupMessages(
-  messages: ChatMessageWithSender[],
+  messages: MessageWithSender[],
   currentUserId: string,
 ): MessageGroup[] {
   // Reverse messages to handle them in chronological order (oldest first) for proper grouping
@@ -402,37 +388,41 @@ export function groupMessages(
   let currentGroup: MessageGroup | null = null;
 
   for (const message of sortedMessages) {
-    const isSameSender = currentGroup?.senderId === message.conversation_id;
+    const isSameSender = currentGroup?.senderId === message.sender_id;
     const timeDiff = currentGroup
-      ? new Date(message.created_at).getTime() -
+      ? new Date(message.created_at || '').getTime() -
         new Date(currentGroup.timestamp).getTime()
       : 0;
 
     // Start new group if different sender or more than 5 minutes apart
     if (!isSameSender || timeDiff > 300000) {
       currentGroup = {
-        senderId: message.conversation_id,
-        senderName: message.conversation_id === currentUserId
+        senderId: message.sender_id,
+        senderName: message.sender_id === currentUserId
           ? "You"
-          : (message.sender_user?.display_name || "Unknown"),
-        senderAvatar: message.sender_user?.avatar_url,
+          : getUserDisplayName(message.sender),
+        senderAvatar: getUserAvatarUrl(message.sender) || undefined,
         messages: [],
-        timestamp: message.created_at,
+        timestamp: message.created_at || '',
       };
       groups.push(currentGroup);
     }
 
     // Add message to current group
-    currentGroup!.messages.push({
+    currentGroup?.messages.push({
       id: message.id,
       content: message.content,
-      timestamp: message.created_at,
-      isRead: message.is_read || false,
+      timestamp: message.created_at || '',
+      isRead: false, // This would need to be calculated based on receipts
       message: message.content,
-      created_at: message.created_at,
-      is_read: message.is_read || false,
-      reply_to_message_id: message.reply_to_message_id,
-      reactions: message.reactions,
+      created_at: message.created_at || '',
+      is_read: false, // This would need to be calculated based on receipts
+      reply_to_message_id: message.reply_to_id,
+      reactions: message.reactions?.map(r => ({
+        emoji: r.reaction,
+        reaction_count: 1, // This would need proper counting
+        user_ids: [r.user_id || '']
+      }))
     });
   }
 

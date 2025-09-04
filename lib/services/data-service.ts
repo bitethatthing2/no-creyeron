@@ -5,6 +5,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/supabase";
+import type { MessageWithSender } from "@/types";
 
 // Type aliases for better readability
 type Tables = Database["public"]["Tables"];
@@ -26,9 +27,7 @@ interface MenuItemWithCategory extends MenuItem {
   category?: MenuCategory;
 }
 
-interface ChatMessageWithSender extends ChatMessage {
-  sender?: User;
-}
+// Using centralized MessageWithSender type instead of local interface
 
 interface NotificationWithRelatedUser extends Notification {
   related_user?: User;
@@ -482,7 +481,7 @@ class DataService {
   async getMessages(
     conversationId: string,
     limit: number = 50,
-  ): Promise<ChatMessageWithSender[]> {
+  ): Promise<MessageWithSender[]> {
     return this.executeQuery(
       async () => {
         const result = await this.supabase
@@ -496,7 +495,7 @@ class DataService {
           .limit(limit);
 
         return {
-          data: result.data as unknown as ChatMessageWithSender[],
+          data: result.data as unknown as MessageWithSender[],
           error: result.error,
         };
       },
@@ -996,7 +995,7 @@ export type {
   CacheEntry,
   ChatConversation,
   ChatMessage,
-  ChatMessageWithSender,
+  MessageWithSender,
   ContentPost,
   ContentPostWithUser,
   MenuCategory,

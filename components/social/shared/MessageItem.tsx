@@ -3,30 +3,22 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import type { Database } from '@/types/supabase';
+import type { 
+  MessageWithSender,
+  MessageItemProps as BaseMessageItemProps 
+} from '@/types/chat';
 
-// Type definitions based on your actual database schema
-type ChatMessage = Database['public']['Tables']['chat_messages']['Row'];
-type User = Database['public']['Tables']['users']['Row'];
-type MessageReaction = Database['public']['Tables']['chat_message_reactions']['Row'];
-
-// Extended message type with sender and reactions
-interface MessageWithDetails extends ChatMessage {
-  sender?: Pick<User, 'id' | 'username' | 'display_name' | 'profile_image_url' | 'avatar_url'> | null;
-  reactions?: MessageReaction[];
-}
-
-// Component props
-interface MessageItemProps {
-  message: MessageWithDetails;
-  currentUserId: string;
-  onReactionAdd?: (messageId: string, reaction: string) => Promise<void>;
-  onReactionRemove?: (reactionId: string) => Promise<void>;
+// Extend the base props if needed for this specific component
+interface MessageItemProps extends Omit<BaseMessageItemProps, 'onEdit' | 'onDelete' | 'onReply' | 'showReadReceipts' | 'isHighlighted'> {
   onMessageEdit?: (messageId: string, content: string) => Promise<void>;
   onMessageDelete?: (messageId: string) => Promise<void>;
-  className?: string;
+  showFullName?: boolean; // Option to show full name instead of display name
+  showUsername?: boolean; // Option to show username alongside real name
 }
 
+/**
+ * Formats a timestamp into a human-readable relative time
+ */
 function formatMessageTime(timestamp: string | null): string {
   if (!timestamp) return '';
   
@@ -45,23 +37,105 @@ function formatMessageTime(timestamp: string | null): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-function getDisplayName(sender: MessageWithDetails['sender']): string {
-  if (!sender) return 'Unknown User';
-  return sender.display_name || sender.username || 'Anonymous';
+/**
+ * Gets the full real name from first_name and last_name
+ */
+function getFullName(sender: MessageWithSender['sender']): string | null {
+  if (!sender) return null;
+  
+  const firstName = sender.first_name?.trim() || '';
+  const lastName = sender.last_name?.trim() || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  
+  return fullName || null;
 }
 
-function getAvatarUrl(sender: MessageWithDetails['sender']): string | null {
+/**
+ * Gets the display name with proper fallback priority:
+ * 1. display_name (if user has set a preferred display name)
+ * 2. full name (first_name + last_name)
+ * 3. username
+ * 4. email prefix (if email exists)
+ * 5. 'Anonymous' as last resort
+ */
+function getDisplayName(sender: MessageWithSender['sender']): string {
+  if (!sender) return 'Unknown User';
+  
+  // Priority 1: User's preferred display name
+  if (sender.display_name?.trim()) {
+    return sender.display_name.trim();
+  }
+  
+  // Priority 2: Real name (first + last)
+  const fullName = getFullName(sender);
+  if (fullName) {
+    return fullName;
+  }
+  
+  // Priority 3: Username
+  if (sender.username?.trim()) {
+    return sender.username.trim();
+  }
+  
+  // Priority 4: Email prefix (if email exists)
+  if (sender.email) {
+    return sender.email.split('@')[0];
+  }
+  
+  // Priority 5: Fallback
+  return 'Anonymous';
+}
+
+/**
+ * Gets the user's username with @ prefix if available
+ */
+function getUsername(sender: MessageWithSender['sender']): string | null {
+  if (!sender?.username) return null;
+  return `@${sender.username}`;
+}
+
+/**
+ * Gets the appropriate avatar URL
+ */
+function getAvatarUrl(sender: MessageWithSender['sender']): string | null {
   if (!sender) return null;
   return sender.avatar_url || sender.profile_image_url || null;
 }
 
+/**
+ * Generates initials from a name
+ * Handles both single names and multiple word names
+ */
 function getInitials(name: string): string {
-  return name
-    .split(' ')
+  const words = name.split(' ').filter(word => word.length > 0);
+  
+  if (words.length === 0) return '?';
+  if (words.length === 1) {
+    // For single word, take first two characters
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  
+  // For multiple words, take first character of first two words
+  return words
+    .slice(0, 2)
     .map(word => word.charAt(0))
     .join('')
-    .toUpperCase()
-    .slice(0, 2);
+    .toUpperCase();
+}
+
+/**
+ * Determines if we should show additional name info
+ * Shows username when display name is different from username
+ */
+function shouldShowUsername(sender: MessageWithSender['sender']): boolean {
+  if (!sender?.username) return false;
+  
+  const displayName = getDisplayName(sender);
+  const username = sender.username;
+  
+  // Show username if it's different from what's being displayed
+  return displayName.toLowerCase() !== username.toLowerCase() && 
+         !displayName.includes(username);
 }
 
 export function MessageItem({
@@ -71,6 +145,8 @@ export function MessageItem({
   onReactionRemove,
   onMessageEdit,
   onMessageDelete,
+  showFullName = false,
+  showUsername = false,
   className
 }: MessageItemProps): React.ReactElement | null {
   // Group reactions by reaction type
@@ -140,8 +216,15 @@ export function MessageItem({
   if (!message.content) return null;
 
   const isCurrentUser = message.sender_id === currentUserId;
-  const displayName = getDisplayName(message.sender);
+  
+  // Get name information
+  const displayName = showFullName ? getFullName(message.sender) || getDisplayName(message.sender) : getDisplayName(message.sender);
+  const username = getUsername(message.sender);
+  const shouldShowUsernameTag = (showUsername || shouldShowUsername(message.sender)) && username;
   const avatarUrl = getAvatarUrl(message.sender);
+  
+  // Check if user is verified (blue checkmark)
+  const isVerified = message.sender?.is_verified;
 
   return (
     <div 
@@ -155,7 +238,7 @@ export function MessageItem({
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
-        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-600">
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-600 relative">
           {avatarUrl ? (
             <Image
               src={avatarUrl}
@@ -165,8 +248,16 @@ export function MessageItem({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white text-xs font-medium">
+            <div className="w-full h-full flex items-center justify-center text-white text-xs font-medium bg-gradient-to-br from-gray-600 to-gray-700">
               {getInitials(displayName)}
+            </div>
+          )}
+          {/* Verified badge on avatar */}
+          {isVerified && (
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
             </div>
           )}
         </div>
@@ -179,14 +270,32 @@ export function MessageItem({
           "flex items-center gap-2 mb-1",
           isCurrentUser ? "justify-end" : "justify-start"
         )}>
-          <span className="text-sm font-medium text-gray-300">
-            {displayName}
-          </span>
+          {/* Name and username */}
+          <div className={cn(
+            "flex items-center gap-1",
+            isCurrentUser ? "flex-row-reverse" : "flex-row"
+          )}>
+            <span className="text-sm font-medium text-gray-300">
+              {displayName}
+            </span>
+            {/* Inline verified badge next to name */}
+            {isVerified && !avatarUrl && (
+              <svg className="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            )}
+            {shouldShowUsernameTag && (
+              <span className="text-xs text-gray-500">
+                {username}
+              </span>
+            )}
+          </div>
+          
           <span className="text-xs text-gray-500">
             {formatMessageTime(message.created_at)}
           </span>
           {message.edited_at && (
-            <span className="text-xs text-gray-500">(edited)</span>
+            <span className="text-xs text-gray-500 italic">(edited)</span>
           )}
         </div>
 
@@ -325,4 +434,4 @@ export function MessageItem({
 }
 
 // Export types for use in other components
-export type { MessageWithDetails, MessageItemProps };
+export type { MessageItemProps };
