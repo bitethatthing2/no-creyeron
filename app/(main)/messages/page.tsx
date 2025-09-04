@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
-import { messagingHelpers } from '@/lib/utils/messaging-helpers';
 import { 
   ArrowLeft, 
   Search, 
@@ -57,47 +56,45 @@ interface User {
   account_status?: string | null;
 }
 
-interface ConversationData {
+interface Participant {
+  user_id: string;
+  last_read_at?: string | null;
+  is_active?: boolean | null;
+  user?: User | null;
+}
+
+interface ConversationFromAPI {
   id: string;
-  conversation_type: 'direct' | 'group' | 'location' | 'broadcast';
+  type: 'direct' | 'group';
+  name?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+  last_message_at?: string | null;
+  last_message_preview?: string | null;
+  last_message_sender_id?: string | null;
+  message_count?: number;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  unread_count: number;
+  participants: Participant[];
+  last_read_at?: string | null;
+}
+
+interface ConversationWithDetails {
+  id: string;
+  type: 'direct' | 'group';
   name?: string | null;
   avatar_url?: string | null;
   last_message_at?: string | null;
   last_message_preview?: string | null;
   last_message_sender_id?: string | null;
-  is_pinned?: boolean | null;
-  is_archived?: boolean | null;
-  participant_count?: number | null;
-  message_count?: number | null;
-  is_active?: boolean | null;
-}
-
-interface ParticipantData {
-  conversation_id: string;
-  user_id: string;
-  last_read_at?: string | null;
-  notification_settings?: { muted?: boolean } | null;
-  user?: User | null;
-  is_active?: boolean | null;
-}
-
-interface MessageData {
-  id: string;
-  content: string;
-  created_at: string;
-  sender_id: string;
-  message_type?: string | null;
-  is_deleted?: boolean | null;
-  sender?: User | null;
-}
-
-interface ConversationWithDetails extends ConversationData {
-  participants: ParticipantData[];
-  last_message?: MessageData | null;
+  is_pinned?: boolean;
+  is_archived?: boolean;
+  is_muted?: boolean;
   unread_count: number;
   other_user?: User | null;
-  is_muted?: boolean;
-  my_last_read_at?: string | null;
+  participants: Participant[];
 }
 
 // Default avatar URL
@@ -122,13 +119,14 @@ export default function MessagesInboxPage() {
   const getDisplayName = (user: User | undefined | null): string => {
     if (!user) return 'Unknown User';
     
-    // Prioritize display_name if it exists and is not empty
     if (user.display_name?.trim()) return user.display_name.trim();
     
-    // Use username as second priority (this should be the main identifier)
-    if (user.username?.trim()) return user.username.trim();
+    const firstName = user.first_name?.trim() || '';
+    const lastName = user.last_name?.trim() || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    if (fullName) return fullName;
     
-    // Only fall back to email prefix as last resort
+    if (user.username?.trim()) return user.username.trim();
     if (user.email) return user.email.split('@')[0];
     
     return 'Unknown User';
@@ -180,7 +178,7 @@ export default function MessagesInboxPage() {
     }
   };
 
-  // Load conversations - FIXED VERSION
+  // Load conversations using edge function
   const loadConversations = useCallback(async () => {
     if (!currentUser) {
       console.log('No current user, skipping conversation load');
@@ -191,192 +189,94 @@ export default function MessagesInboxPage() {
       console.log('Loading conversations for user:', currentUser.id);
       setLoading(true);
 
-      // Step 1: Get participant records
-      const { data: participantRecords, error: participantError } = await supabase
-        .from('chat_participants')
-        .select('conversation_id, last_read_at, notification_settings')
-        .eq('user_id', currentUser.id)
-        .eq('is_active', true);
-
-      if (participantError) {
-        console.error('Error loading participant records:', participantError);
-        toast.error('Failed to load conversations');
+      // Get the session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No session found');
+        toast.error('Authentication required');
+        router.push('/login');
         return;
       }
 
-      if (!participantRecords || participantRecords.length === 0) {
-        console.log('No conversations found');
-        setConversations([]);
-        return;
-      }
-
-      const conversationIds = participantRecords.map(p => p.conversation_id);
-      console.log(`Found ${conversationIds.length} conversations`);
-
-      // Step 2: Get conversation details
-      const { data: conversationsData, error: convError } = await supabase
-        .from('chat_conversations')
-        .select('*')
-        .in('id', conversationIds)
-        .eq('is_active', true);
-
-      if (convError) {
-        console.error('Error loading conversations:', convError);
-        toast.error('Failed to load conversation details');
-        return;
-      }
-
-      if (!conversationsData) {
-        setConversations([]);
-        return;
-      }
-
-      // Step 3: Process each conversation
-      const conversationsWithDetails: ConversationWithDetails[] = [];
-
-      for (const conversation of conversationsData) {
-        const myParticipantRecord = participantRecords.find(
-          p => p.conversation_id === conversation.id
-        );
-
-        // Get all participants WITHOUT join to avoid array issues
-        const { data: participantsList, error: participantsError } = await supabase
-          .from('chat_participants')
-          .select('*')
-          .eq('conversation_id', conversation.id)
-          .eq('is_active', true);
-
-        if (participantsError) {
-          console.error('Error loading participants:', participantsError);
-          continue;
+      // Call the edge function
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/MESSAGE_HANDLER/get-conversations`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            limit: 50, 
+            offset: 0 
+          })
         }
+      );
 
-        if (!participantsList) {
-          continue;
-        }
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Failed to fetch conversations:', error);
+        throw new Error('Failed to fetch conversations');
+      }
 
-        // Get user data separately to avoid join issues
-        const userIds = participantsList.map(p => p.user_id);
-        const { data: usersData, error: usersError } = await supabase
-          .from('users')
-          .select(`
-            id,
-            email,
-            username,
-            display_name,
-            first_name,
-            last_name,
-            avatar_url,
-            profile_image_url,
-            is_verified,
-            last_seen_at,
-            bio,
-            account_status
-          `)
-          .in('id', userIds);
-
-        if (usersError) {
-          console.error('Error loading users:', usersError);
-          continue;
-        }
-
-        // Attach user data to participants
-        const participantsWithUsers: ParticipantData[] = participantsList.map(participant => ({
-          ...participant,
-          user: usersData?.find(u => u.id === participant.user_id) || null
-        }));
-
-        // For direct conversations, find the other user
-        let otherUser: User | null = null;
-        if (conversation.conversation_type === 'direct') {
-          const otherParticipant = participantsWithUsers.find(p => p.user_id !== currentUser.id);
-          if (otherParticipant?.user) {
-            otherUser = otherParticipant.user;
+      const data = await response.json();
+      
+      if (data.success && data.conversations) {
+        // Process conversations from API
+        const processedConversations: ConversationWithDetails[] = data.conversations.map((conv: ConversationFromAPI) => {
+          // For direct conversations, find the other user
+          let otherUser: User | null = null;
+          if (conv.type === 'direct' && conv.participants) {
+            const otherParticipant = conv.participants.find(p => p.user_id !== currentUser.id);
+            if (otherParticipant?.user) {
+              otherUser = otherParticipant.user;
+            }
           }
+
+          return {
+            id: conv.id,
+            type: conv.type,
+            name: conv.name,
+            avatar_url: conv.avatar_url,
+            last_message_at: conv.last_message_at,
+            last_message_preview: conv.last_message_preview,
+            last_message_sender_id: conv.last_message_sender_id,
+            is_pinned: false, // These fields would need to be added to the edge function response
+            is_archived: false,
+            is_muted: false,
+            unread_count: conv.unread_count || 0,
+            other_user: otherUser,
+            participants: conv.participants || []
+          };
+        });
+
+        // Sort conversations
+        processedConversations.sort((a, b) => {
+          if (a.is_pinned && !b.is_pinned) return -1;
+          if (!a.is_pinned && b.is_pinned) return 1;
           
-          // Skip broken direct conversations
-          if (!otherUser) {
-            console.log('Skipping direct conversation without other user');
-            continue;
-          }
-        }
+          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          return bTime - aTime;
+        });
 
-        // Get the last message
-        const { data: messages, error: msgError } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('conversation_id', conversation.id)
-          .eq('is_deleted', false)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (msgError) {
-          console.error('Error loading messages:', msgError);
-        }
-
-        const lastMessage = messages?.[0] || null;
-
-        // Get sender info for last message if exists
-        if (lastMessage && usersData) {
-          const sender = usersData.find(u => u.id === lastMessage.sender_id);
-          if (sender) {
-            lastMessage.sender = sender;
-          }
-        }
-
-        // Calculate unread count
-        let unreadCount = 0;
-        if (myParticipantRecord?.last_read_at) {
-          const { count } = await supabase
-            .from('chat_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conversation.id)
-            .neq('sender_id', currentUser.id)
-            .eq('is_deleted', false)
-            .gt('created_at', myParticipantRecord.last_read_at);
-          
-          unreadCount = count || 0;
-        }
-
-        // Build the conversation object
-        const conversationWithDetails: ConversationWithDetails = {
-          ...conversation,
-          participants: participantsWithUsers,
-          last_message: lastMessage,
-          unread_count: unreadCount,
-          other_user: otherUser,
-          is_muted: myParticipantRecord?.notification_settings?.muted || false,
-          my_last_read_at: myParticipantRecord?.last_read_at,
-          last_message_at: lastMessage?.created_at || conversation.last_message_at,
-          last_message_preview: lastMessage?.content || conversation.last_message_preview,
-          last_message_sender_id: lastMessage?.sender_id || conversation.last_message_sender_id
-        };
-
-        conversationsWithDetails.push(conversationWithDetails);
+        console.log(`Successfully loaded ${processedConversations.length} conversations`);
+        setConversations(processedConversations);
+      } else {
+        setConversations([]);
       }
-
-      // Sort conversations
-      conversationsWithDetails.sort((a, b) => {
-        if (a.is_pinned && !b.is_pinned) return -1;
-        if (!a.is_pinned && b.is_pinned) return 1;
-        
-        const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-        const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-        return bTime - aTime;
-      });
-
-      console.log(`Successfully loaded ${conversationsWithDetails.length} conversations`);
-      setConversations(conversationsWithDetails);
       
     } catch (error) {
       console.error('Unexpected error loading conversations:', error);
       toast.error('Failed to load conversations');
+      setConversations([]);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, supabase]);
+  }, [currentUser, supabase, router]);
 
-  // Search for users - FIXED VERSION
+  // Search for users - still uses direct query as it's simpler and doesn't cause recursion
   const searchForUsers = useCallback(async () => {
     if (!currentUser || !searchQuery.trim()) {
       setSearchUsers([]);
@@ -392,7 +292,9 @@ export default function MessagesInboxPage() {
           id, 
           email, 
           username, 
-          display_name, 
+          display_name,
+          first_name,
+          last_name,
           avatar_url, 
           profile_image_url, 
           is_verified, 
@@ -409,7 +311,6 @@ export default function MessagesInboxPage() {
         return;
       }
 
-      // Ensure we have an array of users
       const users: User[] = data || [];
       setSearchUsers(users);
       
@@ -421,7 +322,7 @@ export default function MessagesInboxPage() {
     }
   }, [currentUser, searchQuery, supabase]);
 
-  // Start a direct chat - USING HELPER FUNCTIONS
+  // Start a direct chat using edge function
   const handleStartDirectChat = async (userId: string) => {
     if (!currentUser?.id || creatingChat) return;
 
@@ -429,42 +330,88 @@ export default function MessagesInboxPage() {
       setCreatingChat(true);
       console.log('Starting direct chat with user:', userId);
 
-      const conversationId = await messagingHelpers.createOrGetDirectConversation(
-        currentUser.id,
-        userId
-      );
-
-      if (!conversationId) {
-        toast.error('Failed to create conversation');
+      // Get the session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Authentication required');
+        router.push('/login');
         return;
       }
 
-      console.log('Got conversation ID:', conversationId);
+      // Call the edge function to create DM
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/MESSAGE_HANDLER/create-dm`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            other_user_id: userId 
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Failed to create conversation:', error);
+        throw new Error('Failed to create conversation');
+      }
+
+      const data = await response.json();
       
-      // Close sheet and navigate
-      setShowNewChatSheet(false);
-      setSearchQuery('');
-      setSearchUsers([]);
-      
-      router.push(`/messages/conversation/${conversationId}`);
+      if (data.success && data.conversation) {
+        console.log('Got conversation:', data.conversation);
+        
+        // Close sheet and navigate
+        setShowNewChatSheet(false);
+        setSearchQuery('');
+        setSearchUsers([]);
+        
+        router.push(`/messages/conversation/${data.conversation.id}`);
+      } else {
+        throw new Error('Invalid response from server');
+      }
       
     } catch (error) {
       console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred');
+      toast.error('Failed to start conversation');
     } finally {
       setCreatingChat(false);
     }
   };
 
-  // Conversation actions
+  // Mark messages as read using edge function
+  const markMessagesAsRead = async (conversationId: string, messageIds?: string[]) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/MESSAGE_HANDLER/mark-read`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            conversation_id: conversationId,
+            message_ids: messageIds 
+          })
+        }
+      );
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
+  // Conversation actions (these still need direct DB access for now, but could be moved to edge functions)
   const handlePinConversation = async (conversationId: string, isPinned: boolean) => {
     try {
-      const { error } = await supabase
-        .from('chat_conversations')
-        .update({ is_pinned: !isPinned })
-        .eq('id', conversationId);
-
-      if (error) throw error;
+      // DISABLED: Direct DB access causes RLS conflicts - move to edge function
+      throw new Error('Pin feature temporarily disabled');
       
       toast.success(isPinned ? 'Conversation unpinned' : 'Conversation pinned');
       await loadConversations();
@@ -476,12 +423,8 @@ export default function MessagesInboxPage() {
 
   const handleArchiveConversation = async (conversationId: string, isArchived: boolean) => {
     try {
-      const { error } = await supabase
-        .from('chat_conversations')
-        .update({ is_archived: !isArchived })
-        .eq('id', conversationId);
-
-      if (error) throw error;
+      // DISABLED: Direct DB access causes RLS conflicts - move to edge function
+      throw new Error('Archive feature temporarily disabled');
       
       toast.success(isArchived ? 'Conversation unarchived' : 'Conversation archived');
       await loadConversations();
@@ -495,15 +438,8 @@ export default function MessagesInboxPage() {
     if (!currentUser) return;
     
     try {
-      const { error } = await supabase
-        .from('chat_participants')
-        .update({ 
-          notification_settings: { muted: !isMuted } 
-        })
-        .eq('conversation_id', conversationId)
-        .eq('user_id', currentUser.id);
-
-      if (error) throw error;
+      // DISABLED: Direct DB access causes RLS conflicts - move to edge function
+      throw new Error('Mute feature temporarily disabled');
       
       toast.success(isMuted ? 'Notifications enabled' : 'Notifications muted');
       await loadConversations();
@@ -581,7 +517,7 @@ export default function MessagesInboxPage() {
         filtered = filtered.filter(c => c.unread_count > 0);
         break;
       case 'groups':
-        filtered = filtered.filter(c => c.conversation_type === 'group');
+        filtered = filtered.filter(c => c.type === 'group');
         break;
     }
 
@@ -589,7 +525,7 @@ export default function MessagesInboxPage() {
     if (searchQuery.trim() && !showNewChatSheet) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(conv => {
-        if (conv.conversation_type === 'direct' && conv.other_user) {
+        if (conv.type === 'direct' && conv.other_user) {
           const name = getDisplayName(conv.other_user).toLowerCase();
           const username = conv.other_user.username?.toLowerCase() || '';
           return name.includes(query) || username.includes(query);
@@ -728,37 +664,39 @@ export default function MessagesInboxPage() {
               let showOnlineStatus = false;
               let isOnline = false;
               
-              if (conversation.conversation_type === 'direct' && conversation.other_user) {
-                displayName = getDisplayName(conversation.other_user);
-                avatarUrl = getAvatarUrl(conversation.other_user);
-                showOnlineStatus = true;
-                isOnline = isUserOnline(conversation.other_user.last_seen_at);
-              } else if (conversation.conversation_type === 'group') {
+              if (conversation.type === 'direct') {
+                if (conversation.other_user) {
+                  displayName = getDisplayName(conversation.other_user);
+                  avatarUrl = getAvatarUrl(conversation.other_user);
+                  showOnlineStatus = true;
+                  isOnline = isUserOnline(conversation.other_user.last_seen_at);
+                } else {
+                  // Find the other user from participants if other_user is missing
+                  const otherParticipant = conversation.participants?.find(p => p.user_id !== currentUser.id);
+                  if (otherParticipant?.user) {
+                    displayName = getDisplayName(otherParticipant.user);
+                    avatarUrl = getAvatarUrl(otherParticipant.user);
+                    showOnlineStatus = true;
+                    isOnline = isUserOnline(otherParticipant.user.last_seen_at);
+                  } else {
+                    displayName = 'Unknown User';
+                    avatarUrl = DEFAULT_AVATAR;
+                  }
+                }
+              } else if (conversation.type === 'group') {
                 displayName = conversation.name || 'Group Chat';
                 avatarUrl = conversation.avatar_url || DEFAULT_AVATAR;
               } else {
-                displayName = conversation.name || 'Conversation';
+                displayName = conversation.name || 'Unknown Conversation';
                 avatarUrl = conversation.avatar_url || DEFAULT_AVATAR;
               }
 
               let lastMessageText = '';
-              if (conversation.last_message) {
-                if (conversation.last_message.sender_id === currentUser.id) {
+              if (conversation.last_message_preview) {
+                if (conversation.last_message_sender_id === currentUser.id) {
                   lastMessageText = 'You: ';
-                } else if (conversation.conversation_type === 'group' && conversation.last_message.sender) {
-                  const senderName = getDisplayName(conversation.last_message.sender);
-                  lastMessageText = `${senderName}: `;
                 }
-                
-                if (conversation.last_message.is_deleted) {
-                  lastMessageText += 'Message deleted';
-                } else if (conversation.last_message.message_type === 'image') {
-                  lastMessageText += '📷 Photo';
-                } else {
-                  lastMessageText += conversation.last_message.content;
-                }
-              } else if (conversation.last_message_preview) {
-                lastMessageText = conversation.last_message_preview;
+                lastMessageText += conversation.last_message_preview;
               } else {
                 lastMessageText = 'No messages yet';
               }
@@ -785,7 +723,7 @@ export default function MessagesInboxPage() {
                       <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-black" />
                     )}
                     
-                    {conversation.conversation_type === 'group' && (
+                    {conversation.type === 'group' && (
                       <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-gray-800 rounded-full border-2 border-black flex items-center justify-center">
                         <Users className="h-2.5 w-2.5 text-gray-400" />
                       </div>
@@ -829,24 +767,11 @@ export default function MessagesInboxPage() {
                         {lastMessageText}
                       </p>
                       
-                      <div className="flex items-center gap-2">
-                        {conversation.last_message?.sender_id === currentUser.id && (
-                          <div className="text-gray-500">
-                            {conversation.my_last_read_at && conversation.last_message?.created_at && 
-                             new Date(conversation.my_last_read_at) >= new Date(conversation.last_message.created_at) ? (
-                              <CheckCheck className="h-4 w-4 text-blue-500" />
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </div>
-                        )}
-                        
-                        {conversation.unread_count > 0 && (
-                          <Badge className="bg-red-600 text-white min-w-[20px] h-5 px-1.5">
-                            {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
-                          </Badge>
-                        )}
-                      </div>
+                      {conversation.unread_count > 0 && (
+                        <Badge className="bg-red-600 text-white min-w-[20px] h-5 px-1.5">
+                          {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
@@ -897,7 +822,7 @@ export default function MessagesInboxPage() {
                         {conversation.is_archived ? 'Unarchive' : 'Archive'}
                       </DropdownMenuItem>
                       
-                      {conversation.conversation_type === 'direct' && conversation.other_user && (
+                      {conversation.type === 'direct' && conversation.other_user && (
                         <>
                           <DropdownMenuSeparator className="bg-gray-800" />
                           <DropdownMenuItem

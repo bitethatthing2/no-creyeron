@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Shield, 
   Key, 
@@ -19,8 +20,8 @@ import {
 } from 'lucide-react';
 
 export function CleanupDebugPanel() {
-  const supabase = useSupabaseClient();
-  const user = useUser();
+  const supabase = getSupabaseBrowserClient();
+  const { currentUser: user } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   type TestResult = {

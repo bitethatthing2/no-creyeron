@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
 import { 
   Play,
   CheckCircle2, 
@@ -28,7 +28,7 @@ import { EdgeFunctionTester, EdgeFunctionTestSuite, TestResult } from '@/lib/edg
 import { cn } from '@/lib/utils';
 
 export function EdgeFunctionTestPanel() {
-  const supabase = useSupabaseClient();
+  const supabase = getSupabaseBrowserClient();
   const [isRunning, setIsRunning] = useState(false);
   const [currentTest, setCurrentTest] = useState<string>('');
   const [results, setResults] = useState<EdgeFunctionTestSuite[]>([]);

@@ -243,7 +243,18 @@ export function useVideoLike(
   React.useEffect(() => {
     if (!postId) return;
 
-    const channel = supabase
+    interface PostgresChangesPayload {
+      eventType: string;
+      new: Record<string, any> | null;
+      old: Record<string, any> | null;
+      [key: string]: any;
+    }
+
+    interface Channel {
+      unsubscribe: () => void;
+    }
+
+    const channel: Channel = supabase
       .channel(`post-likes:${postId}`)
       .on(
         "postgres_changes",
@@ -253,7 +264,7 @@ export function useVideoLike(
           table: "user_post_interactions",
           filter: `post_id=eq.${postId}`,
         },
-        async (payload) => {
+        async (payload: PostgresChangesPayload) => {
           debugLog.success("Real-time like update", {
             event: payload.eventType,
             postId,
@@ -267,11 +278,12 @@ export function useVideoLike(
             payload.new.user_id !== currentUser?.id
           ) {
             // Refresh the like count when other users like/unlike
-            const { data: post } = await supabase
-              .from("content_posts")
-              .select("likes_count")
-              .eq("id", postId)
-              .single();
+            const { data: post }: { data: { likes_count: number } | null } =
+              await supabase
+                .from("content_posts")
+                .select("likes_count")
+                .eq("id", postId)
+                .single();
 
             if (post) {
               setState((prev) => ({
@@ -293,7 +305,18 @@ export function useVideoLike(
   React.useEffect(() => {
     if (!postId) return;
 
-    const channel = supabase
+    interface PostCountsPayload {
+      eventType: string;
+      new: { likes_count?: number } | null;
+      old: Record<string, any> | null;
+      [key: string]: any;
+    }
+
+    interface Channel {
+      unsubscribe: () => void;
+    }
+
+    const channel: Channel = supabase
       .channel(`post-counts:${postId}`)
       .on(
         "postgres_changes",
@@ -303,7 +326,7 @@ export function useVideoLike(
           table: "content_posts",
           filter: `id=eq.${postId}`,
         },
-        (payload) => {
+        (payload: PostCountsPayload) => {
           if (
             payload.new &&
             typeof payload.new === "object" &&
@@ -311,7 +334,7 @@ export function useVideoLike(
           ) {
             setState((prev) => ({
               ...prev,
-              likeCount: payload.new.likes_count as number || 0,
+              likeCount: payload.new!.likes_count as number || 0,
             }));
           }
         },

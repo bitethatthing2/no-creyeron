@@ -103,6 +103,15 @@ export const debugLog = {
   },
 
   /**
+   * Log informational messages
+   */
+  info: (name: string, data?: unknown): void => {
+    if (process.env.NODE_ENV === "development") {
+      console.log(`ℹ️ Info: ${name}`, data || "");
+    }
+  },
+
+  /**
    * Log successful operations
    */
   success: (name: string, result: unknown): void => {
@@ -307,3 +316,8 @@ export function createScopedLogger(scope: string) {
 // const logger = createScopedLogger('AuthModule');
 // logger.log('User logged in', { userId: '123' });
 // logger.error('Authentication failed', new Error('Invalid token'));
+
+// Named exports for backward compatibility
+export const info = debugLog.info;
+export const success = debugLog.success;
+export const error = debugLog.error;

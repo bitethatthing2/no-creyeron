@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
 
 export interface CleanupResults {
   posts_deleted: number;
@@ -23,7 +23,7 @@ export interface CleanupResponse {
 export const useCleanup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useSupabaseClient();
+  const supabase = getSupabaseBrowserClient();
 
   const runCleanup = async (): Promise<CleanupResponse> => {
     setIsLoading(true);

@@ -144,32 +144,40 @@ export function useVideoComments(videoId: string): UseVideoCommentsReturn {
       const comments = data || [];
 
       // Fetch replies for each comment
-      const commentsWithReplies = await Promise.all(
-        comments.map(async (comment) => {
-          const { data: replies } = await supabase
-            .from("content_comments")
-            .select(`
-              *,
-              user:users!content_comments_user_id_fkey (
-                id,
-                email,
-                first_name,
-                last_name,
-                display_name,
-                username,
-                avatar_url,
-                profile_image_url
-              )
-            `)
-            .eq("parent_comment_id", comment.id)
-            .eq("is_deleted", false)
-            .order("created_at", { ascending: true });
+      interface Reply extends VideoComment {}
 
-          return {
-            ...comment,
-            replies: replies || [],
-          };
-        }),
+      interface CommentWithReplies extends VideoComment {
+        replies: Reply[];
+      }
+
+      const commentsWithReplies: CommentWithReplies[] = await Promise.all(
+        comments.map(
+          async (comment: VideoComment): Promise<CommentWithReplies> => {
+            const { data: replies } = await supabase
+              .from("content_comments")
+              .select(`
+          *,
+          user:users!content_comments_user_id_fkey (
+            id,
+            email,
+            first_name,
+            last_name,
+            display_name,
+            username,
+            avatar_url,
+            profile_image_url
+          )
+        `)
+              .eq("parent_comment_id", comment.id)
+              .eq("is_deleted", false)
+              .order("created_at", { ascending: true });
+
+            return {
+              ...comment,
+              replies: (replies as Reply[]) || [],
+            };
+          },
+        ),
       );
 
       offsetRef.current += comments.length;

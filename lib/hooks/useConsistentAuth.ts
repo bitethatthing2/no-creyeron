@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from 'react';
+import * as React from "react";
 import { supabase } from "@/lib/supabase";
 import type {
   AuthChangeEvent,
@@ -35,7 +35,7 @@ export function useConsistentAuth(): AuthState {
   const [user, setUser] = React.useState<DatabaseUser | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = React.useRef(false);
 
   // Fetch user data from database based on auth user
   const fetchDatabaseUser = async (
@@ -91,7 +91,7 @@ export function useConsistentAuth(): AuthState {
   };
 
   React.useEffect(() => {
-    setMounted(true);
+    mounted.current = true;
 
     // Add a timeout to prevent infinite loading
     const authTimeout = setTimeout(() => {
@@ -124,7 +124,7 @@ export function useConsistentAuth(): AuthState {
             session.user.id,
           );
           const dbUser = await fetchDatabaseUser(session.user);
-          if (mounted) {
+          if (mounted.current) {
             if (dbUser) {
               console.log("🔐 Database user found:", {
                 id: dbUser.id,
@@ -141,7 +141,7 @@ export function useConsistentAuth(): AuthState {
           // Fallback to getUser if no session
           const { data: { user: authUser } } = await supabase.auth.getUser();
 
-          if (mounted) {
+          if (mounted.current) {
             if (authUser) {
               const dbUser = await fetchDatabaseUser(authUser);
               setUser(dbUser);
@@ -154,7 +154,7 @@ export function useConsistentAuth(): AuthState {
           }
         }
       } catch (err) {
-        if (mounted) {
+        if (mounted.current) {
           const errorMessage = err instanceof Error
             ? err.message
             : "Failed to initialize auth";
@@ -171,7 +171,7 @@ export function useConsistentAuth(): AuthState {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        if (!mounted) return;
+        if (!mounted.current) return;
 
         if (process.env.NODE_ENV === "development") {
           console.log("Auth state changed:", event);
@@ -188,7 +188,7 @@ export function useConsistentAuth(): AuthState {
     );
 
     return () => {
-      setMounted(false);
+      mounted.current = false;
       clearTimeout(authTimeout);
       subscription.unsubscribe();
     };

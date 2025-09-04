@@ -3,23 +3,18 @@
 
 import * as React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { debugLog } from "@/lib/debug";
+import { error as logError, info, success } from "@/lib/debug";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { messageHandlerService } from "@/lib/services/message-handler.service";
-import type { 
-  MessageWithSender,
+import type {
   ConversationWithParticipants,
-  MessageType,
   MediaType,
-  ParticipantRole
+  MessageWithSender,
+  ParticipantRole,
+  MessageType,
 } from "@/types/chat";
-import {
-  RealtimeChannel,
-  RealtimePostgresChangesPayload,
-} from "@supabase/supabase-js";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
-
-type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
 
 // Notification settings structure
 interface NotificationSettings {
@@ -41,20 +36,32 @@ interface UseMessagingReturn {
 
   // Conversation actions
   loadConversations: () => Promise<void>;
-  getOrCreateDirectConversation: (otherUserId: string) => Promise<string | null>;
-  createGroupConversation: (name: string, participantIds: string[]) => Promise<string | null>;
-  updateConversation: (conversationId: string, updates: any) => Promise<boolean>;
+  getOrCreateDirectConversation: (
+    otherUserId: string,
+  ) => Promise<string | null>;
+  createGroupConversation: (
+    name: string,
+    participantIds: string[],
+  ) => Promise<string | null>;
+  updateConversation: (
+    conversationId: string,
+    updates: Partial<ConversationWithParticipants>,
+  ) => Promise<boolean>;
   archiveConversation: (conversationId: string) => Promise<boolean>;
   leaveConversation: (conversationId: string) => Promise<boolean>;
 
   // Message actions
-  loadMessages: (conversationId: string, limit?: number, before?: string) => Promise<void>;
+  loadMessages: (
+    conversationId: string,
+    limit?: number,
+    before?: string,
+  ) => Promise<void>;
   sendMessage: (
     conversationId: string,
     content: string,
     messageType?: MessageType,
     mediaUrl?: string,
-    mediaType?: MediaType
+    mediaType?: MediaType,
   ) => Promise<boolean>;
   editMessage: (messageId: string, newContent: string) => Promise<boolean>;
   deleteMessage: (messageId: string) => Promise<boolean>;
@@ -70,32 +77,58 @@ interface UseMessagingReturn {
   // Real-time actions
   subscribeToConversation: (conversationId: string) => () => void;
   subscribeToTypingIndicators: (conversationId: string) => () => void;
-  sendTypingIndicator: (conversationId: string, isTyping: boolean) => Promise<void>;
+  sendTypingIndicator: (
+    conversationId: string,
+    isTyping: boolean,
+  ) => Promise<void>;
 
   // Participant actions (fallback to original implementation)
-  addParticipants: (conversationId: string, userIds: string[]) => Promise<boolean>;
-  removeParticipant: (conversationId: string, userId: string) => Promise<boolean>;
-  updateParticipantRole: (conversationId: string, userId: string, role: ParticipantRole) => Promise<boolean>;
+  addParticipants: (
+    conversationId: string,
+    userIds: string[],
+  ) => Promise<boolean>;
+  removeParticipant: (
+    conversationId: string,
+    userId: string,
+  ) => Promise<boolean>;
+  updateParticipantRole: (
+    conversationId: string,
+    userId: string,
+    role: ParticipantRole,
+  ) => Promise<boolean>;
 
   // Notification actions (fallback to original implementation)
-  getNotificationSettings: (conversationId: string) => Promise<NotificationSettings | null>;
-  updateNotificationSettings: (conversationId: string, settings: NotificationSettings) => Promise<boolean>;
+  getNotificationSettings: (
+    conversationId: string,
+  ) => Promise<NotificationSettings | null>;
+  updateNotificationSettings: (
+    conversationId: string,
+    settings: NotificationSettings,
+  ) => Promise<boolean>;
 }
 
 export function useMessaging(): UseMessagingReturn {
   const { currentUser } = useAuth();
-  const [conversations, setConversations] = React.useState<ConversationWithParticipants[]>([]);
+  const [conversations, setConversations] = React.useState<
+    ConversationWithParticipants[]
+  >([]);
   const [messages, setMessages] = React.useState<MessageWithSender[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
-  const [typingUsers, setTypingUsers] = React.useState<Map<string, string[]>>(new Map());
+  const [typingUsers, setTypingUsers] = React.useState<Map<string, string[]>>(
+    new Map(),
+  );
 
   const supabase = getSupabaseBrowserClient();
 
   // Track active subscriptions
-  const subscriptionsRef = React.useRef<Map<string, RealtimeChannel>>(new Map());
-  const typingTimeoutsRef = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const subscriptionsRef = React.useRef<Map<string, RealtimeChannel>>(
+    new Map(),
+  );
+  const typingTimeoutsRef = React.useRef<Map<string, NodeJS.Timeout>>(
+    new Map(),
+  );
 
   // Set current user ID
   React.useEffect(() => {
@@ -127,8 +160,8 @@ export function useMessaging(): UseMessagingReturn {
     setError(null);
 
     try {
-      debugLog.info("Loading conversations via MESSAGE_HANDLER");
-      
+      info("Messaging", "Loading conversations via MESSAGE_HANDLER");
+
       const response = await messageHandlerService.getConversations({
         limit: 50,
         offset: 0,
@@ -140,10 +173,12 @@ export function useMessaging(): UseMessagingReturn {
 
       const conversationList = response.conversations || [];
       setConversations(conversationList);
-      debugLog.success("loadConversations", { count: conversationList.length });
+      success("loadConversations", { count: conversationList.length });
     } catch (err) {
-      debugLog.error("loadConversations", err);
-      setError(err instanceof Error ? err.message : "Failed to load conversations");
+      logError("loadConversations", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load conversations",
+      );
     } finally {
       setLoading(false);
     }
@@ -153,14 +188,17 @@ export function useMessaging(): UseMessagingReturn {
   const loadMessages = React.useCallback(async (
     conversationId: string,
     limit = 50,
-    before?: string
+    before?: string,
   ) => {
     setLoading(true);
     setError(null);
 
     try {
-      debugLog.info("Loading messages via MESSAGE_HANDLER", { conversationId, limit });
-      
+      info(
+        "Messaging",
+        `Loading messages via MESSAGE_HANDLER (conversationId=${conversationId}, limit=${limit})`,
+      );
+
       const response = await messageHandlerService.getMessages({
         conversation_id: conversationId,
         limit,
@@ -173,9 +211,9 @@ export function useMessaging(): UseMessagingReturn {
 
       const messageList = response.messages || [];
       setMessages(messageList);
-      debugLog.success("loadMessages", { count: messageList.length });
+      success("loadMessages", { count: messageList.length });
     } catch (err) {
-      debugLog.error("loadMessages", err);
+      logError("loadMessages", err);
       setError(err instanceof Error ? err.message : "Failed to load messages");
     } finally {
       setLoading(false);
@@ -188,7 +226,7 @@ export function useMessaging(): UseMessagingReturn {
     content: string,
     messageType: MessageType = MessageType.TEXT,
     mediaUrl?: string,
-    mediaType?: MediaType
+    mediaType?: MediaType,
   ) => {
     if (!currentUserId || !content.trim()) return false;
 
@@ -205,35 +243,40 @@ export function useMessaging(): UseMessagingReturn {
         throw new Error(response.error || "Failed to send message");
       }
 
-      debugLog.success("sendMessage", { conversationId });
+      success("sendMessage", { conversationId });
       return true;
     } catch (err) {
-      debugLog.error("sendMessage", err);
+      logError("sendMessage", err);
       setError(err instanceof Error ? err.message : "Failed to send message");
       return false;
     }
   }, [currentUserId]);
 
   // Get or create direct conversation using MESSAGE_HANDLER
-  const getOrCreateDirectConversation = React.useCallback(async (otherUserId: string) => {
-    if (!currentUserId) return null;
+  const getOrCreateDirectConversation = React.useCallback(
+    async (otherUserId: string) => {
+      if (!currentUserId) return null;
 
-    try {
-      const response = await messageHandlerService.createDirectConversation({
-        other_user_id: otherUserId,
-      });
+      try {
+        const response = await messageHandlerService.createDirectConversation({
+          other_user_id: otherUserId,
+        });
 
-      if (!response.success) {
-        throw new Error(response.error || "Failed to create conversation");
+        if (!response.success) {
+          throw new Error(response.error || "Failed to create conversation");
+        }
+
+        return response.conversation?.id || null;
+      } catch (err) {
+        logError("getOrCreateDirectConversation", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to create conversation",
+        );
+        return null;
       }
-
-      return response.conversation?.id || null;
-    } catch (err) {
-      debugLog.error("getOrCreateDirectConversation", err);
-      setError(err instanceof Error ? err.message : "Failed to create conversation");
-      return null;
-    }
-  }, [currentUserId]);
+    },
+    [currentUserId],
+  );
 
   // Mark message as read using MESSAGE_HANDLER
   const markMessageAsRead = React.useCallback(async (messageId: string) => {
@@ -243,39 +286,50 @@ export function useMessaging(): UseMessagingReturn {
       const response = await messageHandlerService.markMessageAsRead(messageId);
       return response.success || false;
     } catch (err) {
-      debugLog.error("markMessageAsRead", err);
+      logError("markMessageAsRead", err);
       return false;
     }
   }, [currentUserId]);
 
   // Mark conversation as read using MESSAGE_HANDLER
-  const markConversationAsRead = React.useCallback(async (conversationId: string) => {
-    if (!currentUserId) return false;
+  const markConversationAsRead = React.useCallback(
+    async (conversationId: string) => {
+      if (!currentUserId) return false;
 
-    try {
-      const response = await messageHandlerService.markConversationAsRead(conversationId);
-      return response.success || false;
-    } catch (err) {
-      debugLog.error("markConversationAsRead", err);
-      return false;
-    }
-  }, [currentUserId]);
+      try {
+        const response = await messageHandlerService.markConversationAsRead(
+          conversationId,
+        );
+        return response.success || false;
+      } catch (err) {
+        logError("markConversationAsRead", err);
+        return false;
+      }
+    },
+    [currentUserId],
+  );
 
   // Add reaction using MESSAGE_HANDLER
-  const addReaction = React.useCallback(async (messageId: string, reaction: string) => {
-    if (!currentUserId) return false;
+  const addReaction = React.useCallback(
+    async (messageId: string, reaction: string) => {
+      if (!currentUserId) return false;
 
-    try {
-      const response = await messageHandlerService.addReaction(messageId, reaction);
-      return response.success || false;
-    } catch (err) {
-      debugLog.error("addReaction", err);
-      return false;
-    }
-  }, [currentUserId]);
+      try {
+        const response = await messageHandlerService.addReaction(
+          messageId,
+          reaction,
+        );
+        return response.success || false;
+      } catch (err) {
+        logError("addReaction", err);
+        return false;
+      }
+    },
+    [currentUserId],
+  );
 
   // Remove reaction (same endpoint as add in MESSAGE_HANDLER)
-  const removeReaction = React.useCallback(async (messageId: string) => {
+  const removeReaction = React.useCallback(async () => {
     // Note: MESSAGE_HANDLER toggles reactions, so this is same as add
     return false; // Not directly supported, would need message_id + reaction
   }, []);
@@ -283,14 +337,14 @@ export function useMessaging(): UseMessagingReturn {
   // Send typing indicator using MESSAGE_HANDLER
   const sendTypingIndicator = React.useCallback(async (
     conversationId: string,
-    isTyping: boolean
+    isTyping: boolean,
   ) => {
     if (!currentUserId) return;
 
     try {
       await messageHandlerService.setTypingStatus(conversationId, isTyping);
     } catch (err) {
-      debugLog.error("sendTypingIndicator", err);
+      console.error("❌ sendTypingIndicator error:", err);
     }
   }, [currentUserId]);
 
@@ -312,10 +366,10 @@ export function useMessaging(): UseMessagingReturn {
             table: "chat_messages",
             filter: `conversation_id=eq.${conversationId}`,
           },
-          async (payload: RealtimePostgresChangesPayload<ChatMessage>) => {
+          async () => {
             // Reload messages to get updated list
             await loadMessages(conversationId);
-          }
+          },
         )
         .subscribe();
 
@@ -326,7 +380,7 @@ export function useMessaging(): UseMessagingReturn {
         subscriptionsRef.current.delete(conversationId);
       };
     },
-    [supabase, loadMessages]
+    [supabase, loadMessages],
   );
 
   const subscribeToTypingIndicators = React.useCallback(
@@ -353,11 +407,11 @@ export function useMessaging(): UseMessagingReturn {
               const newMap = new Map(prev);
               newMap.set(
                 conversationId,
-                typingUserIds.filter((id) => id !== currentUserId)
+                typingUserIds.filter((id) => id !== currentUserId),
               );
               return newMap;
             });
-          }
+          },
         )
         .subscribe();
 
@@ -365,62 +419,84 @@ export function useMessaging(): UseMessagingReturn {
         supabase.removeChannel(channel);
       };
     },
-    [currentUserId, supabase]
+    [currentUserId, supabase],
   );
 
   // Fallback implementations for methods not in MESSAGE_HANDLER yet
   const createGroupConversation = React.useCallback(async () => {
-    console.warn("createGroupConversation: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "createGroupConversation: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return null;
   }, []);
 
   const updateConversation = React.useCallback(async () => {
-    console.warn("updateConversation: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "updateConversation: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const archiveConversation = React.useCallback(async () => {
-    console.warn("archiveConversation: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "archiveConversation: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const leaveConversation = React.useCallback(async () => {
-    console.warn("leaveConversation: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "leaveConversation: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const editMessage = React.useCallback(async () => {
-    console.warn("editMessage: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "editMessage: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const deleteMessage = React.useCallback(async () => {
-    console.warn("deleteMessage: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "deleteMessage: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const addParticipants = React.useCallback(async () => {
-    console.warn("addParticipants: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "addParticipants: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const removeParticipant = React.useCallback(async () => {
-    console.warn("removeParticipant: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "removeParticipant: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const updateParticipantRole = React.useCallback(async () => {
-    console.warn("updateParticipantRole: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "updateParticipantRole: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 
   const getNotificationSettings = React.useCallback(async () => {
-    console.warn("getNotificationSettings: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "getNotificationSettings: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return null;
   }, []);
 
   const updateNotificationSettings = React.useCallback(async () => {
-    console.warn("updateNotificationSettings: Using fallback - not implemented in MESSAGE_HANDLER");
+    console.warn(
+      "updateNotificationSettings: Using fallback - not implemented in MESSAGE_HANDLER",
+    );
     return false;
   }, []);
 

@@ -263,24 +263,37 @@ export function useTypingIndicators(
     );
 
     // Subscribe to the channel
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        debugLog.success("Connected to typing indicators", { conversationId });
-        performanceLog.end("setupTypingChannel", startTime);
-      } else if (status === "CHANNEL_ERROR") {
-        debugLog.error(
-          "Failed to connect to typing indicators",
-          new Error("Channel subscription failed"),
-          {},
-        );
-      } else if (status === "TIMED_OUT") {
-        debugLog.error(
-          "Typing indicator channel timed out",
-          new Error("Channel timed out"),
-          {},
-        );
-      }
-    });
+    channel.subscribe(
+      (status: "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | string) => {
+        interface SubscribedStatusPayload {
+          status: "SUBSCRIBED";
+        }
+        interface ChannelErrorStatusPayload {
+          status: "CHANNEL_ERROR";
+        }
+        interface TimedOutStatusPayload {
+          status: "TIMED_OUT";
+        }
+        if (status === "SUBSCRIBED") {
+          debugLog.success("Connected to typing indicators", {
+            conversationId,
+          });
+          performanceLog.end("setupTypingChannel", startTime);
+        } else if (status === "CHANNEL_ERROR") {
+          debugLog.error(
+            "Failed to connect to typing indicators",
+            new Error("Channel subscription failed"),
+            {},
+          );
+        } else if (status === "TIMED_OUT") {
+          debugLog.error(
+            "Typing indicator channel timed out",
+            new Error("Channel timed out"),
+            {},
+          );
+        }
+      },
+    );
 
     channelRef.current = channel;
 

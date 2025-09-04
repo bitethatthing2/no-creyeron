@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/use-toast';
+import { useCallback, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
 
-export type UploadStatus = 'idle' | 'uploading' | 'completed' | 'error';
+export type UploadStatus = "idle" | "uploading" | "completed" | "error";
 
 interface UploadState {
   uploadStatus: UploadStatus;
@@ -23,164 +23,172 @@ interface CreatePostData {
 export function useMediaUpload() {
   const { currentUser } = useAuth();
   const [state, setState] = useState<UploadState>({
-    uploadStatus: 'idle',
+    uploadStatus: "idle",
     uploadProgress: 0,
     uploadedUrl: null,
-    errorMessage: ''
+    errorMessage: "",
   });
 
-  const uploadMedia = useCallback(async (file: Blob): Promise<string | null> => {
-    if (!currentUser) {
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'error',
-        errorMessage: 'User not authenticated'
-      }));
-      return null;
-    }
-
-    try {
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'uploading',
-        uploadProgress: 0,
-        errorMessage: ''
-      }));
-
-      // Determine file extension based on type
-      const fileExtension = file.type.includes('video') ? 'webm' : 'jpg';
-      const fileName = `${Date.now()}_${currentUser.id}.${fileExtension}`;
-      const filePath = `${currentUser.id}/${fileName}`;
-
-      // Upload to Supabase storage
-      const { data, error } = await supabase.storage
-        .from('content')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        throw error;
+  const uploadMedia = useCallback(
+    async (file: Blob): Promise<string | null> => {
+      if (!currentUser) {
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "error",
+          errorMessage: "User not authenticated",
+        }));
+        return null;
       }
 
-      // Get the public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('content')
-        .getPublicUrl(filePath);
+      try {
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "uploading",
+          uploadProgress: 0,
+          errorMessage: "",
+        }));
 
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'completed',
-        uploadProgress: 100,
-        uploadedUrl: publicUrlData.publicUrl
-      }));
+        // Determine file extension based on type
+        const fileExtension = file.type.includes("video") ? "webm" : "jpg";
+        const fileName = `${Date.now()}_${currentUser.id}.${fileExtension}`;
+        const filePath = `${currentUser.id}/${fileName}`;
 
-      return publicUrlData.publicUrl;
+        // Upload to Supabase storage
+        const { error } = await supabase.storage
+          .from("content")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
 
-    } catch (error) {
-      console.error('Error uploading media:', error);
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'error',
-        uploadProgress: 0,
-        errorMessage: error instanceof Error ? error.message : 'Upload failed'
-      }));
-      return null;
-    }
-  }, [currentUser]);
+        if (error) {
+          throw error;
+        }
 
-  const createPost = useCallback(async ({ capturedMedia, caption, isVideo = true }: CreatePostData) => {
-    if (!currentUser) {
-      toast({
-        title: 'Error',
-        description: 'You must be logged in to create a post',
-        variant: 'destructive'
-      });
-      return false;
-    }
+        // Get the public URL
+        const { data: publicUrlData } = supabase.storage
+          .from("content")
+          .getPublicUrl(filePath);
 
-    try {
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'uploading',
-        uploadProgress: 0,
-        errorMessage: ''
-      }));
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "completed",
+          uploadProgress: 100,
+          uploadedUrl: publicUrlData.publicUrl,
+        }));
 
-      // Upload media first
-      const mediaUrl = await uploadMedia(capturedMedia);
-      
-      if (!mediaUrl) {
+        return publicUrlData.publicUrl;
+      } catch (error) {
+        console.error("Error uploading media:", error);
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "error",
+          uploadProgress: 0,
+          errorMessage: error instanceof Error
+            ? error.message
+            : "Upload failed",
+        }));
+        return null;
+      }
+    },
+    [currentUser],
+  );
+
+  const createPost = useCallback(
+    async ({ capturedMedia, caption, isVideo = true }: CreatePostData) => {
+      if (!currentUser) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a post",
+          variant: "destructive",
+        });
         return false;
       }
 
-      // Create the post record
-      const postData = {
-        user_id: currentUser.id,
-        caption: caption || '',
-        [isVideo ? 'video_url' : 'thumbnail_url']: mediaUrl,
-        post_type: isVideo ? 'video' : 'image',
-        visibility: 'public',
-        is_active: true,
-        processing_status: 'completed',
-        likes_count: 0,
-        comments_count: 0,
-        shares_count: 0,
-        views_count: 0
-      };
+      try {
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "uploading",
+          uploadProgress: 0,
+          errorMessage: "",
+        }));
 
-      // Create post via API endpoint instead of direct database insertion
-      const response = await fetch('/api/posts/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
-      });
+        // Upload media first
+        const mediaUrl = await uploadMedia(capturedMedia);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create post');
+        if (!mediaUrl) {
+          return false;
+        }
+
+        // Create the post record
+        const postData = {
+          user_id: currentUser.id,
+          caption: caption || "",
+          [isVideo ? "video_url" : "thumbnail_url"]: mediaUrl,
+          post_type: isVideo ? "video" : "image",
+          visibility: "public",
+          is_active: true,
+          processing_status: "completed",
+          likes_count: 0,
+          comments_count: 0,
+          shares_count: 0,
+          views_count: 0,
+        };
+
+        // Create post via API endpoint instead of direct database insertion
+        const response = await fetch("/api/posts/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(postData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create post");
+        }
+
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "completed",
+          uploadProgress: 100,
+        }));
+
+        toast({
+          title: "Success",
+          description: "Post created successfully!",
+        });
+
+        return true;
+      } catch (error) {
+        console.error("Error creating post:", error);
+        setState((prev) => ({
+          ...prev,
+          uploadStatus: "error",
+          errorMessage: error instanceof Error
+            ? error.message
+            : "Failed to create post",
+        }));
+
+        toast({
+          title: "Error",
+          description: "Failed to create post. Please try again.",
+          variant: "destructive",
+        });
+
+        return false;
       }
-
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'completed',
-        uploadProgress: 100
-      }));
-
-      toast({
-        title: 'Success',
-        description: 'Post created successfully!',
-      });
-
-      return true;
-
-    } catch (error) {
-      console.error('Error creating post:', error);
-      setState(prev => ({
-        ...prev,
-        uploadStatus: 'error',
-        errorMessage: error instanceof Error ? error.message : 'Failed to create post'
-      }));
-
-      toast({
-        title: 'Error',
-        description: 'Failed to create post. Please try again.',
-        variant: 'destructive'
-      });
-
-      return false;
-    }
-  }, [currentUser, uploadMedia]);
+    },
+    [currentUser, uploadMedia],
+  );
 
   const reset = useCallback(() => {
     setState({
-      uploadStatus: 'idle',
+      uploadStatus: "idle",
       uploadProgress: 0,
       uploadedUrl: null,
-      errorMessage: ''
+      errorMessage: "",
     });
   }, []);
 
@@ -188,6 +196,6 @@ export function useMediaUpload() {
     ...state,
     uploadMedia,
     createPost,
-    reset
+    reset,
   };
 }
