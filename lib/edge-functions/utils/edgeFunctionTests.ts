@@ -50,9 +50,9 @@ export class EdgeFunctionTester {
       return {
         name: testName,
         status: "pass",
-        response: result.data || result,
+        response: (result as any).data || result,
         duration,
-        statusCode: result.status || 200,
+        statusCode: (result as any).status || 200,
       };
     } catch (error: any) {
       const duration = Date.now() - startTime;

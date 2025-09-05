@@ -529,7 +529,7 @@ export default function TikTokStyleFeed({
               <>
               <video
                 ref={el => { videoRefs.current[index] = el; }}
-                poster={video.thumbnail_url}
+                poster={video.thumbnail_url || undefined}
                 className={cn("absolute inset-0 w-full h-full object-cover", styles.videoElement)}
                 loop
                 muted={muted}
@@ -574,7 +574,7 @@ export default function TikTokStyleFeed({
               <div className="absolute inset-0 w-full h-full">
                 <Image
                   src={video.thumbnail_url || '/images/entertainment-hero.jpg'}
-                  alt={video.caption}
+                  alt={video.caption || 'Video thumbnail'}
                   fill
                   className="object-cover"
                   onClick={handleVideoClick}

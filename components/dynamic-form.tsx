@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils'
 import type { Database } from '@/types/database.types' // Import your generated Supabase types
 
 // Use exact Json type from Supabase
-type Json = Database['public']['Tables']['users']['Row']['permissions']
+type Json = Database['public']['Tables']['users']['Row']['settings']
 
 // Type definitions with exact types
 interface LabelConfig {

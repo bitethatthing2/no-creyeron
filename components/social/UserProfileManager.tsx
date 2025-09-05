@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,6 +111,7 @@ const GENDER_DISPLAY_MAP: Record<string, string> = {
 };
 
 export function UserProfileManager() {
+  const router = useRouter();
   const { currentUser, loading: userLoading } = useAuth();
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -143,6 +145,36 @@ export function UserProfileManager() {
     favorite_drink: '',
     favorite_song: ''
   });
+
+  // Helper function to ensure all form values are strings (not null/undefined)
+  const sanitizeFormData = (data: any): FormData => {
+    return {
+      first_name: data.first_name || '',
+      last_name: data.last_name || '',
+      display_name: data.display_name || data.username || '',
+      bio: data.bio || '',
+      gender: data.gender || '',
+      pronouns: data.pronouns || '',
+      is_private: data.is_private ?? false,
+      email_notifications: data.email_notifications ?? true,
+      push_notifications: data.push_notifications ?? true,
+      profile_image_url: data.profile_image_url || '',
+      avatar_url: data.avatar_url || '',
+      location: data.location || '',
+      city: data.city || '',
+      state: data.state || '',
+      country: data.country || '',
+      postal_code: data.postal_code || '',
+      date_of_birth: data.date_of_birth || '',
+      occupation: data.occupation || '',
+      company: data.company || '',
+      website: data.website || '',
+      phone: data.phone || '',
+      instagram_handle: ((data.settings as Record<string, string>) || {}).instagram_handle || '',
+      favorite_drink: ((data.settings as Record<string, string>) || {}).favorite_drink || '',
+      favorite_song: ((data.settings as Record<string, string>) || {}).favorite_song || ''
+    };
+  };
 
   // Load existing profile - wrapped in useCallback to fix ESLint warning
   const loadProfile = React.useCallback(async () => {
@@ -185,37 +217,7 @@ export function UserProfileManager() {
       
       if (profileData) {
         setProfile(profileData as UserProfile);
-        
-        // Parse settings for custom fields
-        const settings = profileData.settings || {};
-        
-        setFormData({
-          first_name: profileData.first_name || '',
-          last_name: profileData.last_name || '',
-          display_name: profileData.display_name || '',
-          bio: profileData.bio || '',
-          gender: profileData.gender || '',
-          pronouns: profileData.pronouns || '',
-          is_private: profileData.is_private ?? false,
-          email_notifications: profileData.email_notifications ?? true,
-          push_notifications: profileData.push_notifications ?? true,
-          profile_image_url: profileData.profile_image_url || '',
-          avatar_url: profileData.avatar_url || '',
-          location: profileData.location || '',
-          city: profileData.city || '',
-          state: profileData.state || '',
-          country: profileData.country || '',
-          postal_code: profileData.postal_code || '',
-          date_of_birth: profileData.date_of_birth || '',
-          occupation: profileData.occupation || '',
-          company: profileData.company || '',
-          website: profileData.website || '',
-          phone: profileData.phone || '',
-          // Custom fields from settings
-          instagram_handle: (settings as Record<string, string>).instagram_handle || '',
-          favorite_drink: (settings as Record<string, string>).favorite_drink || '',
-          favorite_song: (settings as Record<string, string>).favorite_song || ''
-        });
+        setFormData(sanitizeFormData(profileData));
       } else if (authUser?.id) {
         // No profile exists, create one
         console.log('No profile found, creating new profile for auth user:', authUser.id);
@@ -283,11 +285,15 @@ export function UserProfileManager() {
       return;
     }
 
-    // Validate required fields
-    if (!data.display_name?.trim()) {
+    // Validate required fields - use current profile's display_name if form data is empty
+    const displayName = data.display_name?.trim() || profile?.display_name;
+    if (!displayName) {
       toast.error('Display name is required');
       return;
     }
+    
+    // Update data with the valid display name
+    data.display_name = displayName;
 
     setSaving(true);
 
@@ -316,27 +322,15 @@ export function UserProfileManager() {
         phone: data.phone || null,
       };
 
-      // First, try the RPC function for basic fields
-      console.log('🔥 Calling update_user_profile RPC with:', {
-        p_first_name: data.first_name || null,
-        p_last_name: data.last_name || null,
-        p_display_name: data.display_name,
-        p_avatar_url: data.avatar_url || data.profile_image_url || null,
-        p_settings: settings
-      });
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('update_user_profile', {
-        p_first_name: data.first_name || null,
-        p_last_name: data.last_name || null,
-        p_display_name: data.display_name,
-        p_avatar_url: data.avatar_url || data.profile_image_url || null,
-        p_settings: settings
-      });
+      // Skip RPC and go directly to update since RPC function doesn't exist
+      console.log('🔥 Updating profile directly with auth context');
       
-      console.log('🔥 RPC result:', { rpcResult, rpcError });
+      // Set rpcError to true to force direct update
+      const rpcError = true;
       
       // If RPC fails, try direct update with proper auth context
       if (rpcError) {
-        console.log('🔥 RPC failed, trying direct update with auth context');
+        console.log('🔥 Using direct update with auth context');
         
         // Prepare the full update data
         const updateData = {
@@ -368,6 +362,7 @@ export function UserProfileManager() {
         console.log('🔥 Attempting direct update with data:', updateData);
 
         // Try to update using auth_id which should work with RLS
+        console.log('🔥 Attempting update with auth_id:', authUser.id);
         const { data: directUpdate, error: directError } = await supabase
           .from('users')
           .update(updateData)
@@ -376,7 +371,55 @@ export function UserProfileManager() {
           .single();
 
         if (directError) {
-          console.error('🔥 Direct update also failed:', directError);
+          console.error('🔥 Direct update failed:', {
+            error: directError,
+            code: directError.code,
+            message: directError.message,
+            details: directError.details,
+            hint: directError.hint
+          });
+          
+          // Try one more approach - update using id directly if we have it
+          if (profile?.id) {
+            console.log('🔥 Trying update with profile id:', profile.id);
+            const { data: idUpdate, error: idError } = await supabase
+              .from('users')
+              .update(updateData)
+              .eq('id', profile.id)
+              .select()
+              .single();
+              
+            if (idError) {
+              console.error('🔥 Update by ID also failed:', idError);
+              throw new Error(`Failed to save profile: ${idError.message || directError.message}`);
+            }
+            
+            if (idUpdate) {
+              console.log('🔥 Update by ID successful:', idUpdate);
+              setProfile(idUpdate as UserProfile);
+              setFormData({
+                ...data,
+                ...idUpdate,
+                instagram_handle: idUpdate.settings?.instagram_handle || '',
+                favorite_drink: idUpdate.settings?.favorite_drink || '',
+                favorite_song: idUpdate.settings?.favorite_song || '',
+              });
+              
+              if (showToast) {
+                toast.success('Profile saved successfully!');
+              }
+              
+              await loadProfile();
+              
+              // Redirect to feed after successful save
+              setTimeout(() => {
+                router.push('/social/feed');
+              }, 500);
+              
+              return;
+            }
+          }
+          
           throw new Error(`Failed to save profile: ${directError.message}`);
         }
 
@@ -393,32 +436,6 @@ export function UserProfileManager() {
             favorite_song: directUpdate.settings?.favorite_song || '',
           });
         }
-      } else {
-        // RPC was successful, now fetch the updated profile
-        console.log('🔥 RPC successful, fetching updated profile');
-        
-        const { data: updatedProfile, error: fetchError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('auth_id', authUser.id)
-          .single();
-
-        if (fetchError) {
-          console.error('🔥 Error fetching updated profile:', fetchError);
-        } else if (updatedProfile) {
-          console.log('🔥 Updated profile fetched:', updatedProfile);
-          
-          setProfile(updatedProfile as UserProfile);
-          
-          // Update the form data to reflect the saved values
-          setFormData({
-            ...data,
-            ...updatedProfile,
-            instagram_handle: updatedProfile.settings?.instagram_handle || '',
-            favorite_drink: updatedProfile.settings?.favorite_drink || '',
-            favorite_song: updatedProfile.settings?.favorite_song || '',
-          });
-        }
       }
       
       if (showToast) {
@@ -427,6 +444,11 @@ export function UserProfileManager() {
       
       // Reload the profile to ensure everything is in sync
       await loadProfile();
+      
+      // Redirect to feed after successful save
+      setTimeout(() => {
+        router.push('/social/feed');
+      }, 500);
       
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save profile';
@@ -440,7 +462,7 @@ export function UserProfileManager() {
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: typeof value === 'string' ? (value || '') : value
     }));
   };
 
@@ -603,7 +625,7 @@ export function UserProfileManager() {
                 <Label htmlFor="first-name">First Name</Label>
                 <Input
                   id="first-name"
-                  value={formData.first_name}
+                  value={formData.first_name || ''}
                   onChange={(e) => handleInputChange('first_name', e.target.value)}
                   placeholder="First name"
                 />
@@ -613,7 +635,7 @@ export function UserProfileManager() {
                 <Label htmlFor="last-name">Last Name</Label>
                 <Input
                   id="last-name"
-                  value={formData.last_name}
+                  value={formData.last_name || ''}
                   onChange={(e) => handleInputChange('last_name', e.target.value)}
                   placeholder="Last name"
                 />
@@ -624,7 +646,7 @@ export function UserProfileManager() {
               <Label htmlFor="display-name">Display Name *</Label>
               <Input
                 id="display-name"
-                value={formData.display_name}
+                value={formData.display_name || ''}
                 onChange={(e) => handleInputChange('display_name', e.target.value)}
                 placeholder="How you want to be known"
                 required
@@ -635,7 +657,7 @@ export function UserProfileManager() {
               <Label htmlFor="bio">Bio</Label>
               <Textarea
                 id="bio"
-                value={formData.bio}
+                value={formData.bio || ''}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
                 placeholder="Tell others about yourself..."
                 maxLength={500}
@@ -650,7 +672,7 @@ export function UserProfileManager() {
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
-                value={formData.phone}
+                value={formData.phone || ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="+1 234 567 8900"
                 type="tel"
@@ -676,7 +698,7 @@ export function UserProfileManager() {
                 <Label htmlFor="gender">Gender</Label>
                 <select
                   id="gender"
-                  value={formData.gender}
+                  value={formData.gender || ''}
                   onChange={(e) => handleInputChange('gender', e.target.value)}
                   className="w-full p-2 border border-input rounded-md bg-background"
                   title="Select your gender"
@@ -695,7 +717,7 @@ export function UserProfileManager() {
                 <Label htmlFor="pronouns">Pronouns</Label>
                 <Input
                   id="pronouns"
-                  value={formData.pronouns}
+                  value={formData.pronouns || ''}
                   onChange={(e) => handleInputChange('pronouns', e.target.value)}
                   placeholder="e.g., they/them"
                 />
@@ -710,7 +732,7 @@ export function UserProfileManager() {
               <Input
                 id="dob"
                 type="date"
-                value={formData.date_of_birth}
+                value={formData.date_of_birth || ''}
                 onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
               />
             </div>
@@ -719,7 +741,7 @@ export function UserProfileManager() {
               <Label htmlFor="occupation">Occupation</Label>
               <Input
                 id="occupation"
-                value={formData.occupation}
+                value={formData.occupation || ''}
                 onChange={(e) => handleInputChange('occupation', e.target.value)}
                 placeholder="Your job title or role"
               />
@@ -729,7 +751,7 @@ export function UserProfileManager() {
               <Label htmlFor="company">Company</Label>
               <Input
                 id="company"
-                value={formData.company}
+                value={formData.company || ''}
                 onChange={(e) => handleInputChange('company', e.target.value)}
                 placeholder="Where you work"
               />
@@ -740,7 +762,7 @@ export function UserProfileManager() {
               <Input
                 id="website"
                 type="url"
-                value={formData.website}
+                value={formData.website || ''}
                 onChange={(e) => handleInputChange('website', e.target.value)}
                 placeholder="https://yourwebsite.com"
               />
@@ -764,7 +786,7 @@ export function UserProfileManager() {
               <Label htmlFor="location">General Location</Label>
               <Input
                 id="location"
-                value={formData.location}
+                value={formData.location || ''}
                 onChange={(e) => handleInputChange('location', e.target.value)}
                 placeholder="e.g., San Francisco Bay Area"
               />
@@ -775,7 +797,7 @@ export function UserProfileManager() {
                 <Label htmlFor="city">City</Label>
                 <Input
                   id="city"
-                  value={formData.city}
+                  value={formData.city || ''}
                   onChange={(e) => handleInputChange('city', e.target.value)}
                   placeholder="City"
                 />
@@ -785,7 +807,7 @@ export function UserProfileManager() {
                 <Label htmlFor="state">State/Province</Label>
                 <Input
                   id="state"
-                  value={formData.state}
+                  value={formData.state || ''}
                   onChange={(e) => handleInputChange('state', e.target.value)}
                   placeholder="State"
                 />
@@ -797,7 +819,7 @@ export function UserProfileManager() {
                 <Label htmlFor="country">Country</Label>
                 <Input
                   id="country"
-                  value={formData.country}
+                  value={formData.country || ''}
                   onChange={(e) => handleInputChange('country', e.target.value)}
                   placeholder="Country"
                 />
@@ -807,7 +829,7 @@ export function UserProfileManager() {
                 <Label htmlFor="postal">Postal Code</Label>
                 <Input
                   id="postal"
-                  value={formData.postal_code}
+                  value={formData.postal_code || ''}
                   onChange={(e) => handleInputChange('postal_code', e.target.value)}
                   placeholder="12345"
                 />
@@ -837,7 +859,7 @@ export function UserProfileManager() {
                 <span className="absolute left-3 top-2.5 text-muted-foreground">@</span>
                 <Input
                   id="instagram"
-                  value={formData.instagram_handle}
+                  value={formData.instagram_handle || ''}
                   onChange={(e) => handleInputChange('instagram_handle', e.target.value)}
                   placeholder="username"
                   className="pl-8"
@@ -852,7 +874,7 @@ export function UserProfileManager() {
               </Label>
               <Input
                 id="favorite-drink"
-                value={formData.favorite_drink}
+                value={formData.favorite_drink || ''}
                 onChange={(e) => handleInputChange('favorite_drink', e.target.value)}
                 placeholder="Coffee, tea, or something stronger?"
               />
@@ -865,7 +887,7 @@ export function UserProfileManager() {
               </Label>
               <Input
                 id="favorite-song"
-                value={formData.favorite_song}
+                value={formData.favorite_song || ''}
                 onChange={(e) => handleInputChange('favorite_song', e.target.value)}
                 placeholder="What&apos;s on your playlist?"
               />

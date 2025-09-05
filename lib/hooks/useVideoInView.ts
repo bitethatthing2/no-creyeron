@@ -21,13 +21,20 @@ export function useVideoInView(
     autoPause = true
   } = options;
 
-  const entry = useIntersectionObserver(videoRef, {
+  const { isIntersecting, ref: observerRef } = useIntersectionObserver({
     threshold,
     rootMargin,
     freezeOnceVisible
   });
 
-  const isInView = !!entry?.isIntersecting;
+  // Connect the observer ref to our video ref
+  useEffect(() => {
+    if (videoRef.current) {
+      observerRef(videoRef.current);
+    }
+  }, [observerRef, videoRef]);
+
+  const isInView = !!isIntersecting;
 
   // Auto play/pause video based on visibility
   useEffect(() => {
@@ -43,7 +50,7 @@ export function useVideoInView(
 
   return {
     isInView,
-    entry,
+    entry: { isIntersecting },
     // Utility values for video components
     shouldLoad: isInView,
     shouldPlay: isInView && autoPlay,

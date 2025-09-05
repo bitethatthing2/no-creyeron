@@ -4,26 +4,17 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   
-  // Disable TypeScript and ESLint validation for deployment
+  // Enable TypeScript and ESLint validation for production safety
   typescript: {
-    ignoreBuildErrors: true
+    // Build will fail on TypeScript errors - this ensures type safety in production
   },
   eslint: {
-    ignoreDuringBuilds: true
+    // Build will fail on ESLint errors - this ensures code quality
   },
   
-  // Image optimization configuration - disabled in development
-  images: process.env.NODE_ENV === 'development' ? {
+  // Image optimization configuration - disabled for static export
+  images: {
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '',
-        pathname: '/**',
-      },
-    ]
-  } : {
     remotePatterns: [
       {
         protocol: 'http',
@@ -85,11 +76,7 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-    ],
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    ]
   },
   
   // Skip API routes from build to avoid NextJS 15 type issues
@@ -111,7 +98,8 @@ const nextConfig = {
   compress: true,
   
   // Generate static pages where possible
-  // output: 'standalone', // Temporarily disabled for development
+  output: 'standalone', // Creates a standalone deployment
+  trailingSlash: true,
   
   async headers() {
     return [
@@ -136,118 +124,15 @@ const nextConfig = {
             key: 'Service-Worker-Allowed',
             value: '/',
           },
-        ],
-      },
-      // Specific headers for service workers
-      {
-        source: '/firebase-messaging-sw.js',
-        headers: [
-          {
-            key: 'Service-Worker-Allowed',
-            value: '/'
-          },
-          {
-            key: 'Content-Type',
-            value: 'application/javascript'
-          },
           {
             key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate'
-          }
-        ]
-      },
-      {
-        source: '/sw.js',
-        headers: [
-          {
-            key: 'Service-Worker-Allowed',
-            value: '/'
-          },
-          {
-            key: 'Content-Type',
-            value: 'application/javascript'
-          },
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate'
-          }
-        ]
-      },
-      // Static assets caching - disable in development
-      {
-        source: '/food-menu-images/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: process.env.NODE_ENV === 'development' 
-              ? 'no-cache, no-store, must-revalidate' 
-              : 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Drink menu images - disable caching in development
-      {
-        source: '/drink-menu-images/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: process.env.NODE_ENV === 'development' 
-              ? 'no-cache, no-store, must-revalidate' 
-              : 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/icons/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Font caching
-      {
-        source: '/fonts/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Security headers with proper CSP for Instagram and Google Maps
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.instagram.com http://www.instagram.com https://maps.googleapis.com https://apis.google.com https://www.googletagmanager.com https://*.firebaseapp.com https://*.firebase.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://fcmregistrations.googleapis.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https: blob: http:",
-              "media-src 'self' blob: https://tvnpgbjypnezoasbhbwx.supabase.co https://scontent.cdninstagram.com https://*.cdninstagram.com https://instagram.fsac1-1.fna.fbcdn.net https://*.fbcdn.net https://commondatastorage.googleapis.com https://*.googleapis.com https://videos.pexels.com https://*.pexels.com",
-              "connect-src 'self' http://127.0.0.1:54321 http://localhost:54321 https://api.instagram.com https://www.instagram.com https://*.supabase.co https://*.supabase.com wss://*.supabase.co wss://*.supabase.com https://maps.googleapis.com https://fcm.googleapis.com https://firebaseinstallations.googleapis.com https://*.googleapis.com https://*.firebase.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://fcmregistrations.googleapis.com wss://*.firebaseio.com https://tvnpgbjypnezoasbhbwx.supabase.co wss://tvnpgbjypnezoasbhbwx.supabase.co",
-              "worker-src 'self' blob:",
-              "child-src 'self' blob:",
-              "frame-src 'self' https://www.instagram.com https://instagram.com https://www.google.com https://maps.google.com https://maps.googleapis.com",
-            ].join('; ')
+            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },
     ];
   },
-  
+
   async rewrites() {
     return [
       {
@@ -257,18 +142,6 @@ const nextConfig = {
       {
         source: '/firebase-messaging-sw.js',
         destination: '/firebase-messaging-sw.js',      
-      },
-      {
-        source: '/favicon.ico',
-        destination: '/favicon.ico',
-      },
-      {
-        source: '/icons/favicon.ico',
-        destination: '/favicon.ico',
-      },
-      {
-        source: '/offline.html',
-        destination: '/offline.html',
       },
     ];
   },
@@ -283,8 +156,8 @@ const nextConfig = {
           'self.FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || ''),
           'self.FIREBASE_PROJECT_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || ''),
           'self.FIREBASE_STORAGE_BUCKET': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || ''),
-          'self.FIREBASE_MESSAGING_conversation_id': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_conversation_id || ''),
-          'self.FIREBASE_APp_user_id': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APp_user_id || ''),
+          'self.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || ''),
+          'self.FIREBASE_APP_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ''),
           'self.FIREBASE_MEASUREMENT_ID': JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ''),
         })
       );

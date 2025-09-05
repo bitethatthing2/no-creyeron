@@ -1,3 +1,4 @@
 // Edge Function Utils
 
-export { testSupabaseConnection, testEdgeFunctionEndpoint } from './edgeFunctionTests';
+export { EdgeFunctionTester } from './edgeFunctionTests';
+export type { TestResult, EdgeFunctionTestSuite } from './edgeFunctionTests';

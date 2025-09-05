@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useDebounce, useInterval, useLocalStorage } from 'usehooks-ts';
+import { useDebounceValue, useInterval, useLocalStorage } from 'usehooks-ts';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { debugLog } from "@/lib/debug";
@@ -19,8 +19,8 @@ export function useEnhancedTyping(conversationId: string) {
   const [typingState, setTypingState] = React.useState<TypingState>({});
   const [isTyping, setIsTyping] = React.useState(false);
   
-  // Use usehooks-ts debounce instead of custom implementation
-  const debouncedIsTyping = useDebounce(isTyping, 1000);
+  // Use usehooks-ts debounce hook
+  const debouncedIsTyping = useDebounceValue(isTyping, 1000);
   
   // Auto-cleanup typing indicators every 3 seconds
   useInterval(() => {
@@ -70,12 +70,14 @@ export function useEnhancedTyping(conversationId: string) {
         event: 'typing',
         payload: {
           userId: currentUser.id,
-          displayName: currentUser.display_name || 'User',
+          displayName: currentUser.displayName || 'User',
           isTyping: debouncedIsTyping
         }
       });
 
-      return () => supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [conversationId, currentUser, debouncedIsTyping]);
 

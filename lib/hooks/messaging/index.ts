@@ -67,6 +67,15 @@ export function useMessaging(conversationId?: string) {
   //   subscribeToMessages
   // } = realtime; // Temporarily commented out
   const subscribeToMessages = useCallback(() => {}, []); // Stub function
+  
+  // Add subscribeToConversation stub
+  const subscribeToConversation = useCallback((conversationId: string) => {
+    console.log('Subscribing to conversation:', conversationId);
+    // Return a no-op unsubscribe function
+    return () => {
+      console.log('Unsubscribing from conversation:', conversationId);
+    };
+  }, []);
 
   return {
     // Core state
@@ -96,6 +105,7 @@ export function useMessaging(conversationId?: string) {
     
     // Realtime features
     subscribeToMessages,
+    subscribeToConversation,
     
     // Participant actions (stubs)
     addParticipants,

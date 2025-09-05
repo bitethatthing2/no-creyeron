@@ -1,4 +1,4 @@
 // Edge Function Services
 
 export { MenuApiService } from './menu-api.service';
-export { MessageHandlerService } from './message-handler.service';
+export { messageHandlerService } from './message-handler.service';

@@ -106,7 +106,8 @@
       "WebFetch(domain:dequeuniversity.com)",
       "Bash(npm run types:generate:*)",
       "Bash(awk:*)",
-      "Bash(npx next lint:*)"
+      "Bash(npx next lint:*)",
+      "WebSearch"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

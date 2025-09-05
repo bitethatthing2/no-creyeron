@@ -6,7 +6,7 @@ import * as React from 'react';
 import { UserMigration } from './UserMigration';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, userProfile } = useAuth();
+  const { user, loading, currentUser } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -34,7 +34,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Check if user needs migration
-  if (user && !userProfile?.authId) {
+  if (user && !currentUser?.authId) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <UserMigration email={user.email!} />

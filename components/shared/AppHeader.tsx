@@ -32,7 +32,7 @@ import {
   Search
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNotifications } from '@/lib/contexts/unified-notification-context';
+import { useNotifications } from '@/lib/hooks/useNotifications';
 
 interface AppHeaderProps {
   showBackButton?: boolean;

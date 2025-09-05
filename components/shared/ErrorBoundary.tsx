@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
 interface ErrorBoundaryState {
@@ -32,10 +33,16 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log the error to console
-    console.error('Admin panel error:', error);
+    console.error('ErrorBoundary caught error:', error);
     console.error('Component stack:', errorInfo.componentStack);
     
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+    
     // Here you could send the error to an error reporting service
+    // Example: Sentry.captureException(error, { extra: errorInfo });
   }
 
   handleErrorRetry = () => {
@@ -50,9 +57,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <div className="flex items-start gap-4">
             <AlertCircle className="h-6 w-6 text-destructive mt-0.5" />
             <div>
-              <h3 className="text-lg font-medium mb-2 text-destructive">Admin Panel Error</h3>
+              <h3 className="text-lg font-medium mb-2 text-destructive">Application Error</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                There was an error loading the admin panel data. This may be due to database connectivity issues or missing API endpoints.
+                We encountered an unexpected error. This may be due to connectivity issues or a temporary problem.
               </p>
               <div className="space-y-3">
                 <Button 
@@ -61,10 +68,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   className="w-full"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Admin Panel
+                  Refresh Page
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  If this error persists, please check server logs for more information.
+                  If this error persists, please refresh the page or contact support.
                 </p>
                 {process.env.NODE_ENV !== 'production' && this.state.error && (
                   <div className="mt-4 p-4 bg-muted text-left rounded-md overflow-auto max-w-full">
@@ -87,3 +94,22 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children;
   }
 }
+
+// HOC for wrapping components with ErrorBoundary
+export const withErrorBoundary = <P extends object>(
+  Component: React.ComponentType<P>,
+  fallback?: React.ReactNode,
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
+) => {
+  const WrappedComponent = (props: P) => (
+    <ErrorBoundary fallback={fallback} onError={onError}>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  
+  return WrappedComponent;
+};
+
+export default ErrorBoundary;

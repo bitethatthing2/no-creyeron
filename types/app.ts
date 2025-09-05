@@ -169,36 +169,6 @@ export interface MenuCategory {
   items?: MenuItem[];
 }
 
-// =============================================================================
-// BOOKING & RESERVATION TYPES
-// =============================================================================
-
-export interface Reservation {
-  id: string;
-  user_id: string;
-  date: string;
-  time: string;
-  party_size: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  special_requests?: string;
-  contact_phone?: string;
-  contact_email?: string;
-  created_at: string;
-  updated_at: string;
-  user?: User;
-}
-
-export interface TimeSlot {
-  time: string;
-  available: boolean;
-  max_party_size?: number;
-}
-
-export interface AvailabilityDate {
-  date: string;
-  available: boolean;
-  time_slots: TimeSlot[];
-}
 
 // =============================================================================
 // NOTIFICATION TYPES
@@ -230,6 +200,59 @@ export interface NotificationAction {
   action: string;
   title: string;
   icon?: string;
+}
+
+// =============================================================================
+// FCM & PUSH NOTIFICATION TYPES
+// =============================================================================
+
+export interface FcmDeviceInfo {
+  device_id: string;
+  userAgent?: string;
+  platform?: string;
+  language?: string;
+  screen?: {
+    width: number;
+    height: number;
+  };
+}
+
+export interface FcmTokenState {
+  token: string | null;
+  permission: NotificationPermission | null;
+  isLoading: boolean;
+  error: string | null;
+  lastRefresh: number;
+}
+
+export interface FcmMessagePayload {
+  notification?: {
+    title?: string;
+    body?: string;
+    icon?: string;
+    image?: string;
+  };
+  data?: Record<string, string>;
+  fcmOptions?: {
+    link?: string;
+  };
+}
+
+export interface FcmTokenRegistrationParams {
+  p_token: string;
+  p_platform: 'web' | 'ios' | 'android';
+  p_device_info: FcmDeviceInfo;
+}
+
+export interface UseFcmTokenReturn {
+  token: string | null;
+  notificationPermissionStatus: NotificationPermission | null;
+  isLoading: boolean;
+  error: string | null;
+  registerToken: () => Promise<string | null>;
+  hasPermission: boolean;
+  isTokenValid: boolean;
+  refreshToken: () => Promise<string | null>;
 }
 
 // =============================================================================
@@ -281,14 +304,6 @@ export interface ProfileUpdateData {
   settings?: Partial<UserSettings>;
 }
 
-export interface ReservationFormData {
-  date: string;
-  time: string;
-  party_size: number;
-  special_requests?: string;
-  contact_phone?: string;
-  contact_email?: string;
-}
 
 // =============================================================================
 // UTILITY TYPES

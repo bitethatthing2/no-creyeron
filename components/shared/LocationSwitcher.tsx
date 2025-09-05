@@ -60,7 +60,7 @@ interface LocationSwitcherProps {
 // Export LocationSwitcher component
 export function LocationSwitcher({ onLocationChange, className = '' }: LocationSwitcherProps) {
   const location = 'salem' as LocationKey; // Static location since useLocationState was removed
-  const setLocation = () => {}; // Placeholder function
+  const setLocation = (locationKey: LocationKey) => {}; // Placeholder function
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {

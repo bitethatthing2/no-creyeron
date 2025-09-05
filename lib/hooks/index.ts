@@ -10,6 +10,7 @@ export { useFcmToken } from './useFcmToken';
 export { useMediaUpload } from './useMediaUpload';
 export { useMenuItems } from './useMenuItems';
 export { useRecording } from './useRecording';
+export { useRedirectAfterLogin } from './useRedirectAfterLogin';
 export { useVideoComments } from './useVideoComments';
 export { useVideoLike } from './useVideoLike';
 

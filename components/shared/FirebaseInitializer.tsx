@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { initFirebase } from '@/lib/firebase';
-import { FcmProvider } from '@/lib/hooks/useFcmToken';
 import { Toaster } from 'sonner'; 
 import { Loader2 } from 'lucide-react';
 
@@ -63,7 +62,7 @@ export default function FirebaseInitializer({ children }: { children?: React.Rea
   }, []);
 
   return (
-    <FcmProvider>
+    <>
       {isInitializing && (
         <div className="fixed bottom-4 right-4 bg-background border rounded-md shadow-md p-2 z-50 flex items-center gap-2 text-xs">
           <Loader2 className="h-3 w-3 animate-spin" />
@@ -87,6 +86,6 @@ export default function FirebaseInitializer({ children }: { children?: React.Rea
         duration={8000}
         visibleToasts={3}
       />
-    </FcmProvider>
+    </>
   );
 }

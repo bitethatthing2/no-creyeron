@@ -11,10 +11,8 @@ export { ClientComponentWrapper, createClientComponent } from './ClientComponent
 // Export UI components
 // StatusBadge removed - OrderStatus type doesn't exist
 
-// Export notification components - fix import paths
-export { NotificationIndicator } from '../notifications/NotificationIndicator';
-export { NotificationPopover } from '../notifications/NotificationPopover';
-export { useNotifications, useSafeNotifications, NotificationProvider } from '../notifications/index';
+// Notification components were removed during cleanup
+// Use NotificationBell from components/NotificationBell.tsx instead
 
 // Export layout components
 export {

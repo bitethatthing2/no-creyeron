@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export function UserMigration({ email }: { email: string }) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const { refreshSession } = useAuth();
+  const { refreshUser } = useAuth();
 
   const handleMigration = async () => {
     setLoading(true);
@@ -62,8 +62,8 @@ export function UserMigration({ email }: { email: string }) {
 
       alert('Migration successful! Check your email to set your password.');
       
-      // Refresh the session
-      await refreshSession();
+      // Refresh the user data
+      await refreshUser();
     } catch (err) {
       console.error('Migration error:', err);
       setError('An unexpected error occurred during migration');

@@ -3,7 +3,7 @@ import { useDebounceValue, useToggle, useLocalStorage } from 'usehooks-ts';
 import { usePrevious } from './enhanced/usePrevious';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocialNotifications } from "./useNotifications";
+import { useNotifications } from "./useNotifications";
 
 interface VideoLikeState {
   liked: boolean;
@@ -15,13 +15,13 @@ interface VideoLikeState {
 // Optimistic updates with usehooks-ts
 export function useVideoLike(postId: string, initialLiked = false, initialCount = 0) {
   const { currentUser } = useAuth();
-  const { sendLikeNotification } = useSocialNotifications();
+  const { sendNotification } = useNotifications();
   const [optimisticState, setOptimisticState] = useLocalStorage<VideoLikeState>(
     `like-${postId}`, 
     { liked: initialLiked, likeCount: initialCount, loading: false, error: null }
   );
-  const [isToggling, setIsToggling, toggleIsToggling] = useToggle(false);
-  const debouncedPostId = useDebounceValue(postId, 100);
+  const [isToggling, toggleIsToggling, setIsToggling] = useToggle(false);
+  const [debouncedPostId] = useDebounceValue(postId, 100);
   const prevPostId = usePrevious(debouncedPostId);
 
   // Auto-sync like status when postId changes
@@ -94,12 +94,12 @@ export function useVideoLike(postId: string, initialLiked = false, initialCount 
             .single();
 
           if (post?.user_id && post.user_id !== currentUser.id) {
-            const likerName = currentUser.display_name || currentUser.first_name || 'Someone';
-            await sendLikeNotification(
-              post.user_id,
-              likerName,
-              postId,
-              post.thumbnail_url
+            const likerName = currentUser.displayName || currentUser.firstName || 'Someone';
+            await sendNotification(
+              [post.user_id],
+              `${likerName} liked your video`,
+              'Someone enjoyed your content!',
+              { postId, thumbnailUrl: post.thumbnail_url }
             );
           }
         } catch (notifError) {
@@ -118,7 +118,7 @@ export function useVideoLike(postId: string, initialLiked = false, initialCount 
     } finally {
       setIsToggling(false);
     }
-  }, [postId, currentUser?.id, optimisticState.liked, optimisticState.likeCount, isToggling, setOptimisticState, setIsToggling, sendLikeNotification]);
+  }, [postId, currentUser?.id, optimisticState.liked, optimisticState.likeCount, isToggling, setOptimisticState, setIsToggling, sendNotification]);
 
   return {
     ...optimisticState,

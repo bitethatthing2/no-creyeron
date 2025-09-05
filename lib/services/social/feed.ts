@@ -203,7 +203,7 @@ export class FeedService {
       const enhancedPosts: EnhancedPost[] = (posts || []).map((post) => {
         const userData = Array.isArray(post.user) ? post.user[0] : post.user;
         const interactions = Array.isArray(post.user_post_interactions)
-          ? post.user_post_interactions.find((i) => i.user_id === userId)
+          ? post.user_post_interactions.find((i: any) => i.user_id === userId)
           : post.user_post_interactions;
 
         return {

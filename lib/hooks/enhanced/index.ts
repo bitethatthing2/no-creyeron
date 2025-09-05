@@ -4,20 +4,17 @@
 // Core usehooks-ts re-exports with better names
 export { 
   useLocalStorage, 
-  useDebounce, 
-  useDebouncedCallback,
+  useDebounceValue,
   useMediaQuery,
   useWindowSize,
   useOnClickOutside,
   useIntersectionObserver,
-  useGeolocation,
   useInterval,
   useReadLocalStorage
 } from 'usehooks-ts';
 
 // App-specific enhanced hooks
 export { useRedirectAfterLogin } from '../useRedirectAfterLogin';
-export { useAppGeolocation } from '../useAppGeolocation';
 export { useEnhancedTyping } from '../useEnhancedTyping';
 export { useVideoInView } from '../useVideoInView';
 export { useAppWindowSize } from '../useAppWindowSize';

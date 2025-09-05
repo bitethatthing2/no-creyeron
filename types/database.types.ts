@@ -208,13 +208,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "chat_message_reactions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages_with_reactions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "chat_message_reactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -271,13 +264,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "chat_message_receipts_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages_with_reactions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "chat_message_receipts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -323,6 +309,8 @@ export type Database = {
           reply_count: number | null
           reply_to_id: string | null
           sender_id: string
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
           attachments?: Json | null
@@ -346,6 +334,8 @@ export type Database = {
           reply_count?: number | null
           reply_to_id?: string | null
           sender_id: string
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
           attachments?: Json | null
@@ -369,6 +359,8 @@ export type Database = {
           reply_count?: number | null
           reply_to_id?: string | null
           sender_id?: string
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -411,13 +403,6 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "chat_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages_with_reactions"
             referencedColumns: ["id"]
           },
           {
@@ -1446,6 +1431,7 @@ export type Database = {
           gender: string | null
           id: string
           is_private: boolean | null
+          is_public: boolean | null
           is_verified: boolean | null
           last_name: string | null
           last_seen_at: string | null
@@ -1481,6 +1467,7 @@ export type Database = {
           gender?: string | null
           id?: string
           is_private?: boolean | null
+          is_public?: boolean | null
           is_verified?: boolean | null
           last_name?: string | null
           last_seen_at?: string | null
@@ -1516,6 +1503,7 @@ export type Database = {
           gender?: string | null
           id?: string
           is_private?: boolean | null
+          is_public?: boolean | null
           is_verified?: boolean | null
           last_name?: string | null
           last_seen_at?: string | null
@@ -1547,155 +1535,6 @@ export type Database = {
           total_tables: number | null
         }
         Relationships: []
-      }
-      chat_messages_with_reactions: {
-        Row: {
-          attachments: Json | null
-          content: string | null
-          conversation_id: string | null
-          created_at: string | null
-          current_user_has_reacted: boolean | null
-          deleted_at: string | null
-          deleted_by: string | null
-          edited_at: string | null
-          id: string | null
-          is_deleted: boolean | null
-          is_edited: boolean | null
-          media_duration: number | null
-          media_metadata: Json | null
-          media_size: number | null
-          media_thumbnail_url: string | null
-          media_type: string | null
-          media_url: string | null
-          message_type: string | null
-          metadata: Json | null
-          reactions: Json | null
-          reply_count: number | null
-          reply_to_id: string | null
-          sender_id: string | null
-        }
-        Insert: {
-          attachments?: Json | null
-          content?: string | null
-          conversation_id?: string | null
-          created_at?: string | null
-          current_user_has_reacted?: never
-          deleted_at?: string | null
-          deleted_by?: string | null
-          edited_at?: string | null
-          id?: string | null
-          is_deleted?: boolean | null
-          is_edited?: boolean | null
-          media_duration?: number | null
-          media_metadata?: Json | null
-          media_size?: number | null
-          media_thumbnail_url?: string | null
-          media_type?: string | null
-          media_url?: string | null
-          message_type?: string | null
-          metadata?: Json | null
-          reactions?: never
-          reply_count?: number | null
-          reply_to_id?: string | null
-          sender_id?: string | null
-        }
-        Update: {
-          attachments?: Json | null
-          content?: string | null
-          conversation_id?: string | null
-          created_at?: string | null
-          current_user_has_reacted?: never
-          deleted_at?: string | null
-          deleted_by?: string | null
-          edited_at?: string | null
-          id?: string | null
-          is_deleted?: boolean | null
-          is_edited?: boolean | null
-          media_duration?: number | null
-          media_metadata?: Json | null
-          media_size?: number | null
-          media_thumbnail_url?: string | null
-          media_type?: string | null
-          media_url?: string | null
-          message_type?: string | null
-          metadata?: Json | null
-          reactions?: never
-          reply_count?: number | null
-          reply_to_id?: string | null
-          sender_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "chat_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_deleted_by_fkey"
-            columns: ["deleted_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_with_stats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_deleted_by_fkey"
-            columns: ["deleted_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_deleted_by_fkey"
-            columns: ["deleted_by"]
-            isOneToOne: false
-            referencedRelation: "v_user_activity"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages_with_reactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_with_stats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_activity"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_profiles_with_stats: {
         Row: {
@@ -1932,12 +1771,16 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      check_backend_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       check_system_health: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
-      check_user_session_status: {
-        Args: { p_email?: string }
+      cleanup_old_notifications: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       cleanup_old_typing_indicators: {
@@ -2018,6 +1861,10 @@ export type Database = {
         Args: { item_type?: string }
         Returns: Json
       }
+      get_notification_stats: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       get_notifications: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: Json
@@ -2028,13 +1875,13 @@ export type Database = {
           conversation_id: string
         }[]
       }
-      get_or_create_dm_optimized: {
-        Args: { p_other_user_id: string }
-        Returns: string
-      }
       get_performance_metrics: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_user_by_auth_id: {
+        Args: { auth_uuid: string }
+        Returns: string
       }
       get_user_conversations: {
         Args: Record<PropertyKey, never>
@@ -2043,15 +1890,6 @@ export type Database = {
       get_user_feed: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: Json
-      }
-      get_user_message_stats: {
-        Args: { p_user_id?: string }
-        Returns: {
-          avg_messages_per_day: number
-          total_conversations: number
-          total_messages: number
-          user_id: string
-        }[]
       }
       get_user_posts: {
         Args: { p_limit?: number; p_offset?: number; target_user_id?: string }
@@ -2081,6 +1919,14 @@ export type Database = {
         Args: { post_ids: string[]; user_id_param: string }
         Returns: undefined
       }
+      is_conversation_admin: {
+        Args: { conv_id: string; user_auth_id?: string }
+        Returns: boolean
+      }
+      is_conversation_participant: {
+        Args: { conv_id: string; user_auth_id?: string }
+        Returns: boolean
+      }
       mark_all_notifications_read: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2097,6 +1943,10 @@ export type Database = {
         Args: { p_device_info?: Json; p_platform?: string; p_token: string }
         Returns: Json
       }
+      rpc_get_or_create_direct_conversation: {
+        Args: { p_other_user_id: string }
+        Returns: Json
+      }
       run_automated_cleanup: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2107,6 +1957,10 @@ export type Database = {
       }
       search_users: {
         Args: { p_limit?: number; p_query: string }
+        Returns: Json
+      }
+      send_all_pending_notifications: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       send_message: {
@@ -2131,12 +1985,30 @@ export type Database = {
         }
         Returns: Json
       }
+      send_push_notification: {
+        Args: {
+          p_body: string
+          p_data?: Json
+          p_title: string
+          p_type?: string
+          p_user_ids: string[]
+        }
+        Returns: Json
+      }
       set_typing_status: {
         Args: { p_conversation_id: string; p_is_typing: boolean }
         Returns: undefined
       }
+      should_send_notification: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       subscribe_to_conversation_messages: {
         Args: { p_conversation_id: string }
+        Returns: Json
+      }
+      test_backend_connection: {
+        Args: { user_auth_id?: string }
         Returns: Json
       }
       toggle_follow: {
@@ -2155,6 +2027,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      update_trending_scores: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_user_presence: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2167,6 +2043,10 @@ export type Database = {
           p_last_name?: string
           p_settings?: Json
         }
+        Returns: Json
+      }
+      upsert_fcm_token: {
+        Args: { p_device_info?: Json; p_platform?: string; p_token: string }
         Returns: Json
       }
     }

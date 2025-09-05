@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { NotificationProvider } from '@/components/unified';
+// NotificationProvider removed - using edge functions for notifications
 // ServiceWorkerRegister removed - using layout.tsx registration instead
 import FirebaseInitializer from '@/components/shared/FirebaseInitializer';
 import { PwaStatusToast } from '@/components/shared/PwaStatusToast';
@@ -84,15 +84,13 @@ export default function ClientSideWrapper({ children }: ClientSideWrapperProps):
     );
   }
 
-  // User is authenticated, render with notification provider
+  // User is authenticated, render without notification provider (using edge functions)
   return (
     <TooltipProvider>
-      <NotificationProvider recipientId={userId}>
-        <FirebaseInitializer>
-          {children}
-          <PwaStatusToast />
-        </FirebaseInitializer>
-      </NotificationProvider>
+      <FirebaseInitializer>
+        {children}
+        <PwaStatusToast />
+      </FirebaseInitializer>
     </TooltipProvider>
   );
 }

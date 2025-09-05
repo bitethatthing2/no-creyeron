@@ -68,8 +68,8 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
   }, [content_postsrc]);
 
   React.useEffect(() => {
-    if (instagramReelUrl && containerRef.current && window.instgrm) {
-      window.instgrm.Embeds.process();
+    if (instagramReelUrl && containerRef.current && (window as any).instgrm) {
+      (window as any).instgrm.Embeds.process();
     }
   }, [instagramReelUrl]);
 

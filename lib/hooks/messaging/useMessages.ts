@@ -4,7 +4,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase';
 import { success, error as logError } from '@/lib/debug';
 import { messageHandlerService } from '@/lib/edge-functions/services/message-handler.service';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMessageNotifications } from '../useNotifications';
+// Removed notificationService import - notifications handled by edge function
 import type { MessagingCore } from './useMessagingCore';
 
 export enum MessageType {
@@ -25,7 +25,6 @@ export enum MediaType {
 export function useMessages(core: MessagingCore) {
   const { currentUser } = useAuth();
   const supabase = getSupabaseBrowserClient();
-  const { sendMessageNotification } = useMessageNotifications();
 
   const loadMessages = useCallback(async (
     conversationId: string,
@@ -87,34 +86,9 @@ export function useMessages(core: MessagingCore) {
 
       success("sendMessage", { conversationId });
       
-      console.log('🔥 Message sent successfully via edge function, reloading messages...');
+      console.log('🔥 Message sent successfully via edge function (notifications handled server-side)');
       
-      // Send push notification to other conversation participants
-      try {
-        // Get conversation participants
-        const { data: participants } = await supabase
-          .from('chat_participants')
-          .select('user_id, users(display_name)')
-          .eq('conversation_id', conversationId)
-          .neq('user_id', currentUser.id);
-
-        if (participants?.length) {
-          const senderName = currentUser.display_name || currentUser.first_name || 'Someone';
-          
-          // Send notification to each participant
-          for (const participant of participants) {
-            await sendMessageNotification(
-              participant.user_id,
-              senderName,
-              content,
-              conversationId
-            );
-          }
-        }
-      } catch (notifError) {
-        console.error('Failed to send message notification:', notifError);
-        // Don't fail the message send if notification fails
-      }
+      // ✅ CONFIRMED: MESSAGE_HANDLER edge function creates notifications automatically
       
       // Reload messages to show the new one
       await loadMessages(conversationId);
@@ -124,7 +98,7 @@ export function useMessages(core: MessagingCore) {
       core.setError("Failed to send message");
       return false;
     }
-  }, [currentUser?.id, core.setError, supabase, loadMessages, sendMessageNotification]);
+  }, [currentUser?.id, core.setError, supabase, loadMessages]);
 
   const markMessageAsRead = useCallback(async (messageId: string) => {
     if (!currentUser?.id) return false;

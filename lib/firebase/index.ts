@@ -5,7 +5,17 @@ import {
   Messaging,
   onMessage,
 } from "firebase/messaging";
-import { firebaseConfig } from "@/config/app.config";
+// Firebase configuration from environment variables - PRODUCTION SAFE
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
+  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || ""
+};
 // import { FirebaseConfig, FcmMessagePayload } from '@/types/features/firebase';
 
 // Temporary types during rebuild
@@ -26,7 +36,7 @@ type FcmMessagePayload = {
   [key: string]: unknown;
 };
 
-// Use secure configuration from validated environment
+// Use the hardcoded configuration
 const firebaseClientConfig: FirebaseConfig = firebaseConfig;
 
 // Global initialization flag to prevent multiple attempts
@@ -250,7 +260,7 @@ export const fetchToken = async (maxRetries = 2): Promise<string | null> => {
         throw new Error("Failed to get messaging instance");
       }
 
-      // Use the VAPID key from secure configuration
+      // Use the VAPID key from configuration
       const vapidKey = firebaseConfig.vapidKey;
 
       if (!vapidKey) {
@@ -377,7 +387,7 @@ export const setupForegroundMessageHandler = (
   }
 
   try {
-    return onMessage(messaging, (payload: FcmMessagePayload) => {
+    return onMessage(messaging, (payload) => {
       console.log("Foreground message received:", payload);
 
       try {
@@ -402,7 +412,7 @@ export const setupForegroundMessageHandler = (
             data: dataObject,
           };
 
-          callback(enhancedPayload);
+          callback(enhancedPayload as any);
         }
 
         // For browsers that don't support the callback method (like Safari on iOS),

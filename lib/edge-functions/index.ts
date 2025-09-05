@@ -2,13 +2,14 @@
 
 // Services
 export { MenuApiService } from './services/menu-api.service';
-export { MessageHandlerService } from './services/message-handler.service';
+export { messageHandlerService } from './services/message-handler.service';
 
 // Types
 export type * from './types/MENU_ITEMS';
 
 // Utils
-export { testSupabaseConnection, testEdgeFunctionEndpoint } from './utils/edgeFunctionTests';
+export { EdgeFunctionTester } from './utils/edgeFunctionTests';
+export type { TestResult, EdgeFunctionTestSuite } from './utils/edgeFunctionTests';
 
 // Re-export common edge function utilities
 export const EDGE_FUNCTION_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL + '/functions/v1';

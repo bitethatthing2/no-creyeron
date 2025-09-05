@@ -13,7 +13,7 @@ import { ConnectionStatus } from '@/components/shared/ConnectionStatus';
 
 export default function MessagesListPage() {
   const router = useRouter();
-  const { currentUser } = useAuth();
+  const { } = useAuth(); // currentUser unused, keeping for future use
   const { 
     conversations,
     loading, 
@@ -25,7 +25,7 @@ export default function MessagesListPage() {
   
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<unknown[]>([]);
   const [searching, setSearching] = useState(false);
   const supabase = getSupabaseBrowserClient();
 
@@ -60,39 +60,42 @@ export default function MessagesListPage() {
     }
   };
 
-  const getConversationName = (conversation: any) => {
+  const getConversationName = (conversation: Record<string, unknown>): string => {
     if (conversation.type === 'direct') {
       // Find the other participant
-      const otherParticipant = conversation.participants?.find(
-        (p: any) => p.user_id !== currentUserId
+      const participants = conversation.participants as Record<string, unknown>[] | undefined;
+      const otherParticipant = participants?.find(
+        (p: Record<string, unknown>) => p.user_id !== currentUserId
       );
       
       if (otherParticipant?.user) {
-        const user = otherParticipant.user;
-        return user.display_name || 
-               `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
-               user.username ||
+        const user = otherParticipant.user as Record<string, unknown>;
+        return (user.display_name as string) || 
+               `${(user.first_name as string) || ''} ${(user.last_name as string) || ''}`.trim() ||
+               (user.username as string) ||
                'Wolf Pack Member';
       }
     }
     
-    return conversation.name || 'Wolf Pack Chat';
+    return (conversation.name as string) || 'Wolf Pack Chat';
   };
 
-  const getConversationAvatar = (conversation: any) => {
+  const getConversationAvatar = (conversation: Record<string, unknown>): string => {
     if (conversation.type === 'direct') {
-      const otherParticipant = conversation.participants?.find(
-        (p: any) => p.user_id !== currentUserId
+      const participants = conversation.participants as Record<string, unknown>[] | undefined;
+      const otherParticipant = participants?.find(
+        (p: Record<string, unknown>) => p.user_id !== currentUserId
       );
       
       if (otherParticipant?.user) {
-        return otherParticipant.user.avatar_url || 
-               otherParticipant.user.profile_image_url ||
+        const user = otherParticipant.user as Record<string, unknown>;
+        return (user.avatar_url as string) || 
+               (user.profile_image_url as string) ||
                'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
       }
     }
     
-    return conversation.avatar_url || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
+    return (conversation.avatar_url as string) || 'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
   };
 
   const handleStartChat = async (userId: string) => {
@@ -311,17 +314,18 @@ export default function MessagesListPage() {
               ) : searchResults.length > 0 ? (
                 <div className="p-2">
                   {searchResults.map((user) => {
-                    const displayName = user.display_name || 
-                      `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
-                      user.username || 
+                    const userObj = user as Record<string, unknown>;
+                    const displayName = (userObj.display_name as string) || 
+                      `${(userObj.first_name as string) || ''} ${(userObj.last_name as string) || ''}`.trim() ||
+                      (userObj.username as string) || 
                       'Wolf Pack Member';
-                    const avatarUrl = user.avatar_url || user.profile_image_url || 
+                    const avatarUrl = (userObj.avatar_url as string) || (userObj.profile_image_url as string) || 
                       'https://tvnpgbjypnezoasbhbwx.supabase.co/storage/v1/object/public/icons/wolf-512x512.png';
                     
                     return (
                       <div
-                        key={user.id}
-                        onClick={() => handleStartChat(user.id)}
+                        key={userObj.id as string}
+                        onClick={() => handleStartChat(userObj.id as string)}
                         className="flex items-center p-3 hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 mr-3 flex-shrink-0">
@@ -341,9 +345,9 @@ export default function MessagesListPage() {
                           <h3 className="text-white font-medium text-sm truncate">
                             {displayName}
                           </h3>
-                          {user.username && (
+                          {(userObj.username as string) && (
                             <p className="text-gray-400 text-xs truncate">
-                              @{user.username}
+                              @{userObj.username as string}
                             </p>
                           )}
                         </div>

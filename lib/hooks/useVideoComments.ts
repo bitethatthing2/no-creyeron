@@ -3,7 +3,7 @@ import { useDebounceValue, useToggle, useLocalStorage, useInterval } from 'useho
 import { usePrevious } from './enhanced/usePrevious';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocialNotifications } from "./useNotifications";
+import { useNotifications } from "./useNotifications";
 
 export interface VideoComment {
   id: string;
@@ -38,28 +38,14 @@ interface CommentState {
 // Dramatically simplified comments hook with usehooks-ts
 export function useVideoComments(videoId: string, autoRefresh = true) {
   const { currentUser } = useAuth();
-  const { sendCommentNotification } = useSocialNotifications();
+  const { sendNotification } = useNotifications();
   const [state, setState] = useLocalStorage<CommentState>(
     `comments-${videoId}`, 
     { comments: [], loading: false, error: null, hasMore: true }
   );
-  const [isSubmitting, setIsSubmitting, toggleSubmitting] = useToggle(false);
-  const debouncedVideoId = useDebounceValue(videoId, 100);
+  const [isSubmitting, toggleSubmitting, setIsSubmitting] = useToggle(false);
+  const [debouncedVideoId] = useDebounceValue(videoId, 100);
   const prevVideoId = usePrevious(debouncedVideoId);
-
-  // Auto-load comments when videoId changes
-  useEffect(() => {
-    if (debouncedVideoId && debouncedVideoId !== prevVideoId) {
-      loadComments();
-    }
-  }, [debouncedVideoId, prevVideoId, loadComments]);
-
-  // Auto-refresh every 30 seconds if enabled
-  useInterval(() => {
-    if (autoRefresh && !state.loading) {
-      loadComments(false);
-    }
-  }, 30000);
 
   const loadComments = useCallback(async (showLoading = true) => {
     if (showLoading) {
@@ -106,6 +92,20 @@ export function useVideoComments(videoId: string, autoRefresh = true) {
     }
   }, [debouncedVideoId, setState]);
 
+  // Auto-load comments when videoId changes
+  useEffect(() => {
+    if (debouncedVideoId && debouncedVideoId !== prevVideoId) {
+      loadComments();
+    }
+  }, [debouncedVideoId, prevVideoId, loadComments]);
+
+  // Auto-refresh every 30 seconds if enabled
+  useInterval(() => {
+    if (autoRefresh && !state.loading) {
+      loadComments(false);
+    }
+  }, 30000);
+
   const addComment = useCallback(async (content: string, parentId?: string) => {
     if (!currentUser?.id || !content.trim()) return;
 
@@ -127,10 +127,10 @@ export function useVideoComments(videoId: string, autoRefresh = true) {
       user: {
         id: currentUser.id,
         email: currentUser.email || '',
-        first_name: currentUser.first_name,
-        last_name: currentUser.last_name,
-        display_name: currentUser.display_name,
-        avatar_url: currentUser.avatar_url,
+        first_name: currentUser.firstName || null,
+        last_name: currentUser.lastName || null,
+        display_name: currentUser.displayName || null,
+        avatar_url: currentUser.avatarUrl || null,
       }
     };
 
@@ -169,12 +169,12 @@ export function useVideoComments(videoId: string, autoRefresh = true) {
           // Reply notification - notify the original commenter
           const parentComment = state.comments.find(c => c.id === parentId);
           if (parentComment?.user_id && parentComment.user_id !== currentUser.id) {
-            const commenterName = currentUser.display_name || currentUser.first_name || 'Someone';
-            await sendCommentNotification(
-              parentComment.user_id,
-              commenterName,
+            const commenterName = currentUser.displayName || currentUser.firstName || 'Someone';
+            await sendNotification(
+              [parentComment.user_id],
+              `New reply from ${commenterName}`,
               content.trim(),
-              debouncedVideoId
+              { videoId: debouncedVideoId }
             );
           }
         } else {
@@ -186,13 +186,12 @@ export function useVideoComments(videoId: string, autoRefresh = true) {
             .single();
 
           if (post?.user_id && post.user_id !== currentUser.id) {
-            const commenterName = currentUser.display_name || currentUser.first_name || 'Someone';
-            await sendCommentNotification(
-              post.user_id,
-              commenterName,
+            const commenterName = currentUser.displayName || currentUser.firstName || 'Someone';
+            await sendNotification(
+              [post.user_id],
+              `New comment from ${commenterName}`,
               content.trim(),
-              debouncedVideoId,
-              post.thumbnail_url
+              { videoId: debouncedVideoId, thumbnailUrl: post.thumbnail_url }
             );
           }
         }
@@ -225,7 +224,7 @@ export function useVideoComments(videoId: string, autoRefresh = true) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentUser, debouncedVideoId, setState, setIsSubmitting, loadComments, sendCommentNotification, state.comments]);
+  }, [currentUser, debouncedVideoId, setState, setIsSubmitting, loadComments, sendNotification, state.comments]);
 
   return {
     ...state,

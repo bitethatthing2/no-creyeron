@@ -12,7 +12,7 @@ function useAsyncData<T>(
 ) {
   const [data, setData] = useLocalStorage<T | null>(`menu-${key}`, null);
   const [error, setError] = useLocalStorage<string | null>(`menu-error-${key}`, null);
-  const [loading, setLoading, toggleLoading] = useToggle(false);
+  const [loading, toggleLoading, setLoading] = useToggle(false);
   
   const prevDeps = usePrevious(deps);
   
@@ -40,7 +40,7 @@ function useAsyncData<T>(
 
 // Main hook - dramatically simplified with usehooks-ts
 export const useMenuItems = (filters: MenuFilters = {}) => {
-  const debouncedFilters = useDebounceValue(filters, 500);
+  const [debouncedFilters] = useDebounceValue(filters, 500);
   
   const { data: response, error, loading, refetch } = useAsyncData(
     () => menuApiService.getMenuItems(debouncedFilters),
@@ -60,11 +60,11 @@ export const useMenuItems = (filters: MenuFilters = {}) => {
 
 // Search hook - optimized with debounce
 export const useMenuSearch = (query: string, filters: Omit<MenuFilters, "search"> = {}) => {
-  const debouncedQuery = useDebounceValue(query, 500);
-  const debouncedFilters = useDebounceValue(filters, 300);
+  const [debouncedQuery] = useDebounceValue(query, 500);
+  const [debouncedFilters] = useDebounceValue(filters, 300);
   
   const { data: response, error, loading } = useAsyncData(
-    () => debouncedQuery ? menuApiService.searchMenuItems(debouncedQuery, debouncedFilters) : Promise.resolve({ data: [], total_count: 0 }),
+    () => debouncedQuery ? menuApiService.searchMenuItems(debouncedQuery, debouncedFilters) : Promise.resolve({ success: true, data: [], total_count: 0 }),
     `search-${debouncedQuery}-${JSON.stringify(debouncedFilters)}`,
     [debouncedQuery, debouncedFilters]
   );

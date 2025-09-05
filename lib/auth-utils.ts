@@ -238,7 +238,7 @@ export function logAuthError(error: unknown, context: string): void {
 
   debugLog.error(`Auth Error - ${context}`, error, {
     action: context,
-    error: errorMessage,
+    metadata: { error: errorMessage },
   });
 }
 

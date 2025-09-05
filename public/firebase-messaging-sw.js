@@ -4,15 +4,16 @@
 importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging-compat.js');
 
-// Firebase configuration will be injected by next.config.js
-// This ensures credentials are not hardcoded in public files
+// Firebase configuration will be injected by next.config.js webpack plugin
+// This ensures credentials are not hardcoded in public files - PRODUCTION SAFE
 const firebaseConfig = {
-  apiKey: "${NEXT_PUBLIC_FIREBASE_API_KEY}",
-  authDomain: "${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}",
-  projectId: "${NEXT_PUBLIC_FIREBASE_PROJECT_ID}",
-  storageBucket: "${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}",
-  messagingSenderId: "${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}",
-  appId: "${NEXT_PUBLIC_FIREBASE_APP_ID}"
+  apiKey: self.FIREBASE_API_KEY,
+  authDomain: self.FIREBASE_AUTH_DOMAIN,
+  projectId: self.FIREBASE_PROJECT_ID,
+  storageBucket: self.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: self.FIREBASE_MESSAGING_SENDER_ID,
+  appId: self.FIREBASE_APP_ID,
+  measurementId: self.FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
