@@ -269,11 +269,16 @@ export function UserProfileManager() {
 
   // Save profile with proper typing
   const saveProfile = async (data: FormData = formData, showToast = true) => {
+    console.log('🔥 saveProfile called with data:', data);
+    
     // Get the authenticated user
     const { data: { user: authUser } } = await supabase.auth.getUser();
     
-    if (!profile?.id && !authUser?.id) {
-      console.error('Cannot save profile: No profile or auth user available');
+    console.log('🔥 Current profile:', profile);
+    console.log('🔥 Auth user:', authUser);
+    
+    if (!authUser?.id) {
+      console.error('Cannot save profile: No authenticated user');
       toast.error('Please log in to save your profile');
       return;
     }
@@ -287,27 +292,18 @@ export function UserProfileManager() {
     setSaving(true);
 
     try {
-      // Prepare settings JSON for custom fields
+      // Prepare settings JSON for custom fields including all the extra fields
       const settings = {
         ...(profile?.settings || {}),
         instagram_handle: data.instagram_handle || null,
         favorite_drink: data.favorite_drink || null,
-        favorite_song: data.favorite_song || null
-      };
-
-      // Prepare update data
-      const updateData: Partial<UserProfile> = {
-        first_name: data.first_name || null,
-        last_name: data.last_name || null,
-        display_name: data.display_name,
+        favorite_song: data.favorite_song || null,
         bio: data.bio || null,
         gender: data.gender || null,
         pronouns: data.pronouns || null,
         is_private: data.is_private,
         email_notifications: data.email_notifications,
         push_notifications: data.push_notifications,
-        profile_image_url: data.profile_image_url || null,
-        avatar_url: data.avatar_url || data.profile_image_url || null,
         location: data.location || null,
         city: data.city || null,
         state: data.state || null,
@@ -318,39 +314,112 @@ export function UserProfileManager() {
         company: data.company || null,
         website: data.website || null,
         phone: data.phone || null,
-        settings: settings,
-        updated_at: new Date().toISOString()
       };
 
-      let updatedProfile;
+      // First, try the RPC function for basic fields
+      console.log('🔥 Calling update_user_profile RPC with:', {
+        p_first_name: data.first_name || null,
+        p_last_name: data.last_name || null,
+        p_display_name: data.display_name,
+        p_avatar_url: data.avatar_url || data.profile_image_url || null,
+        p_settings: settings
+      });
+      const { data: rpcResult, error: rpcError } = await supabase.rpc('update_user_profile', {
+        p_first_name: data.first_name || null,
+        p_last_name: data.last_name || null,
+        p_display_name: data.display_name,
+        p_avatar_url: data.avatar_url || data.profile_image_url || null,
+        p_settings: settings
+      });
       
-      // Update using the profile ID if we have it
-      if (profile?.id) {
-        const { data: updated, error } = await supabase
-          .from('users')
-          .update(updateData)
-          .eq('id', profile.id)
-          .select()
-          .single();
-          
-        if (error) throw error;
-        updatedProfile = updated;
-      } else if (authUser?.id) {
-        // Update by auth_id if that's all we have
-        const { data: updated, error } = await supabase
+      console.log('🔥 RPC result:', { rpcResult, rpcError });
+      
+      // If RPC fails, try direct update with proper auth context
+      if (rpcError) {
+        console.log('🔥 RPC failed, trying direct update with auth context');
+        
+        // Prepare the full update data
+        const updateData = {
+          first_name: data.first_name || null,
+          last_name: data.last_name || null,
+          display_name: data.display_name,
+          bio: data.bio || null,
+          gender: data.gender || null,
+          pronouns: data.pronouns || null,
+          is_private: data.is_private,
+          email_notifications: data.email_notifications,
+          push_notifications: data.push_notifications,
+          profile_image_url: data.profile_image_url || null,
+          avatar_url: data.avatar_url || data.profile_image_url || null,
+          location: data.location || null,
+          city: data.city || null,
+          state: data.state || null,
+          country: data.country || null,
+          postal_code: data.postal_code || null,
+          date_of_birth: data.date_of_birth || null,
+          occupation: data.occupation || null,
+          company: data.company || null,
+          website: data.website || null,
+          phone: data.phone || null,
+          settings: settings,
+          updated_at: new Date().toISOString()
+        };
+
+        console.log('🔥 Attempting direct update with data:', updateData);
+
+        // Try to update using auth_id which should work with RLS
+        const { data: directUpdate, error: directError } = await supabase
           .from('users')
           .update(updateData)
           .eq('auth_id', authUser.id)
           .select()
           .single();
+
+        if (directError) {
+          console.error('🔥 Direct update also failed:', directError);
+          throw new Error(`Failed to save profile: ${directError.message}`);
+        }
+
+        if (directUpdate) {
+          console.log('🔥 Direct update successful:', directUpdate);
+          setProfile(directUpdate as UserProfile);
           
-        if (error) throw error;
-        updatedProfile = updated;
+          // Update the form data to reflect the saved values
+          setFormData({
+            ...data,
+            ...directUpdate,
+            instagram_handle: directUpdate.settings?.instagram_handle || '',
+            favorite_drink: directUpdate.settings?.favorite_drink || '',
+            favorite_song: directUpdate.settings?.favorite_song || '',
+          });
+        }
       } else {
-        throw new Error('Unable to identify user for profile update');
+        // RPC was successful, now fetch the updated profile
+        console.log('🔥 RPC successful, fetching updated profile');
+        
+        const { data: updatedProfile, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('auth_id', authUser.id)
+          .single();
+
+        if (fetchError) {
+          console.error('🔥 Error fetching updated profile:', fetchError);
+        } else if (updatedProfile) {
+          console.log('🔥 Updated profile fetched:', updatedProfile);
+          
+          setProfile(updatedProfile as UserProfile);
+          
+          // Update the form data to reflect the saved values
+          setFormData({
+            ...data,
+            ...updatedProfile,
+            instagram_handle: updatedProfile.settings?.instagram_handle || '',
+            favorite_drink: updatedProfile.settings?.favorite_drink || '',
+            favorite_song: updatedProfile.settings?.favorite_song || '',
+          });
+        }
       }
-      
-      setProfile(updatedProfile as UserProfile);
       
       if (showToast) {
         toast.success('Profile saved successfully!');
@@ -452,6 +521,11 @@ export function UserProfileManager() {
                   </Badge>
                   {profile?.is_verified && (
                     <Badge variant="default">Verified</Badge>
+                  )}
+                  {profile?.role === 'admin' && (
+                    <Badge variant="destructive">
+                      <Settings className="h-3 w-3 mr-1" /> Admin
+                    </Badge>
                   )}
                 </div>
               </div>

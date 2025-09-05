@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { format } from "date-fns/format";
 import { Calendar as CalendarIcon, Users, Phone, Clock, Loader2 } from 'lucide-react';
-import { useLocationState } from '@/lib/hooks/useLocationState';
+// import { useLocationState } from '@/lib/hooks/useLocationState'; // Removed - using prop instead
 import { useToast } from '@/components/ui/use-toast';
 import { BookingRequest, BookingType } from '@/types/features/booking';
 import { submitBookingRequest } from '@/lib/booking/submitBookingRequest';
@@ -53,7 +53,7 @@ export interface BookingFormProps {
 }
 
 export function BookingForm({ onSuccessAction, location }: BookingFormProps) {
-  const { location: locationState } = useLocationState();
+  // const { location: locationState } = useLocationState(); // Removed - using location prop
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -99,7 +99,7 @@ export function BookingForm({ onSuccessAction, location }: BookingFormProps) {
       party_size: partySize,
       booking_type: bookingType,
       notes: notes.trim() || undefined,
-      location_id: location || locationState,
+      location_id: location || 'salem',
       status: 'pending'
     };
     

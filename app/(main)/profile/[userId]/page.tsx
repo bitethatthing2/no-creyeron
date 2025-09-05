@@ -239,7 +239,15 @@ export default function UserProfilePage() {
   };
 
   const handlePostClick = (postId: string) => {
-    router.push(`/social/post/${postId}`);
+    // Only allow clicking on own posts for now
+    if (isOwnProfile) {
+      // TODO: Add post edit/delete modal or page
+      console.log('Post clicked for editing:', postId);
+      // For now, just prevent navigation to non-existent page
+      return;
+    }
+    // Disable clicking on other users' posts
+    return;
   };
 
   const formatNumber = (num: number): string => {
@@ -285,7 +293,7 @@ export default function UserProfilePage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.back()}
+            onClick={() => router.push('/social')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -423,7 +431,7 @@ export default function UserProfilePage() {
                 {isOwnProfile ? (
                   <>
                     <Button
-                      onClick={() => router.push('/settings/profile')}
+                      onClick={() => router.push('/profile/edit')}
                       variant="outline"
                       className="flex items-center gap-2"
                     >
@@ -504,7 +512,9 @@ export default function UserProfilePage() {
                   <button
                     key={post.id}
                     onClick={() => handlePostClick(post.id)}
-                    className="relative aspect-square bg-muted overflow-hidden hover:opacity-80 transition-opacity"
+                    className={`relative aspect-square bg-muted overflow-hidden transition-opacity ${
+                      isOwnProfile ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'
+                    }`}
                   >
                     {/* Thumbnail */}
                     {post.post_type === 'video' && post.thumbnail_url ? (
@@ -514,6 +524,19 @@ export default function UserProfilePage() {
                           alt={post.caption || 'Post'}
                           fill
                           className="object-cover"
+                        />
+                        <div className="absolute top-2 right-2 bg-black/60 rounded p-1">
+                          <Play className="w-4 h-4 text-white" fill="white" />
+                        </div>
+                      </>
+                    ) : post.post_type === 'video' && post.video_url ? (
+                      <>
+                        <video
+                          src={post.video_url}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
                         />
                         <div className="absolute top-2 right-2 bg-black/60 rounded p-1">
                           <Play className="w-4 h-4 text-white" fill="white" />
@@ -559,6 +582,11 @@ export default function UserProfilePage() {
                           <MessageCircle className="w-5 h-5" fill="white" />
                           <span className="font-medium">{formatNumber(post.comments_count)}</span>
                         </div>
+                        {isOwnProfile && (
+                          <div className="absolute top-2 left-2 text-xs bg-primary px-2 py-1 rounded">
+                            Edit
+                          </div>
+                        )}
                       </div>
                     </div>
                   </button>

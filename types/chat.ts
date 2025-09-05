@@ -70,7 +70,7 @@ export interface MessageWithSender extends ChatMessage {
     user?: Pick<User, "id" | "email" | "display_name" | "first_name" | "last_name" | "username" | "is_verified">;
   }>;
   receipts?: ChatMessageReceipt[];
-  reply_to?: Pick<ChatMessage, "id" | "content" | "sender_id"> | null;
+  reply_to?: Pick<ChatMessage, "id" | "content"> & { sender?: Pick<User, "id" | "display_name" | "username"> } | null;
 }
 
 /**

@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { logAuthError, getAuthErrorSuggestions, testSupabaseAuth } from '@/lib/auth-utils';
+import { useRedirectAfterLogin } from '@/lib/hooks/useRedirectAfterLogin';
 
 export default function UnifiedLoginPage() {
   const [isSignUp, setIsSignUp] = React.useState(false);
@@ -19,6 +20,7 @@ export default function UnifiedLoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const redirectAfterLogin = useRedirectAfterLogin();
 
   // Diagnostic function to test Supabase connectivity
   const testSupabaseConnection = async (): Promise<boolean> => {
@@ -206,31 +208,12 @@ export default function UnifiedLoginPage() {
             description: "Welcome back!",
           });
           
-          // Check if user is admin and redirect immediately
-          const isAdmin = data.user.email === 'gthabarber1@gmail.com' || 
-                          data.user.app_metadata?.role === 'admin';
-          
           // Wait a moment for session to be fully persisted before redirecting
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          // Redirect after ensuring session is saved
-          if (isAdmin) {
-            console.log('🔄 Redirecting admin to /admin/dashboard');
-            router.push('/admin/dashboard');
-          } else {
-            // Check multiple sources for redirect URL
-            const urlReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
-            const localStorageReturnUrl = localStorage.getItem('redirectAfterLogin');
-            
-            // Clear the localStorage redirect after using it
-            if (localStorageReturnUrl) {
-              localStorage.removeItem('redirectAfterLogin');
-            }
-            
-            const targetUrl = urlReturnUrl || localStorageReturnUrl || '/social/feed';
-            console.log('🔄 Redirecting user to:', targetUrl);
-            router.push(targetUrl);
-          }
+          // Use the enhanced redirect hook
+          const targetUrl = redirectAfterLogin.clearAndRedirect();
+          console.log('🔄 Redirecting user to:', targetUrl);
           
           // Do profile operations in background (non-blocking)
           setTimeout(async () => {
@@ -282,7 +265,7 @@ export default function UnifiedLoginPage() {
           return;
         }
       }
-    } catch (err) {
+  } catch (err) {
       console.error('Authentication error during login:', err);
       console.error('Full error details:', JSON.stringify(err, null, 2));
       setError('An unexpected error occurred');

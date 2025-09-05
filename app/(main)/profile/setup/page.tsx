@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -24,15 +24,23 @@ export default function ProfileSetupPage() {
     bio: '',
   });
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    router.push('/login');
-    return null;
-  }
+  // Handle redirects in useEffect to avoid calling router during render
+  useEffect(() => {
+    // Redirect if not authenticated
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
-  // If user already has a profile, redirect to home
-  if (currentUser?.displayName || currentUser?.username) {
-    router.push('/');
+    // If user already has a profile, redirect to home
+    if (currentUser?.displayName || currentUser?.username) {
+      router.push('/');
+      return;
+    }
+  }, [isAuthenticated, currentUser, router]);
+
+  // Show loading or nothing while redirecting
+  if (!isAuthenticated || currentUser?.displayName || currentUser?.username) {
     return null;
   }
 

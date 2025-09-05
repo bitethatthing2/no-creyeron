@@ -13,9 +13,13 @@ export const SUPABASE_MENU_VIDEOS = {
   
   // Tacos
   "fish-tacos": "fish-tacos-watch-it-made.mp4",
-  "queso-tacos": "watch-it-being-made-queso-tacos.mp4",
+  "queso-tacos": "watch-it-being-made-queso-tacos.mp4.mp4",
+  "queso-taco": "watch-it-being-made-queso-tacos.mp4.mp4",
+  "cheese-tacos": "watch-it-being-made-queso-tacos.mp4.mp4",
+  "cheese-taco": "watch-it-being-made-queso-tacos.mp4.mp4",
   "taco-salad": "watch-it-being-made-taco-salad.mp4",
-  "street-tacos": "watch-it-being-made-queso-tacos.mp4",
+  "street-tacos": "watch-it-being-made-queso-tacos.mp4.mp4",
+  "street-taco": "watch-it-being-made-queso-tacos.mp4.mp4",
   
   // Other food items
   "burrito": "watch-it-be-made-burrito.mp4",
@@ -58,6 +62,9 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
     .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
     .trim();
   
+  // Debug logging
+  console.log(`[Video URL] Processing item: "${itemName}" -> slug: "${slug}"`);
+  
   // Check if we have a video for this item
   const videoFileName = SUPABASE_MENU_VIDEOS[slug as keyof typeof SUPABASE_MENU_VIDEOS];
   
@@ -78,6 +85,7 @@ export function getMenuItemVideoUrl(itemName: string): string | null {
     // Return Supabase storage URL for the video
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tvnpgbjypnezoasbhbwx.supabase.co';
     const url = `${baseUrl}/storage/v1/object/public/menu-videos/${videoFileName}`;
+    console.log(`[Video URL] Found video for "${itemName}": ${url}`);
     return url;
   }
   

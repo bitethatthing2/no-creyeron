@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef, TouchEvent } from 'react';
 import { Play, Clock } from 'lucide-react';
 import { getMenuItemVideoUrl } from '@/lib/constants/video-urls';
-import { useMenuItems } from '@/hooks/useMenuItems';
-import { MenuItem } from '@/types/functions/MENU_ITEMS';
+import { useMenuItems } from '@/lib/hooks/useMenuItems';
+import { MenuItem } from '@/lib/edge-functions/types/MENU_ITEMS';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import styles from './SliderMenu.module.css';
+import { useIsClient } from 'usehooks-ts';
 
 const WatchItMadeModal = dynamic(() => import('@/components/menu/WatchItMadeModal'), {
   ssr: false
@@ -32,6 +33,7 @@ export default function SliderMenu({
   showSearch = false,
   className = ''
 }: SliderMenuProps) {
+  const isClient = useIsClient();
   const [selectedType, setSelectedType] = useState<'food' | 'drinks' | 'all'>(initialType);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,6 +242,15 @@ export default function SliderMenu({
   useEffect(() => {
     setCurrentIndex(0);
   }, [selectedType, selectedCategory, searchQuery]);
+
+  if (!isClient) {
+    return (
+      <div className={styles.loading}>
+        <div className={styles.loadingSpinner}></div>
+        <div className={styles.loadingText}>Loading menu...</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

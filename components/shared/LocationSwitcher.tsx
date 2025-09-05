@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MapPin } from 'lucide-react';
-import { useLocationState } from '@/lib/hooks/useLocationState';
+// import { useLocationState } from '@/lib/hooks/useLocationState'; // Removed - using static location
 
 // Export LocationKey type - matches what useLocationState expects
 export type LocationKey = 'salem' | 'portland';
@@ -59,7 +59,8 @@ interface LocationSwitcherProps {
 
 // Export LocationSwitcher component
 export function LocationSwitcher({ onLocationChange, className = '' }: LocationSwitcherProps) {
-  const { location, setLocation } = useLocationState();
+  const location = 'salem' as LocationKey; // Static location since useLocationState was removed
+  const setLocation = () => {}; // Placeholder function
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -122,7 +123,7 @@ export function LocationSwitcher({ onLocationChange, className = '' }: LocationS
 
 // Export a simplified version for components that don't need the dropdown
 export function LocationDisplay() {
-  const { location } = useLocationState();
+  const location = 'salem' as LocationKey; // Static location since useLocationState was removed
   const currentLocation = LOCATIONS.find(loc => loc.key === location) || LOCATIONS[0];
   
   return (

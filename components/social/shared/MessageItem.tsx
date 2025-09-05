@@ -138,6 +138,36 @@ function shouldShowUsername(sender: MessageWithSender['sender']): boolean {
          !displayName.includes(username);
 }
 
+// Extended message type using intersection to add database fields
+type ExtendedMessage = MessageWithSender & {
+  is_deleted?: boolean;
+  is_edited?: boolean;
+};
+
+/**
+ * Check if a message is deleted
+ * Works with both is_deleted boolean and deleted_at timestamp
+ */
+function isMessageDeleted(message: MessageWithSender): boolean {
+  // Cast to extended type that includes our database fields
+  const msg = message as ExtendedMessage;
+  
+  // Check both the boolean flag and the timestamp for compatibility
+  return msg.is_deleted === true || msg.deleted_at != null;
+}
+
+/**
+ * Check if a message is edited
+ * Works with both is_edited boolean and edited_at timestamp
+ */
+function isMessageEdited(message: MessageWithSender): boolean {
+  // Cast to extended type that includes our database fields
+  const msg = message as ExtendedMessage;
+  
+  // Check both the boolean flag and the timestamp for compatibility
+  return msg.is_edited === true || msg.edited_at != null;
+}
+
 export function MessageItem({
   message,
   currentUserId,
@@ -202,7 +232,8 @@ export function MessageItem({
   const [showActions, setShowActions] = React.useState(false);
 
   // Don't render deleted messages unless showing deletion notice
-  if (message.deleted_at) {
+  // Now checks both is_deleted and deleted_at for compatibility
+  if (isMessageDeleted(message)) {
     return (
       <div className={cn("flex gap-3 p-4 opacity-50", className)}>
         <div className="text-sm text-gray-500 italic">
@@ -246,6 +277,7 @@ export function MessageItem({
               width={32}
               height={32}
               className="w-full h-full object-cover"
+              unoptimized // Add this to handle external URLs
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white text-xs font-medium bg-gradient-to-br from-gray-600 to-gray-700">
@@ -294,7 +326,8 @@ export function MessageItem({
           <span className="text-xs text-gray-500">
             {formatMessageTime(message.created_at)}
           </span>
-          {message.edited_at && (
+          {/* Show edited indicator - now checks both is_edited and edited_at */}
+          {isMessageEdited(message) && (
             <span className="text-xs text-gray-500 italic">(edited)</span>
           )}
         </div>
@@ -320,6 +353,7 @@ export function MessageItem({
                   width={300}
                   height={200}
                   className="object-cover w-full h-auto"
+                  unoptimized // Add this to handle external URLs
                 />
               </div>
             ) : message.media_type?.startsWith('video') ? (
@@ -399,7 +433,7 @@ export function MessageItem({
             {/* Message actions for own messages */}
             {isCurrentUser && (
               <div className="flex gap-1 ml-2">
-                {onMessageEdit && (
+                {onMessageEdit && !isMessageDeleted(message) && (
                   <button
                     onClick={() => {
                       const newContent = prompt('Edit message:', message.content);
@@ -412,7 +446,7 @@ export function MessageItem({
                     Edit
                   </button>
                 )}
-                {onMessageDelete && (
+                {onMessageDelete && !isMessageDeleted(message) && (
                   <button
                     onClick={() => {
                       if (confirm('Delete this message?')) {

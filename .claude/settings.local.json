@@ -105,7 +105,8 @@
       "Bash(psql:*)",
       "WebFetch(domain:dequeuniversity.com)",
       "Bash(npm run types:generate:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(npx next lint:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

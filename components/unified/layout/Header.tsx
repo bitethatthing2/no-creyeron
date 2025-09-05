@@ -41,7 +41,6 @@ interface NavItem {
   icon?: React.ComponentType<{ className?: string }>;
   badge?: string | number;
   requiresAuth?: boolean;
-  requiresAdmin?: boolean;
 }
 
 interface HeaderProps {
@@ -279,7 +278,6 @@ export function Header({
                   <nav className="space-y-1">
                     {navigationItems
                       .filter(item => !item.requiresAuth || userProfile)
-                      .filter(item => !item.requiresAdmin || userProfile?.role === 'admin')
                       .map((item) => {
                         const Icon = item.icon || Home;
                         const isActive = isNavItemActive(item.href);
@@ -335,15 +333,6 @@ export function Header({
                         </div>
                       </Link>
                       
-                      {userProfile.role === 'admin' && (
-                        <Link
-                          href="/admin"
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent"
-                        >
-                          <Settings className="h-5 w-5" />
-                          <span>Admin Dashboard</span>
-                        </Link>
-                      )}
                       
                       <button
                         onClick={handleSignOut}
@@ -407,7 +396,6 @@ export function Header({
           <nav className="hidden md:flex md:flex-1 md:justify-center md:gap-1">
             {navigationItems
               .filter(item => !item.requiresAuth || userProfile)
-              .filter(item => !item.requiresAdmin || userProfile?.role === 'admin')
               .map((item) => {
                 const Icon = item.icon;
                 const isActive = isNavItemActive(item.href);

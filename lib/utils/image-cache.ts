@@ -22,7 +22,7 @@ const IMAGE_VERSION = getStoredVersion();
  * Force refresh all cached images by updating the version
  */
 export function forceClearImageCache(): void {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && window.location) {
     const newVersion = Date.now().toString();
     localStorage.setItem("imageVersion", newVersion);
     // Reload the page to apply new cache version
@@ -152,7 +152,7 @@ export function getSmartCacheBustedUrl(src: string): string {
  * Clear browser cache for images (more aggressive approach)
  */
 export async function clearBrowserImageCache(): Promise<void> {
-  if ("caches" in window) {
+  if (typeof window !== "undefined" && "caches" in window) {
     try {
       const cacheNames = await caches.keys();
       await Promise.all(

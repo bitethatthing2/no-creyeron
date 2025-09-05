@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Calendar, CheckCircle2 } from 'lucide-react';
-import { useLocationState } from '@/lib/hooks/useLocationState';
+// import { useLocationState } from '@/lib/hooks/useLocationState'; // Removed - using static location
 import { BookingForm } from '@/components/booking/BookingForm';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
@@ -47,7 +47,7 @@ const LOCATION_CONFIG = {
 } as const;
 
 export default function BookingPage() {
-  const { location } = useLocationState();
+  const location = 'portland'; // Static location since useLocationState was removed
   const [submitted, setSubmitted] = React.useState(false);
 
   const handleSuccess = () => {

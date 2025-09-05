@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useMessaging } from '@/lib/hooks/useMessaging';
+import { useMessaging } from '@/lib/hooks/messaging';
 import { ArrowLeft, Send, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { ConnectionStatus } from '@/components/shared/ConnectionStatus';
 import { debugLog } from '@/lib/debug';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getSupabaseBrowserClient } from '@/lib/supabase';
 
 // TypeScript interfaces aligned with database schema
 
@@ -70,6 +72,7 @@ export default function ConversationPage() {
     loading, 
     error, 
     loadMessages, 
+    sendMessage,
     subscribeToConversation 
   } = useMessaging();
   
@@ -81,24 +84,8 @@ export default function ConversationPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load conversation data and messages
-  useEffect(() => {
-    if (conversationId) {
-      debugLog.messaging('ConversationPage mount', { conversationId });
-      loadMessages(conversationId);
-      loadConversationData(conversationId);
-      
-      // Subscribe to real-time updates
-      const unsubscribe = subscribeToConversation(conversationId);
-      
-      return () => {
-        debugLog.messaging('ConversationPage unmount', { conversationId });
-        unsubscribe();
-      };
-    }
-  }, [conversationId, loadMessages, subscribeToConversation]);
-
-  const loadConversationData = async (convId: string) => {
+  // Use useCallback to memoize the function and prevent recreation on every render
+  const loadConversationData = useCallback(async (convId: string) => {
     try {
       setLoadingConversation(true);
       
@@ -136,7 +123,24 @@ export default function ConversationPage() {
     } finally {
       setLoadingConversation(false);
     }
-  };
+  }, [supabase]);
+
+  // Load conversation data and messages
+  useEffect(() => {
+    if (conversationId) {
+      debugLog.messaging('ConversationPage mount', { conversationId });
+      loadMessages(conversationId);
+      loadConversationData(conversationId);
+      
+      // Subscribe to real-time updates
+      const unsubscribe = subscribeToConversation(conversationId);
+      
+      return () => {
+        debugLog.messaging('ConversationPage unmount', { conversationId });
+        unsubscribe();
+      };
+    }
+  }, [conversationId, loadMessages, subscribeToConversation, loadConversationData]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -151,37 +155,14 @@ export default function ConversationPage() {
     setSending(true);
 
     try {
-      // Get authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Insert message directly (RPC function not available)
-      const { error: insertError } = await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content: messageText,
-          message_type: 'text',
-          is_deleted: false,
-          is_edited: false,
-          status: 'sent'
-        });
-
-      if (insertError) throw insertError;
-
-      // Update conversation's last message
-      await supabase
-        .from('chat_conversations')
-        .update({
-          last_message_at: new Date().toISOString(),
-          last_message_preview: messageText.substring(0, 100),
-          last_message_sender_id: user.id,
-        })
-        .eq('id', conversationId);
-
-      // Message will appear via real-time subscription
-      inputRef.current?.focus();
+      console.log('🔥 Using messaging hook sendMessage');
+      const success = await sendMessage(conversationId, messageText);
+      
+      if (success) {
+        inputRef.current?.focus();
+      } else {
+        throw new Error('Failed to send message');
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       setNewMessage(messageText); // Restore message on error
@@ -272,7 +253,7 @@ export default function ConversationPage() {
 
   if (loading || loadingConversation) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="h-screen bg-black text-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
       </div>
     );
@@ -280,7 +261,7 @@ export default function ConversationPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col">
+      <div className="h-screen bg-black text-white flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 bg-black border-b border-gray-800">
           <div className="flex items-center gap-3">
@@ -316,11 +297,11 @@ export default function ConversationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="h-screen bg-black text-white flex flex-col">
       <ConnectionStatus />
       
       {/* TikTok-Style Header */}
-      <div className="flex items-center justify-between p-4 bg-black border-b border-gray-900">
+      <div className="flex items-center justify-between p-4 bg-black border-b border-gray-900 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => router.back()}
@@ -365,7 +346,7 @@ export default function ConversationPage() {
       </div>
 
       {/* Messages Area - TikTok Style */}
-      <div className="flex-1 overflow-y-auto bg-black">
+      <div className="flex-1 overflow-y-auto bg-black min-h-0">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -380,10 +361,12 @@ export default function ConversationPage() {
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            {messages.map((message, index) => {
-              const isFromCurrentUser = message.sender_id === currentUserId;
+            {messages
+              .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())
+              .map((message, index) => {
+              const isFromCurrentUser = message.sender?.id === currentUserId;
               const showAvatar = !isFromCurrentUser && 
-                (index === 0 || messages[index - 1]?.sender_id !== message.sender_id);
+                (index === 0 || messages[index - 1]?.sender?.id !== message.sender?.id);
               
               // Skip deleted messages unless they have a placeholder
               if (message.is_deleted && !message.deleted_at) return null;
@@ -479,7 +462,7 @@ export default function ConversationPage() {
       </div>
 
       {/* Input Area - TikTok Style */}
-      <div className="border-t border-gray-900 bg-black p-4">
+      <div className="border-t border-gray-900 bg-black p-4 flex-shrink-0">
         {/* Quick Emoji Reactions */}
         <div className="flex gap-1 py-2 mb-2">
           {['😀', '😂', '😍', '👍', '🔥', '🎉'].map((emoji) => (

@@ -44,7 +44,7 @@ interface SessionRefreshResponse {
 
 /**
  * Check user session status - can check current user or specific user by email
- * @param email - Optional email to check specific user (admin function)
+ * @param email - Optional email to check specific user
  * @returns Object with success status and user session data
  */
 export async function checkUserSessionStatus(

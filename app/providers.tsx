@@ -4,7 +4,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { LocationProvider } from '@/lib/hooks/useLocationState';
+// import { LocationProvider } from '@/lib/hooks/useLocationState'; // Removed - no longer needed
 
 // ============================================================================
 // Query Client Configuration
@@ -113,13 +113,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <LocationProvider>
-            {children}
+          {children}
             {/* React Query Devtools - disabled */}
             {/* {process.env.NODE_ENV === 'development' && (
               <ReactQueryDevtools initialIsOpen={false} />
             )} */}
-          </LocationProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
